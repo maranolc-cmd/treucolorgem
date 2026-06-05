@@ -1101,13 +1101,13 @@ function downloadCert() {
     // Use html2canvas approach - draw cert to canvas and download
     const canvas = document.createElement('canvas');
     const rect = certPhoto.getBoundingClientRect();
-    canvas.width = 2160;
-    canvas.height = 2160;
+    canvas.width = 1080;
+    canvas.height = 1080;
     const ctx = canvas.getContext('2d');
 
     // Background
     ctx.fillStyle = '#0a0a1a';
-    ctx.fillRect(0, 0, 2160, 2160);
+    ctx.fillRect(0, 0, 1080, 1080);
 
     // Draw listing image if available
     if (state.livePhotoData || state.listingFiles.length > 0) {
@@ -1115,56 +1115,56 @@ function downloadCert() {
       img.onload = () => {
         // Maintain aspect ratio — cover the canvas
         const iw = img.naturalWidth, ih = img.naturalHeight;
-        const scale = Math.max(2160/iw, 2160/ih);
+        const scale = Math.max(1080/iw, 1080/ih);
         const sw = iw*scale, sh = ih*scale;
-        const ox = (2160-sw)/2, oy = (2160-sh)/2;
+        const ox = (1080-sw)/2, oy = (1080-sh)/2;
         ctx.drawImage(img, ox, oy, sw, sh);
 
         // Dark gradient overlay at bottom
-        const grad = ctx.createLinearGradient(0, 1200, 0, 2160);
+        const grad = ctx.createLinearGradient(0, 600, 0, 1080);
         grad.addColorStop(0, 'rgba(0,0,0,0)');
         grad.addColorStop(1, 'rgba(0,0,0,0.92)');
         ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 2160, 2160);
+        ctx.fillRect(0, 0, 1080, 1080);
 
         // CERTIFIED badge top right
         ctx.fillStyle = 'rgba(76,175,125,0.9)';
-        ctx.fillRect(1600, 80, 480, 120);
+        ctx.fillRect(800, 40, 240, 60);
         ctx.fillStyle = 'white';
-        ctx.font = 'bold 44px Arial';
+        ctx.font = 'bold 22px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('CERTIFIED', 1840, 156);
+        ctx.fillText('CERTIFIED', 920, 78);
 
         // Score badge top left
         ctx.fillStyle = 'rgba(0,0,0,0.75)';
-        ctx.fillRect(80, 80, 260, 120);
+        ctx.fillRect(40, 40, 130, 60);
         ctx.fillStyle = '#c9a84c';
-        ctx.font = 'bold 64px Arial';
+        ctx.font = 'bold 32px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText((state.currentScore?.score || 88) + '%', 210, 164);
+        ctx.fillText((state.currentScore?.score || 88) + '%', 105, 82);
 
         // Bottom watermark
         ctx.fillStyle = '#c9a84c';
-        ctx.font = '72px Georgia, serif';
+        ctx.font = '36px Georgia, serif';
         ctx.textAlign = 'left';
-        ctx.fillText('TrueColorGem', 100, 1800);
+        ctx.fillText('TrueColorGem', 50, 900);
 
         ctx.fillStyle = '#c9a84c';
-        ctx.font = '36px Arial';
-        ctx.fillText('🥈 SILVER CERTIFIED', 100, 1880);
+        ctx.font = '18px Arial';
+        ctx.fillText('🥈 SILVER CERTIFIED', 50, 940);
 
         ctx.fillStyle = 'rgba(245,240,232,0.5)';
-        ctx.font = '32px monospace';
+        ctx.font = '16px monospace';
         const certId = document.getElementById('cert-wm-id').textContent;
-        ctx.fillText(certId, 100, 1940);
+        ctx.fillText(certId, 50, 970);
 
         // QR placeholder
         ctx.fillStyle = 'white';
-        ctx.fillRect(1880, 1740, 200, 200);
+        ctx.fillRect(940, 870, 100, 100);
         ctx.fillStyle = '#333';
-        ctx.font = '24px Arial';
+        ctx.font = '12px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText('SCAN', 1980, 1852);
+        ctx.fillText('SCAN', 990, 926);
 
         // Download
         const link = document.createElement('a');
@@ -1179,10 +1179,10 @@ function downloadCert() {
     } else {
       // No photo — download watermark only
       ctx.fillStyle = '#c9a84c';
-      ctx.font = '120px Georgia';
+      ctx.font = '60px Georgia';
       ctx.textAlign = 'center';
-      ctx.fillText('💎', 1080, 1000);
-      ctx.fillText('TrueColorGem', 1080, 1240);
+      ctx.fillText('💎', 540, 500);
+      ctx.fillText('TrueColorGem', 540, 620);
       const link = document.createElement('a');
       link.download = 'TrueColorGem-Certificate.jpg';
       link.href = canvas.toDataURL('image/jpeg', 1.0);

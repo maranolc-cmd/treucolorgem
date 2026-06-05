@@ -260,9 +260,9 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
   <div class="brand">TrueColorGem</div>
   <div class="brand-sub">Gems Certification</div>
   <div class="tagline">The world standard for<br>authentic gemstone photography</div>
-  <button class="btn btn-gold" onclick="show('s-login')">Seller Login</button>
-  <button class="btn btn-outline" onclick="show('s-verify')">Verify a Purchase</button>
-  <button class="btn btn-grey" onclick="show('s-plans')" style="margin-top:10px">View Plans</button>
+  <button class="btn btn-gold" id="btn-login">Seller Login</button>
+  <button class="btn btn-outline" id="btn-verify">Verify a Purchase</button>
+  <button class="btn btn-grey" id="btn-plans" style="margin-top:10px">View Plans</button>
 </div>
 
 <!-- LOGIN -->
@@ -1034,6 +1034,15 @@ function doVerify() {
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // Init — Firebase handles data loading after auth
+// Attach welcome button events after DOM ready
+window.addEventListener('DOMContentLoaded', function() {
+  var bl = document.getElementById('btn-login');
+  var bv = document.getElementById('btn-verify');
+  var bp = document.getElementById('btn-plans');
+  if(bl) bl.addEventListener('click', function(){ show('s-login'); });
+  if(bv) bv.addEventListener('click', function(){ show('s-verify'); });
+  if(bp) bp.addEventListener('click', function(){ show('s-plans'); });
+});
 </script>
 </body>
 </html>

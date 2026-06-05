@@ -913,17 +913,11 @@ async function show_cert_screen() {
   document.getElementById('cert-score-badge').textContent = r.score + '%';
   document.getElementById('cert-wm-id').textContent = 'ID: ' + id + ' · Valid to ' + expiry;
 
-  // QR Code
+  // QR via Google Charts (no external lib needed)
   const qrDiv = document.getElementById('cert-qr');
-  qrDiv.innerHTML = '';
-  try {
-    new QRCode(qrDiv, {
-      text: 'https://truecolorgem.com/verify/' + id,
-      width: 46, height: 46,
-      colorDark: '#000000', colorLight: '#ffffff',
-      correctLevel: QRCode.CorrectLevel.M
-    });
-  } catch(e) { qrDiv.innerHTML = '<div style="font-size:20px;display:flex;align-items:center;justify-content:center;height:100%">⊞</div>'; }
+  const verifyUrl = 'https://treucolorgem.vercel.app/?verify=' + id;
+  const qrUrl = 'https://chart.googleapis.com/chart?chs=46x46&cht=qr&chl=' + encodeURIComponent(verifyUrl);
+  qrDiv.innerHTML = '<img src="' + qrUrl + '" width="46" height="46" style="display:block">';
 
   // Show listing photo if available
   if (state.listingFiles.length > 0) {

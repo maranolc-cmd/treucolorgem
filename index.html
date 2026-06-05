@@ -78,33 +78,51 @@ let lightOK = false;
 async function startCamera() {
   const video = document.getElementById('cam-video');
   const placeholder = document.getElementById('cam-placeholder');
-  const txt = document.getElementById('light-txt');
-  const dot = document.getElementById('light-dot');
-
-  txt.textContent = "Richiesta permesso...";
-  dot.style.background = 'var(--yellow)';
+  const lightTxt = document.getElementById('light-txt');
+  const lightDot = document.getElementById('light-dot');
 
   try {
+    lightTxt.textContent = "Richiesta permesso fotocamera...";
+    lightDot.style.background = 'var(--yellow)';
+
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment", width: {ideal:1280}, height: {ideal:720} }
+      video: { 
+        facingMode: "environment",
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
     });
 
     cameraStream = stream;
     video.srcObject = stream;
     video.style.display = 'block';
     placeholder.style.display = 'none';
+    video.playsInline = true;
+    video.muted = true;
 
-    await video.play();
+    // Forza il caricamento sul mobile
+    await new Promise(resolve => {
+      video.onloadedmetadata = resolve;
+      video.play().catch(() => {});
+    });
 
-    txt.textContent = "Camera attiva ✓";
-    dot.style.background = 'var(--green)';
+    lightTxt.textContent = "Fotocamera attiva ✓";
+    lightDot.style.background = 'var(--green)';
     startLightAnalysis();
 
   } catch (err) {
-    console.error("Camera error:", err);
-    txt.textContent = "Permesso negato o errore";
-    dot.style.background = 'var(--red)';
+    console.error("Camera Error:", err.name, err.message);
     
+    let msg = "Impossibile aprire la fotocamera";
+    if (err.name === "NotAllowedError") msg = "Permesso negato. Tocca 'Consenti'";
+    else if (err.name === "NotReadableError") msg = "Fotocamera già in uso";
+    else if (err.name === "SecurityError") msg = "Apri in HTTPS";
+
+    lightTxt.textContent = msg;
+    lightDot.style.background = 'var(--red)';
+
+    // Fallback galleria
     setTimeout(() => {
       document.getElementById('cam-file').click();
     }, 1800);

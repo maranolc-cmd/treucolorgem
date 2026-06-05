@@ -794,14 +794,53 @@ async function runAnalysisSteps() {
 
 async function callAI() {
   try {
+    // Convert listing photo to base64
+    const getBase64 = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result.split(',')[1]);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+
+    // Build message content with actual images
+    const msgContent = [];
+
+    // Add listing photo if available
+    if (state.listingFiles.length > 0) {
+      const listingB64 = await getBase64(state.listingFiles[0]);
+      const listingMime = state.listingFiles[0].type || 'image/jpeg';
+      msgContent.push({
+        type: 'image',
+        source: { type: 'base64', media_type: listingMime, data: listingB64 }
+      });
+      msgContent.push({ type: 'text', text: 'This is the LISTING PHOTO (as shown on eBay/Catawiki/Etsy).' });
+    }
+
+    // Add live photo if available
+    if (state.livePhotoData) {
+      const liveB64 = state.livePhotoData.split(',')[1];
+      msgContent.push({
+        type: 'image',
+        source: { type: 'base64', media_type: 'image/jpeg', data: liveB64 }
+      });
+      msgContent.push({ type: 'text', text: 'This is the LIVE PHOTO taken in natural daylight via TrueColorGem app.' });
+    }
+
     const prompt = `You are an expert gemstone photography analyst for TrueColorGem certification system.
 
-Analyze this gemstone listing certification request:
-- Gemstone: ${state.currentGemName}
-- Listing photos: ${state.listingFiles.length} photos uploaded
-- Live photo: Captured in natural daylight via TrueColor app
+Gemstone: ${state.currentGemName}
 
-Provide a realistic certification analysis. Return ONLY valid JSON, no markdown, no explanation outside JSON:
+Carefully compare the two photos above:
+1. LISTING PHOTO: the photo used in the online listing
+2. LIVE PHOTO: taken in natural daylight, unedited
+
+Analyze:
+- Color accuracy: does the listing photo color match the live photo?
+- Saturation: is the listing photo artificially enhanced or filtered?
+- Light source of live photo: is it genuine natural daylight?
+- Overall photographic accuracy
+
+Return ONLY valid JSON, no markdown:
 
 {
   "score": <integer 0-100>,
@@ -811,10 +850,12 @@ Provide a realistic certification analysis. Return ONLY valid JSON, no markdown,
   "light_source": "<Natural daylight ✓ or Artificial light ✗>",
   "verdict": "<CERTIFIED or REJECTED>",
   "reason": "<one sentence explaining the result>",
-  "assessment": "<2-3 sentences detailed professional assessment of the photo accuracy for this specific gemstone>"
+  "assessment": "<2-3 sentences professional assessment comparing the two photos>"
 }
 
-Be realistic - most honest sellers score 75-95. Score below 70 means certification rejected.`;
+Score below 70 = REJECTED. Be precise and honest.`;
+
+    msgContent.push({ type: 'text', text: prompt });
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -822,7 +863,7 @@ Be realistic - most honest sellers score 75-95. Score below 70 means certificati
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
+        messages: [{ role: 'user', content: msgContent }]
       })
     });
 

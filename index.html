@@ -453,7 +453,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <strong>AI Assessment</strong>
       <span id="ai-text">Loading...</span>
     </div>
-    <button class="btn btn-gold" id="cert-btn" onclick="show('s-cert')">Generate Certified Photo →</button>
+    <button class="btn btn-gold" id="cert-btn" onclick="show_cert_screen()">Generate Certified Photo →</button>
   </div>
 </div>
 
@@ -954,12 +954,8 @@ async function show_cert_screen() {
   updateDashStats();
 }
 
-// Override show for cert screen
-const _origShow = show;
-window.show = function(id) {
-  if (id === 's-cert') show_cert_screen();
-  _origShow(id);
-};
+// Make show global
+window.show = show;
 
 function downloadCert() {
   toast('Certified photo saved to device ✓');
@@ -1029,13 +1025,15 @@ function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 // Init — Firebase handles data loading after auth
 // Attach welcome button events after DOM ready
-window.addEventListener('DOMContentLoaded', function() {
+// Attach buttons directly with onclick as fallback
+document.addEventListener('DOMContentLoaded', function() {
   var bl = document.getElementById('btn-login');
-  var bv = document.getElementById('btn-verify');
+  var bv = document.getElementById('btn-verify');  
   var bp = document.getElementById('btn-plans');
-  if(bl) bl.addEventListener('click', function(){ show('s-login'); });
-  if(bv) bv.addEventListener('click', function(){ show('s-verify'); });
-  if(bp) bp.addEventListener('click', function(){ show('s-plans'); });
+  if(bl) { bl.onclick = function(e){ e.preventDefault(); window.show('s-login'); return false; }; }
+  if(bv) { bv.onclick = function(e){ e.preventDefault(); window.show('s-verify'); return false; }; }
+  if(bp) { bp.onclick = function(e){ e.preventDefault(); window.show('s-plans'); return false; }; }
+  console.log('Buttons attached:', !!bl, !!bv, !!bp);
 });
 </script>
 </body>

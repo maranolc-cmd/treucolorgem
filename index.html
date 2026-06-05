@@ -952,6 +952,10 @@ async function show_cert_screen() {
   }
   stepDone(3);
   updateDashStats();
+  // Navigate to cert screen
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-cert').classList.add('active');
+  window.scrollTo(0, 0);
 }
 
 // Make show global
@@ -1030,9 +1034,9 @@ document.addEventListener('DOMContentLoaded', function() {
   var bl = document.getElementById('btn-login');
   var bv = document.getElementById('btn-verify');  
   var bp = document.getElementById('btn-plans');
-  if(bl) { bl.onclick = function(e){ e.preventDefault(); window.show('s-login'); return false; }; }
-  if(bv) { bv.onclick = function(e){ e.preventDefault(); window.show('s-verify'); return false; }; }
-  if(bp) { bp.onclick = function(e){ e.preventDefault(); window.show('s-plans'); return false; }; }
+  if(bl) { bl.onclick = function(e){ e.preventDefault(); show('s-login'); return false; }; }
+  if(bv) { bv.onclick = function(e){ e.preventDefault(); show('s-verify'); return false; }; }
+  if(bp) { bp.onclick = function(e){ e.preventDefault(); show('s-plans'); return false; }; }
   console.log('Buttons attached:', !!bl, !!bv, !!bp);
 });
 </script>

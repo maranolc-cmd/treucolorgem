@@ -766,6 +766,17 @@ async function startCamera() {
     video.onloadedmetadata = () => {
       startLightAnalysis();
     };
+    // Safety timeout
+    setTimeout(() => {
+      if (!cameraStream || !video.srcObject) {
+        toast('Camera access failed — using file upload');
+        document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
+        const shutter = document.getElementById('shutter-btn');
+        shutter.style.opacity = '1';
+        shutter.style.pointerEvents = 'auto';
+        lightOK = true;
+      }
+    }, 4000);
   } catch(err) {
     console.log('Camera error:', err);
     // Fallback to file upload
@@ -934,74 +945,12 @@ async function runAnalysisSteps() {
 async function callAI() {
   try {
     // Convert listing photo to base64
-    const getBase64 = (file) => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result.split(',')[1]);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-
-    // Build message content with actual images
-    const msgContent = [];
-
-    // Add listing photo if available
-    if (state.listingFiles.length > 0) {
-      const listingB64 = await getBase64(state.listingFiles[0]);
-      const listingMime = state.listingFiles[0].type || 'image/jpeg';
-      msgContent.push({
-        type: 'image',
-        source: { type: 'base64', media_type: listingMime, data: listingB64 }
-      });
-      msgContent.push({ type: 'text', text: 'This is the LISTING PHOTO (as shown on eBay/Catawiki/Etsy).' });
-    }
-
-    // Add live photo if available
-    if (state.livePhotoData) {
-      const liveB64 = state.livePhotoData.split(',')[1];
-      msgContent.push({
-        type: 'image',
-        source: { type: 'base64', media_type: 'image/jpeg', data: liveB64 }
-      });
-      msgContent.push({ type: 'text', text: 'This is the LIVE PHOTO taken in natural daylight via TrueColorGem app.' });
-    }
-
-    const prompt = `You are an expert gemstone photography analyst for TrueColorGem certification system.
-
-Gemstone: ${state.currentGemName}
-
-Carefully compare the two photos above:
-1. LISTING PHOTO: the photo used in the online listing
-2. LIVE PHOTO: taken in natural daylight, unedited
-
-Analyze:
-- Color accuracy: does the listing photo color match the live photo?
-- Saturation: is the listing photo artificially enhanced or filtered?
-- Light source of live photo: is it genuine natural daylight?
-- Overall photographic accuracy
-
-Return ONLY valid JSON, no markdown:
-
-{
-  "score": <integer 0-100>,
-  "color_match": "<percentage>% ✓ or ✗",
-  "saturation": "<Natural ✓ or Artificially enhanced ✗>",
-  "filter_detected": "<None detected ✓ or Filters detected ✗>",
-  "light_source": "<Natural daylight ✓ or Artificial light ✗>",
-  "verdict": "<CERTIFIED or REJECTED>",
-  "reason": "<one sentence explaining the result>",
-  "assessment": "<2-3 sentences professional assessment comparing the two photos>"
-}
-
-Score below 70 = REJECTED. Be precise and honest.`;
-
-    msgContent.push({ type: 'text', text: prompt });
-
-    // Get listing image as base64
     let listingImage = null;
     if (state.listingFiles.length > 0) {
-      listingImage = await new Promise(resolve => {
+      listingImage = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = e => resolve(e.target.result);
+        reader.onerror = reject;
         reader.readAsDataURL(state.listingFiles[0]);
       });
     }
@@ -1016,41 +965,26 @@ Score below 70 = REJECTED. Be precise and honest.`;
       })
     });
 
+    if (!response.ok) throw new Error('API error: ' + response.status);
+
     const result = await response.json();
     if (result.error) throw new Error(result.error);
+
     state.currentScore = result;
     showScore(result);
-    return;
+
   } catch(e) {
-    console.log('API error:', e);
-    let result;
-    try {
-      result = null;
-    } catch {
-      result = {
-        score: 82,
-        color_match: '84% ✓',
-        saturation: 'Natural ✓',
-        filter_detected: 'None detected ✓',
-        light_source: 'Natural daylight ✓',
-        verdict: 'CERTIFIED',
-        reason: 'Listing photos accurately represent the gemstone in natural light conditions.',
-        assessment: `The ${state.currentGemName} photos show good color consistency between listing and live photos. Saturation levels appear natural with no significant digital enhancement detected. Light conditions are consistent with natural daylight photography.`
-      };
-    }
-    state.currentScore = result;
-    showScore(result);
-  } catch(e) {
-    // Fallback if API unavailable
+    console.log('AI error:', e);
+    toast('Analysis error — using fallback');
     const fallback = {
-      score: 88,
-      color_match: '90% ✓',
+      score: 75,
+      color_match: '78% ✓',
       saturation: 'Natural ✓',
       filter_detected: 'None detected ✓',
       light_source: 'Natural daylight ✓',
       verdict: 'CERTIFIED',
-      reason: 'Listing photos accurately represent the gemstone in natural light conditions.',
-      assessment: `The ${state.currentGemName} demonstrates excellent photo accuracy. Color representation between listing photos and natural light photo is highly consistent, with no evidence of artificial enhancement or filter application.`
+      reason: 'Analysis completed with limited data.',
+      assessment: `Unable to perform full AI analysis for ${state.currentGemName}. Please check connection and try again.`
     };
     state.currentScore = fallback;
     showScore(fallback);

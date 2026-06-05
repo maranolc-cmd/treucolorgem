@@ -502,46 +502,49 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div class="plan-header">
         <div class="plan-icon">🥈</div>
         <div><div class="plan-name">Silver</div><div style="font-size:10px;color:var(--grey)">Entry level</div></div>
-        <div class="plan-price"><div class="plan-amount">€1,000</div><div class="plan-period">per year</div></div>
+        <div class="plan-price"><div class="plan-amount">€150</div><div class="plan-period">per year</div></div>
       </div>
       <ul class="plan-features">
-        <li>Up to 10 certified listings</li>
-        <li>Average score ≥ 70%</li>
-        <li>Silver badge for listings</li>
+        <li>Up to 200 certified listings per year</li>
+        <li>50 certified listings per year</li>
+        <li>Silver badge on certified photos</li>
         <li>Directory listing</li>
-        <li>QR verification page</li>
+        <li>QR verification page for buyers</li>
       </ul>
+      
     </div>
     <div class="plan-card popular" onclick="selectPlan('gold',this)">
       <div class="plan-header">
         <div class="plan-icon">🥇</div>
         <div><div class="plan-name">Gold</div><div style="font-size:10px;color:var(--grey)">Professional</div></div>
-        <div class="plan-price"><div class="plan-amount">€2,000</div><div class="plan-period">per year</div></div>
+        <div class="plan-price"><div class="plan-amount">€400</div><div class="plan-period">per year</div></div>
       </div>
       <ul class="plan-features">
-        <li>Up to 50 certified listings</li>
-        <li>Average score ≥ 85%</li>
-        <li>Gold badge for listings</li>
+        <li>Up to 200 certified listings per year</li>
+        <li>200 certified listings per year</li>
+        <li>Gold badge on certified photos</li>
         <li>Priority directory placement</li>
         <li>Newsletter feature</li>
         <li>Buyer verification layer</li>
       </ul>
+      
     </div>
     <div class="plan-card" onclick="selectPlan('diamond',this)">
       <div class="plan-header">
         <div class="plan-icon">💎</div>
         <div><div class="plan-name">Diamond</div><div style="font-size:10px;color:var(--grey)">Elite</div></div>
-        <div class="plan-price"><div class="plan-amount">€3,000</div><div class="plan-period">per year</div></div>
+        <div class="plan-price"><div class="plan-amount">€1,000</div><div class="plan-period">per year</div></div>
       </div>
       <ul class="plan-features">
         <li>Unlimited certified listings</li>
-        <li>Average score ≥ 95%</li>
-        <li>Diamond badge for listings</li>
+        <li>Unlimited certified listings</li>
+        <li>Diamond badge on certified photos</li>
         <li>Top directory placement</li>
         <li>Advanced analytics dashboard</li>
         <li>Priority support</li>
         <li>AI model training contribution</li>
       </ul>
+      
     </div>
     <button class="btn btn-gold" id="subscribe-btn" onclick="subscribePlan()" style="margin-top:8px;opacity:0.4;pointer-events:none">Select a Plan to Continue</button>
   </div>
@@ -679,6 +682,25 @@ function updateDashStats() {
   document.getElementById('stat-certified').textContent = count;
   document.getElementById('stat-score').textContent = avg !== null ? avg+'%' : '—';
   document.getElementById('stat-verified').textContent = verified;
+
+  // Determine current level based on average score and listing count
+  const plan = state.user?.plan || 'silver';
+  let thresholds = { silver: 70, gold: 85, diamond: 95 };
+  let threshold = thresholds[plan] || 70;
+
+  // Show warning if average is below threshold
+  if (avg !== null && avg < threshold && count >= 3) {
+    const fee = document.getElementById('dash-fee');
+    if (fee) fee.textContent = `⚠ Avg score ${avg}% — minimum required: ${threshold}%`;
+    fee.style.color = 'var(--red)';
+  } else if (avg !== null) {
+    const fee = document.getElementById('dash-fee');
+    if (fee) {
+      fee.textContent = `€${plan==='gold'?'400':plan==='diamond'?'1,000':'150'} / year · Avg score: ${avg}% ${avg >= threshold ? '✓' : ''}`;
+      fee.style.color = avg >= threshold ? 'var(--green)' : 'var(--grey)';
+    }
+  }
+
   const prog = Math.min(count, 50);
   document.getElementById('dash-prog').style.width = (prog/50*100)+'%';
   document.getElementById('dash-prog-txt').textContent = count+' / 50 listings';
@@ -811,30 +833,36 @@ function analyzeLightConditions() {
   ctx.drawImage(video, 0, 0, 50, 50);
   const pixels = ctx.getImageData(0, 0, 50, 50).data;
   
+  // Color averages
   let r=0, g=0, b=0, count=0;
+  const grays = [];
   for (let i=0; i<pixels.length; i+=4) {
     r += pixels[i]; g += pixels[i+1]; b += pixels[i+2]; count++;
+    grays.push(pixels[i]*0.299 + pixels[i+1]*0.587 + pixels[i+2]*0.114);
   }
   r /= count; g /= count; b /= count;
-  
   const brightness = (r*0.299 + g*0.587 + b*0.114);
-  
-  // Color temperature estimation
-  // Natural daylight: R/B ratio ~1.0-1.3, balanced
-  // Warm artificial: R/B > 1.8 (yellow/orange cast)
-  // Cool LED/fluorescent: R/B < 0.8 (blue cast)
   const rbRatio = r / (b + 1);
-  const rgRatio = r / (g + 1);
-  
-  // Natural light indicators:
-  // - Brightness 40-240 (not too dark, not blown out)
-  // - R/B ratio 0.9-1.6 (balanced, not too warm/cool)
-  // - Some variation (not pure white flash)
-  
+
+  // Sharpness: Laplacian variance on grayscale
+  // High variance = sharp edges = in focus
+  const W = 50;
+  let lapSum = 0, lapCount = 0;
+  for (let y=1; y<W-1; y++) {
+    for (let x=1; x<W-1; x++) {
+      const lap = Math.abs(
+        -grays[(y-1)*W+x] - grays[(y+1)*W+x] - grays[y*W+(x-1)] - grays[y*W+(x+1)]
+        + 4 * grays[y*W+x]
+      );
+      lapSum += lap; lapCount++;
+    }
+  }
+  const sharpness = lapSum / lapCount; // higher = sharper
+
   const brightOK = brightness > 40 && brightness < 240;
   const tempOK = rbRatio > 0.85 && rbRatio < 1.7;
-  const notFlash = brightness < 230;
-  
+  const sharpOK = sharpness > 3.5; // threshold: gemstone needs good edges
+
   const dot = document.getElementById('light-dot');
   const txt = document.getElementById('light-txt');
   const detail = document.getElementById('light-detail');
@@ -842,8 +870,9 @@ function analyzeLightConditions() {
   const hint = document.getElementById('cam-hint-main');
   
   detail.style.display = 'block';
-  detail.textContent = `Brightness: ${Math.round(brightness)} · Color temp: ${rbRatio < 1.0 ? 'Cool' : rbRatio > 1.6 ? 'Warm' : 'Neutral'}`;
-  
+  detail.textContent = `Light: ${rbRatio < 1.0 ? 'Cool' : rbRatio > 1.6 ? 'Warm' : 'Natural'} · Brightness: ${Math.round(brightness)} · Focus: ${sharpness > 3.5 ? '✓' : '✗'}`;
+
+  // Priority: check problems in order
   if (!brightOK && brightness <= 40) {
     lightOK = false;
     dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)';
@@ -864,10 +893,15 @@ function analyzeLightConditions() {
     dot.style.background = 'var(--yellow)'; dot.style.boxShadow = '0 0 8px var(--yellow)';
     txt.style.color = 'var(--yellow)'; txt.textContent = 'Cool artificial light ⚠ — use window light';
     hint.textContent = 'Avoid LED/fluorescent lights — use daylight';
+  } else if (!sharpOK) {
+    lightOK = false;
+    dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)';
+    txt.style.color = 'var(--red)'; txt.textContent = 'Out of focus — hold steady ✗';
+    hint.textContent = 'Move closer and hold the phone still';
   } else {
     lightOK = true;
     dot.style.background = 'var(--green)'; dot.style.boxShadow = '0 0 8px var(--green)';
-    txt.style.color = 'var(--green)'; txt.textContent = 'Natural light detected ✓';
+    txt.style.color = 'var(--green)'; txt.textContent = 'Natural light · In focus ✓';
     hint.textContent = 'Perfect — tap shutter to capture';
   }
   
@@ -950,16 +984,36 @@ async function runAnalysisSteps() {
 
 async function callAI() {
   try {
+    // Compress image to max 800px and 80% quality before sending
+    const compressImage = (src) => new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const maxSize = 800;
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = () => resolve(src);
+      img.src = src;
+    });
+
     // Convert listing photo to base64
     let listingImage = null;
     if (state.listingFiles.length > 0) {
-      listingImage = await new Promise((resolve, reject) => {
+      const raw = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = e => resolve(e.target.result);
         reader.onerror = reject;
         reader.readAsDataURL(state.listingFiles[0]);
       });
+      listingImage = await compressImage(raw);
     }
+
+    // Compress live photo too
+    const liveImage = state.livePhotoData ? await compressImage(state.livePhotoData) : null;
 
     console.log('Calling API — gem:', state.currentGemName, '| listing:', !!listingImage, '| live:', !!state.livePhotoData);
 
@@ -968,7 +1022,7 @@ async function callAI() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         listingImage,
-        liveImage: state.livePhotoData,
+        liveImage,
         gemName: state.currentGemName
       })
     });
@@ -1109,118 +1163,92 @@ function downloadCert() {
   canvas.height = 1080;
   const ctx = canvas.getContext('2d');
 
-  const render = (imgSrc) => {
-    ctx.fillStyle = '#0a0a1a';
+  const drawWatermark = () => {
+    // Gradient bottom
+    const grad = ctx.createLinearGradient(0, 580, 0, 1080);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.9)');
+    ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 1080, 1080);
 
-    const finish = () => {
-      // Gradient bottom
-      const grad = ctx.createLinearGradient(0, 580, 0, 1080);
-      grad.addColorStop(0, 'rgba(0,0,0,0)');
-      grad.addColorStop(1, 'rgba(0,0,0,0.9)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, 1080, 1080);
+    // CERTIFIED badge top right
+    ctx.fillStyle = 'rgba(76,175,125,0.92)';
+    ctx.fillRect(780, 36, 264, 58);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 21px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('CERTIFIED', 912, 72);
 
-      // CERTIFIED badge
-      ctx.fillStyle = 'rgba(76,175,125,0.92)';
-      roundRect(ctx, 780, 36, 264, 58, 4);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 21px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('CERTIFIED', 912, 72);
+    // Score badge top left
+    ctx.fillStyle = 'rgba(0,0,0,0.78)';
+    ctx.fillRect(36, 36, 128, 58);
+    ctx.strokeStyle = '#c9a84c';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(36, 36, 128, 58);
+    ctx.fillStyle = '#c9a84c';
+    ctx.font = 'bold 30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText((state.currentScore?.score || 88) + '%', 100, 76);
 
-      // Score badge
-      ctx.fillStyle = 'rgba(0,0,0,0.78)';
-      roundRect(ctx, 36, 36, 128, 58, 4);
-      ctx.strokeStyle = '#c9a84c';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(36, 36, 128, 58);
-      ctx.fillStyle = '#c9a84c';
-      ctx.font = 'bold 30px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText((state.currentScore?.score || 88) + '%', 100, 76);
+    // Bottom watermark
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#c9a84c';
+    ctx.font = '34px Georgia, serif';
+    ctx.fillText('TrueColorGem', 44, 896);
+    ctx.font = '16px Arial';
+    ctx.fillText('🥈 SILVER CERTIFIED', 44, 930);
+    ctx.fillStyle = 'rgba(245,240,232,0.45)';
+    ctx.font = '14px monospace';
+    const certId = document.getElementById('cert-wm-id')?.textContent || '';
+    ctx.fillText(certId, 44, 958);
 
-      // TrueColorGem watermark
-      ctx.textAlign = 'left';
-      ctx.fillStyle = '#c9a84c';
-      ctx.font = '34px Georgia, serif';
-      ctx.fillText('TrueColorGem', 44, 896);
-      ctx.font = '16px Arial';
-      ctx.fillText('🥈 SILVER CERTIFIED', 44, 930);
-      ctx.fillStyle = 'rgba(245,240,232,0.45)';
-      ctx.font = '14px monospace';
-      const certId = document.getElementById('cert-wm-id')?.textContent || '';
-      ctx.fillText(certId, 44, 958);
+    // QR box
+    ctx.fillStyle = 'white';
+    ctx.fillRect(938, 868, 106, 106);
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 11px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('SCAN', 991, 926);
 
-      // QR box
-      ctx.fillStyle = 'white';
-      ctx.fillRect(938, 868, 106, 106);
-      ctx.fillStyle = '#333';
-      ctx.font = 'bold 11px Arial';
-      ctx.textAlign = 'center';
-      ctx.fillText('SCAN TO', 991, 912);
-      ctx.fillText('VERIFY', 991, 928);
+    // Trigger download
+    const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'TrueColorGem-' + (state.currentGemName||'gem').replace(/\s+/g,'-') + '.jpg';
+    a.click();
+    toast('Photo downloaded ✓');
+  };
 
-      // Download / open
-      const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
-      const w = window.open('', '_blank');
-      if (w) {
-        const name = (state.currentGemName || 'gem').replace(/[^a-zA-Z0-9]/g, '-');
-        w.document.write(`<html><head><title>TrueColorGem Certificate</title></head><body style="margin:0;background:#0a0a0a;display:flex;flex-direction:column;align-items:center;min-height:100vh">
-          <img src="${dataUrl}" style="width:100%;max-width:600px;display:block">
-          <p style="color:#c9a84c;font-family:Arial;padding:16px;text-align:center;font-size:14px">Long press the image to save it<br><span style="color:#777;font-size:12px">${name}</span></p>
-          <a href="${dataUrl}" download="TrueColorGem-${name}.jpg" style="color:#c9a84c;font-family:Arial;font-size:13px;padding:10px 24px;border:1px solid #c9a84c;border-radius:4px;text-decoration:none;margin-bottom:40px">⬇ Download</a>
-        </body></html>`);
-        w.document.close();
-        toast('Photo opened — long press to save ✓');
-      } else {
-        toast('Allow popups to view certified photo');
-      }
+  const drawImage = (src) => {
+    const img = new Image();
+    img.onload = () => {
+      // Cover: mantieni proporzioni
+      const scale = Math.max(1080/img.naturalWidth, 1080/img.naturalHeight);
+      const w = img.naturalWidth*scale, h = img.naturalHeight*scale;
+      ctx.drawImage(img, (1080-w)/2, (1080-h)/2, w, h);
+      drawWatermark();
     };
-
-    if (imgSrc) {
-      const img = new Image();
-      img.crossOrigin = 'anonymous';
-      img.onload = () => {
-        const scale = Math.max(1080 / img.naturalWidth, 1080 / img.naturalHeight);
-        const w = img.naturalWidth * scale, h = img.naturalHeight * scale;
-        ctx.drawImage(img, (1080 - w) / 2, (1080 - h) / 2, w, h);
-        finish();
-      };
-      img.onerror = () => finish();
-      img.src = imgSrc;
-    } else {
-      ctx.fillStyle = '#c9a84c';
-      ctx.font = '80px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('💎', 540, 560);
-      finish();
-    }
+    img.onerror = () => {
+      ctx.fillStyle = '#0a0a1a';
+      ctx.fillRect(0,0,1080,1080);
+      drawWatermark();
+    };
+    img.src = src;
   };
 
   if (state.listingFiles?.length > 0) {
     const reader = new FileReader();
-    reader.onload = e => render(e.target.result);
+    reader.onload = e => drawImage(e.target.result);
     reader.readAsDataURL(state.listingFiles[0]);
+  } else if (state.livePhotoData) {
+    drawImage(state.livePhotoData);
   } else {
-    render(state.livePhotoData || null);
+    ctx.fillStyle = '#0a0a1a';
+    ctx.fillRect(0,0,1080,1080);
+    drawWatermark();
   }
 }
 
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-  ctx.fill();
-}
 
 
 function selectPlan(plan, el) {
@@ -1228,7 +1256,7 @@ function selectPlan(plan, el) {
   el.classList.add('selected');
   state.selectedPlan = plan;
   const btn = document.getElementById('subscribe-btn');
-  const labels = { silver: 'Subscribe — €1,000 / year', gold: 'Subscribe — €2,000 / year', diamond: 'Subscribe — €3,000 / year' };
+  const labels = { silver: 'Subscribe — €150 / year', gold: 'Subscribe — €400 / year', diamond: 'Subscribe — €1,000 / year' };
   btn.textContent = labels[plan];
   btn.style.opacity = '1';
   btn.style.pointerEvents = 'auto';

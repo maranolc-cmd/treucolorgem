@@ -357,7 +357,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     </div>
     <div class="field">
       <label>Gemstone Name / Listing Title</label>
-      <input type="text" id="gem-name" placeholder="e.g. Burma Ruby 1.17ct GIA Vivid Red">
+      <input type="text" id="gem-name" placeholder="e.g. Burma Ruby 1.17ct GIA Vivid Red" style="transition:border-color 0.3s">
     </div>
     <div class="info-box"><strong>Step 1:</strong> Upload your listing photos as shown on eBay / Catawiki / Etsy.</div>
     <div class="upload-zone" id="upload-zone" onclick="document.getElementById('listing-files').click()">
@@ -847,23 +847,23 @@ function analyzeLightConditions() {
   if (!brightOK && brightness <= 40) {
     lightOK = false;
     dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)';
-    txt.style.color = 'var(--red)'; txt.textContent = 'Too dark — move to window ✗';
-    hint.textContent = 'Need more natural light';
+    txt.style.color = 'var(--red)'; txt.textContent = 'Too dark — move closer to window ✗';
+    hint.textContent = 'Need more light — face a window';
   } else if (!brightOK && brightness >= 240) {
     lightOK = false;
     dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)';
-    txt.style.color = 'var(--red)'; txt.textContent = 'Too bright — avoid direct sun ✗';
-    hint.textContent = 'Move away from direct sunlight';
+    txt.style.color = 'var(--red)'; txt.textContent = 'Too bright — avoid direct sunlight ✗';
+    hint.textContent = 'Step back or use indirect window light';
   } else if (rbRatio > 1.7) {
     lightOK = false;
     dot.style.background = 'var(--yellow)'; dot.style.boxShadow = '0 0 8px var(--yellow)';
-    txt.style.color = 'var(--yellow)'; txt.textContent = 'Warm artificial light detected ⚠';
-    hint.textContent = 'Move near a window for natural light';
+    txt.style.color = 'var(--yellow)'; txt.textContent = 'Warm artificial light ⚠ — move to window';
+    hint.textContent = 'Turn off lamps and move near a window';
   } else if (rbRatio < 0.85) {
     lightOK = false;
     dot.style.background = 'var(--yellow)'; dot.style.boxShadow = '0 0 8px var(--yellow)';
-    txt.style.color = 'var(--yellow)'; txt.textContent = 'Cool artificial light detected ⚠';
-    hint.textContent = 'Avoid LED/fluorescent — use window light';
+    txt.style.color = 'var(--yellow)'; txt.textContent = 'Cool artificial light ⚠ — use window light';
+    hint.textContent = 'Avoid LED/fluorescent lights — use daylight';
   } else {
     lightOK = true;
     dot.style.background = 'var(--green)'; dot.style.boxShadow = '0 0 8px var(--green)';
@@ -923,7 +923,13 @@ function handleCamFile(input) {
 // ── AI ANALYSIS ──
 async function startAnalysis() {
   const gemName = document.getElementById('gem-name').value.trim();
-  if (!gemName) { toast('Please enter the gemstone name'); return; }
+  if (!gemName) { 
+    toast('⚠ Please enter the gemstone name first');
+    document.getElementById('gem-name').focus();
+    document.getElementById('gem-name').style.borderColor = 'var(--red)';
+    setTimeout(() => { document.getElementById('gem-name').style.borderColor = ''; }, 2000);
+    return; 
+  }
   state.currentGemName = gemName;
   show('s-analyzing');
   await runAnalysisSteps();
@@ -1090,7 +1096,98 @@ async function show_cert_screen() {
 window.show = show;
 
 function downloadCert() {
-  toast('Certified photo saved to device ✓');
+  try {
+    const certPhoto = document.getElementById('cert-photo');
+    // Use html2canvas approach - draw cert to canvas and download
+    const canvas = document.createElement('canvas');
+    const rect = certPhoto.getBoundingClientRect();
+    canvas.width = 1080;
+    canvas.height = 1080;
+    const ctx = canvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = '#0a0a1a';
+    ctx.fillRect(0, 0, 1080, 1080);
+
+    // Draw listing image if available
+    if (state.livePhotoData || state.listingFiles.length > 0) {
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, 1080, 1080);
+
+        // Dark gradient overlay at bottom
+        const grad = ctx.createLinearGradient(0, 600, 0, 1080);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.92)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 1080, 1080);
+
+        // CERTIFIED badge top right
+        ctx.fillStyle = 'rgba(76,175,125,0.9)';
+        ctx.fillRect(800, 40, 240, 60);
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 22px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('CERTIFIED', 920, 78);
+
+        // Score badge top left
+        ctx.fillStyle = 'rgba(0,0,0,0.75)';
+        ctx.fillRect(40, 40, 130, 60);
+        ctx.fillStyle = '#c9a84c';
+        ctx.font = 'bold 32px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText((state.currentScore?.score || 88) + '%', 105, 82);
+
+        // Bottom watermark
+        ctx.fillStyle = '#c9a84c';
+        ctx.font = '36px Georgia, serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('TrueColorGem', 50, 900);
+
+        ctx.fillStyle = '#c9a84c';
+        ctx.font = '18px Arial';
+        ctx.fillText('🥈 SILVER CERTIFIED', 50, 940);
+
+        ctx.fillStyle = 'rgba(245,240,232,0.5)';
+        ctx.font = '16px monospace';
+        const certId = document.getElementById('cert-wm-id').textContent;
+        ctx.fillText(certId, 50, 970);
+
+        // QR placeholder
+        ctx.fillStyle = 'white';
+        ctx.fillRect(940, 870, 100, 100);
+        ctx.fillStyle = '#333';
+        ctx.font = '12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('SCAN', 990, 926);
+
+        // Download
+        const link = document.createElement('a');
+        link.download = 'TrueColorGem-' + state.currentGemName.replace(/\s+/g,'-') + '.jpg';
+        link.href = canvas.toDataURL('image/jpeg', 0.95);
+        link.click();
+        toast('Certified photo downloaded ✓');
+      };
+      img.src = state.listingFiles.length > 0 
+        ? URL.createObjectURL(state.listingFiles[0])
+        : state.livePhotoData;
+    } else {
+      // No photo — download watermark only
+      ctx.fillStyle = '#c9a84c';
+      ctx.font = '60px Georgia';
+      ctx.textAlign = 'center';
+      ctx.fillText('💎', 540, 500);
+      ctx.fillText('TrueColorGem', 540, 620);
+      const link = document.createElement('a');
+      link.download = 'TrueColorGem-Certificate.jpg';
+      link.href = canvas.toDataURL('image/jpeg', 0.95);
+      link.click();
+      toast('Certified photo downloaded ✓');
+    }
+  } catch(e) {
+    console.log('Download error:', e);
+    toast('Download failed — try again');
+  }
 }
 
 // ── PLANS ──

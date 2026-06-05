@@ -382,24 +382,28 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 <!-- CAMERA -->
 <div id="s-camera" class="screen">
   <div class="nav" style="background:#000;border-color:rgba(255,255,255,0.05)">
-    <button class="nav-back" onclick="show('s-new')">←</button>
+    <button class="nav-back" onclick="stopCamera();show('s-new')">←</button>
     <div class="nav-title">Live Photo</div>
   </div>
-  <div class="cam-view">
-    <div class="cam-placeholder">💎</div>
-    <img id="preview-img" class="preview-img" src="" alt="">
-    <div class="cam-overlay" id="cam-overlay">
+  <div class="cam-view" style="position:relative;background:#000;min-height:60vh;display:flex;align-items:center;justify-content:center;">
+    <video id="cam-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none"></video>
+    <canvas id="cam-canvas" style="display:none"></canvas>
+    <canvas id="cam-analyze" width="50" height="50" style="display:none"></canvas>
+    <img id="preview-img" class="preview-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.4s">
+    <div id="cam-placeholder" style="font-size:80px;opacity:0.2;z-index:1">💎</div>
+    <div class="cam-overlay" id="cam-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:2">
       <div class="cam-frame"><span></span></div>
-      <div class="light-ind">
-        <div class="light-dot green" id="light-dot"></div>
-        <div class="light-txt" id="light-txt" style="color:var(--green)">Natural light detected ✓</div>
+      <div class="light-ind" id="light-ind">
+        <div class="light-dot" id="light-dot" style="background:var(--grey);box-shadow:none"></div>
+        <div class="light-txt" id="light-txt" style="color:var(--grey)">Starting camera...</div>
       </div>
+      <div id="light-detail" style="font-size:10px;color:rgba(255,255,255,0.5);text-align:center;background:rgba(0,0,0,0.6);padding:6px 14px;border-radius:10px;display:none"></div>
     </div>
   </div>
   <div class="cam-bottom">
-    <div class="cam-hint">Center the gemstone within the frame</div>
-    <div class="shutter" onclick="capturePhoto()"></div>
-    <div class="cam-hint" style="font-size:9px">Photo timestamped · Natural light verified</div>
+    <div class="cam-hint" id="cam-hint-main">Point camera at gemstone in natural daylight</div>
+    <div class="shutter" id="shutter-btn" onclick="capturePhoto()" style="opacity:0.4;pointer-events:none"></div>
+    <div class="cam-hint" style="font-size:9px" id="cam-hint-sub">Shutter activates when light conditions are optimal</div>
     <input type="file" id="cam-file" accept="image/*" capture="environment" onchange="handleCamFile(this)" style="display:none">
   </div>
 </div>
@@ -581,12 +585,15 @@ const state = {
 // ── NAVIGATION ──
 function show(id) {
   try {
-    state.lastScreen = document.querySelector('.screen.active')?.id || 's-welcome';
+    const prev = document.querySelector('.screen.active')?.id;
+    if (prev === 's-camera' && id !== 's-camera') stopCamera();
+    state.lastScreen = prev || 's-welcome';
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(id);
     if (target) { target.classList.add('active'); }
     window.scrollTo(0, 0);
     setLoading(false);
+    if (id === 's-camera') setTimeout(startCamera, 100);
   } catch(e) { console.log('show error:', e); }
 }
 function goBack() { show(state.lastScreen); }
@@ -741,32 +748,164 @@ function checkAnalyzeBtn() {
 }
 
 // ── CAMERA ──
+let cameraStream = null;
+let lightAnalysisInterval = null;
+let lightOK = false;
+
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false
+    });
+    cameraStream = stream;
+    const video = document.getElementById('cam-video');
+    video.srcObject = stream;
+    video.style.display = 'block';
+    document.getElementById('cam-placeholder').style.display = 'none';
+    video.onloadedmetadata = () => {
+      startLightAnalysis();
+    };
+  } catch(err) {
+    console.log('Camera error:', err);
+    // Fallback to file upload
+    document.getElementById('light-txt').textContent = 'Camera not available — use upload';
+    document.getElementById('light-dot').style.background = 'var(--yellow)';
+    document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
+    document.getElementById('shutter-btn').style.opacity = '1';
+    document.getElementById('shutter-btn').style.pointerEvents = 'auto';
+    lightOK = true;
+  }
+}
+
+function stopCamera() {
+  if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  lightOK = false;
+}
+
+function startLightAnalysis() {
+  lightAnalysisInterval = setInterval(() => {
+    analyzeLightConditions();
+  }, 600);
+}
+
+function analyzeLightConditions() {
+  const video = document.getElementById('cam-video');
+  const canvas = document.getElementById('cam-analyze');
+  const ctx = canvas.getContext('2d');
+  
+  if (video.readyState < 2) return;
+  
+  ctx.drawImage(video, 0, 0, 50, 50);
+  const pixels = ctx.getImageData(0, 0, 50, 50).data;
+  
+  let r=0, g=0, b=0, count=0;
+  for (let i=0; i<pixels.length; i+=4) {
+    r += pixels[i]; g += pixels[i+1]; b += pixels[i+2]; count++;
+  }
+  r /= count; g /= count; b /= count;
+  
+  const brightness = (r*0.299 + g*0.587 + b*0.114);
+  
+  // Color temperature estimation
+  // Natural daylight: R/B ratio ~1.0-1.3, balanced
+  // Warm artificial: R/B > 1.8 (yellow/orange cast)
+  // Cool LED/fluorescent: R/B < 0.8 (blue cast)
+  const rbRatio = r / (b + 1);
+  const rgRatio = r / (g + 1);
+  
+  // Natural light indicators:
+  // - Brightness 40-240 (not too dark, not blown out)
+  // - R/B ratio 0.9-1.6 (balanced, not too warm/cool)
+  // - Some variation (not pure white flash)
+  
+  const brightOK = brightness > 40 && brightness < 240;
+  const tempOK = rbRatio > 0.85 && rbRatio < 1.7;
+  const notFlash = brightness < 230;
+  
+  const dot = document.getElementById('light-dot');
+  const txt = document.getElementById('light-txt');
+  const detail = document.getElementById('light-detail');
+  const shutter = document.getElementById('shutter-btn');
+  const hint = document.getElementById('cam-hint-main');
+  
+  detail.style.display = 'block';
+  detail.textContent = `Brightness: ${Math.round(brightness)} · Color temp: ${rbRatio < 1.0 ? 'Cool' : rbRatio > 1.6 ? 'Warm' : 'Neutral'}`;
+  
+  if (!brightOK && brightness <= 40) {
+    lightOK = false;
+    dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)';
+    txt.style.color = 'var(--red)'; txt.textContent = 'Too dark — move to window ✗';
+    hint.textContent = 'Need more natural light';
+  } else if (!brightOK && brightness >= 240) {
+    lightOK = false;
+    dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)';
+    txt.style.color = 'var(--red)'; txt.textContent = 'Too bright — avoid direct sun ✗';
+    hint.textContent = 'Move away from direct sunlight';
+  } else if (rbRatio > 1.7) {
+    lightOK = false;
+    dot.style.background = 'var(--yellow)'; dot.style.boxShadow = '0 0 8px var(--yellow)';
+    txt.style.color = 'var(--yellow)'; txt.textContent = 'Warm artificial light detected ⚠';
+    hint.textContent = 'Move near a window for natural light';
+  } else if (rbRatio < 0.85) {
+    lightOK = false;
+    dot.style.background = 'var(--yellow)'; dot.style.boxShadow = '0 0 8px var(--yellow)';
+    txt.style.color = 'var(--yellow)'; txt.textContent = 'Cool artificial light detected ⚠';
+    hint.textContent = 'Avoid LED/fluorescent — use window light';
+  } else {
+    lightOK = true;
+    dot.style.background = 'var(--green)'; dot.style.boxShadow = '0 0 8px var(--green)';
+    txt.style.color = 'var(--green)'; txt.textContent = 'Natural light detected ✓';
+    hint.textContent = 'Perfect — tap shutter to capture';
+  }
+  
+  shutter.style.opacity = lightOK ? '1' : '0.35';
+  shutter.style.pointerEvents = lightOK ? 'auto' : 'none';
+}
+
 function capturePhoto() {
-  document.getElementById('cam-file').click();
+  if (cameraStream && lightOK) {
+    // Capture from live video
+    const video = document.getElementById('cam-video');
+    const canvas = document.getElementById('cam-canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    stopCamera();
+    processLivePhoto(dataUrl);
+  } else {
+    // Fallback: file upload
+    document.getElementById('cam-file').click();
+  }
+}
+
+function processLivePhoto(dataUrl) {
+  state.livePhotoData = dataUrl;
+  const img = document.getElementById('preview-img');
+  img.src = dataUrl;
+  img.style.opacity = '1';
+  document.getElementById('cam-overlay').style.opacity = '0';
+  setTimeout(() => {
+    show('s-new');
+    const lz = document.getElementById('live-zone');
+    lz.classList.add('lz-done');
+    document.getElementById('lz-icon').textContent = '✅';
+    document.getElementById('lz-title').textContent = 'Live Photo Captured';
+    document.getElementById('lz-sub').textContent = 'Natural light verified · Timestamped';
+    document.getElementById('lz-req').textContent = '✓ Ready for analysis';
+    stepDone(2);
+    checkAnalyzeBtn();
+    toast('Live photo captured ✓');
+  }, 600);
 }
 
 function handleCamFile(input) {
   if (!input.files[0]) return;
   const reader = new FileReader();
-  reader.onload = e => {
-    state.livePhotoData = e.target.result;
-    const img = document.getElementById('preview-img');
-    img.src = e.target.result;
-    img.classList.add('show');
-    document.getElementById('cam-overlay').style.opacity = '0';
-    setTimeout(() => {
-      show('s-new');
-      const lz = document.getElementById('live-zone');
-      lz.classList.add('lz-done');
-      document.getElementById('lz-icon').textContent = '✅';
-      document.getElementById('lz-title').textContent = 'Live Photo Captured';
-      document.getElementById('lz-sub').textContent = 'Natural light verified · Timestamped';
-      document.getElementById('lz-req').textContent = '✓ Ready for analysis';
-      stepDone(2);
-      checkAnalyzeBtn();
-      toast('Live photo captured ✓');
-    }, 800);
-  };
+  reader.onload = e => { processLivePhoto(e.target.result); };
   reader.readAsDataURL(input.files[0]);
 }
 

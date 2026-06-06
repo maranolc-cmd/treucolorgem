@@ -1259,6 +1259,14 @@ function showScore(r) {
         // Reset live zone
         const liveZone = document.getElementById('live-zone');
         if (liveZone) liveZone.classList.remove('lz-done');
+        const lzIcon = document.getElementById('lz-icon');
+        if (lzIcon) lzIcon.textContent = '📷';
+        const lzTitle = document.getElementById('lz-title');
+        if (lzTitle) lzTitle.textContent = 'Take Live Photo Now';
+        const lzSub = document.getElementById('lz-sub');
+        if (lzSub) lzSub.textContent = 'Open camera and shoot in natural daylight\nThis photo cannot be replaced with a gallery upload';
+        const lzReq = document.getElementById('lz-req');
+        if (lzReq) lzReq.textContent = '⚠ Required for certification';
         const previewImg = document.getElementById('preview-img');
         if (previewImg) { previewImg.src = ''; previewImg.style.opacity = '0'; }
         // Reset gem name

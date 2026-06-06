@@ -55,16 +55,6 @@ CRITICAL EVALUATION PRINCIPLE:
 The ONLY factor that matters is whether the listing photo's lighting or editing artificially inflates the gemstone's perceived color saturation, vividness, or brilliance beyond its true appearance.
 You are NOT judging photo quality, composition, or professionalism. You are judging HONESTY.
 
-STEP 0 — OBJECT IDENTITY CHECK (evaluate FIRST, before color analysis):
-Before evaluating lighting or color, verify that both photos show the SAME gemstone or jewelry piece.
-Look for: same cut shape, same approximate size, same setting style, same number of stones, same distinctive features.
-If the two photos clearly show DIFFERENT objects (different cut, different shape, different jewelry piece):
-- Set score to 0
-- Set verdict to REJECTED
-- Set reason to "The listing photo and live reference photo appear to show different gemstones or jewelry pieces. Certification requires both photos to depict the same item."
-- Do NOT analyze lighting or color — object mismatch overrides all other evaluation.
-Only proceed to color/lighting analysis if you are reasonably confident both photos show the same item.
-
 WHAT IS ACCEPTABLE (HIGH SCORE 70-100):
 - Listing photo shows gemstone looking similar to or less impressive than the live reference
 - Neutral artificial lighting (white LED, softbox, 4500K-6500K) that doesn't exaggerate color

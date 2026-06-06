@@ -395,9 +395,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     <div class="nav-title">Live Photo</div>
   </div>
   <div class="cam-view" style="position:relative;background:#000;min-height:60vh;display:flex;align-items:center;justify-content:center;">
-    <div id="cam-video-container" style="position:absolute;inset:0;">
-      <video id="cam-video" autoplay playsinline muted webkit-playsinline style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none"></video>
-    </div>
+    <video id="cam-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none"></video>
     <canvas id="cam-canvas" style="display:none"></canvas>
     <canvas id="cam-analyze" width="50" height="50" style="display:none"></canvas>
     <img id="preview-img" class="preview-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.4s">
@@ -606,20 +604,7 @@ function show(id) {
     if (target) { target.classList.add('active'); }
     window.scrollTo(0, 0);
     setLoading(false);
-    if (id === 's-camera') {
-      // Reset completo stato camera per ogni accesso
-      cameraInitialized = false;
-      lightOK = false;
-      const shutter = document.getElementById('shutter-btn');
-      if (shutter) { shutter.style.opacity = '0.4'; shutter.style.pointerEvents = 'none'; }
-      const lightDot = document.getElementById('light-dot');
-      if (lightDot) lightDot.style.background = 'var(--yellow)';
-      const lightTxt = document.getElementById('light-txt');
-      if (lightTxt) lightTxt.textContent = 'Checking light...';
-      const hintMain = document.getElementById('cam-hint-main');
-      if (hintMain) hintMain.textContent = 'Checking natural light conditions...';
-      setTimeout(startCamera, 100);
-    }
+    if (id === 's-camera') setTimeout(startCamera, 100);
     if (id === 's-dashboard') {
       // Reset stato certificazione quando si torna alla dashboard
       state.listingFiles = [];
@@ -834,70 +819,42 @@ let lightOK = false;
 let cameraInitialized = false;
 
 async function startCamera() {
+  // Ferma stream precedente prima di richiederne uno nuovo
   if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
   if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-
-  const container = document.getElementById('cam-video-container');
-  const oldVideo = document.getElementById('cam-video');
-  if (oldVideo) {
-    oldVideo.pause();
-    if (oldVideo.srcObject) { oldVideo.srcObject.getTracks().forEach(t => t.stop()); oldVideo.srcObject = null; }
-    oldVideo.load();
-    oldVideo.remove();
-  }
-
-  const video = document.createElement('video');
-  video.id = 'cam-video';
-  video.autoplay = true;
-  video.muted = true;
-  video.setAttribute('playsinline', '');
-  video.setAttribute('webkit-playsinline', '');
-  video.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
-  container.appendChild(video);
-
-  document.getElementById('cam-placeholder').style.display = 'block';
-  cameraInitialized = false;
-
-  await new Promise(r => setTimeout(r, 100));
+  const video = document.getElementById('cam-video');
+  if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
+  video.load(); // Reset decoder Android Chrome
+  await new Promise(r => setTimeout(r, 300));
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
       audio: false
     });
-
     cameraStream = stream;
     video.srcObject = stream;
-    document.getElementById('cam-placeholder').style.display = 'none';
-    // Forza repaint su Android — nasconde e mostra per aggiornare il renderer
-    video.style.display = 'none';
-    void video.offsetHeight;
     video.style.display = 'block';
-
-    await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Video play timeout')), 5000);
-      const onCanPlay = async () => {
-        video.removeEventListener('canplay', onCanPlay);
-        clearTimeout(timeout);
-        try { await video.play(); resolve(); } catch(e) { reject(e); }
-      };
-      video.addEventListener('canplay', onCanPlay);
-      if (video.readyState >= 3) {
-        video.removeEventListener('canplay', onCanPlay);
-        clearTimeout(timeout);
-        video.play().then(resolve).catch(reject);
+    document.getElementById('cam-placeholder').style.display = 'none';
+    cameraInitialized = false;
+    video.onloadedmetadata = () => {
+      cameraInitialized = true;
+      startLightAnalysis();
+    };
+    // Safety timeout
+    setTimeout(() => {
+      if (!cameraInitialized) {
+        stopCamera();
+        toast('Camera access failed — using file upload');
+        document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
+        const shutter = document.getElementById('shutter-btn');
+        shutter.style.opacity = '1';
+        shutter.style.pointerEvents = 'auto';
+        lightOK = true;
       }
-    });
-
-    const track = stream.getVideoTracks()[0];
-    if (!track || track.readyState !== 'live') throw new Error('Video track not live');
-
-    cameraInitialized = true;
-    startLightAnalysis();
-
+    }, 5000);
   } catch(err) {
     console.log('Camera error:', err);
-    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
     document.getElementById('light-txt').textContent = 'Camera not available — use upload';
     document.getElementById('light-dot').style.background = 'var(--yellow)';
     document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
@@ -909,20 +866,17 @@ async function startCamera() {
 
 function stopCamera() {
   if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
   const video = document.getElementById('cam-video');
   if (video) {
-    video.onloadedmetadata = null;
-    video.oncanplay = null;
     video.pause();
-    if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); }
-    video.srcObject = null;
-    video.load();
+    if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
+    video.load(); // Reset decoder Android Chrome
+    video.style.display = 'none';
   }
-  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
   const placeholder = document.getElementById('cam-placeholder');
   if (placeholder) placeholder.style.display = 'block';
   lightOK = false;
-  cameraInitialized = false;
 }
 
 function startLightAnalysis() {
@@ -936,7 +890,7 @@ function analyzeLightConditions() {
   const canvas = document.getElementById('cam-analyze');
   const ctx = canvas.getContext('2d');
   
-  if (!video || video.readyState < 2) return;
+  if (video.readyState < 2) return;
   
   ctx.drawImage(video, 0, 0, 50, 50);
   const pixels = ctx.getImageData(0, 0, 50, 50).data;
@@ -1019,15 +973,11 @@ function analyzeLightConditions() {
 
 function capturePhoto() {
   if (cameraStream && lightOK) {
+    // Capture from live video
     const video = document.getElementById('cam-video');
-    // Verifica che il video sia effettivamente live
-    if (!video.videoWidth || !video.videoHeight || video.paused || video.readyState < 2) {
-      toast('📷 Camera not ready — please wait');
-      return;
-    }
     const canvas = document.getElementById('cam-canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
@@ -1062,16 +1012,7 @@ function processLivePhoto(dataUrl) {
 function handleCamFile(input) {
   if (!input.files[0]) return;
   const reader = new FileReader();
-  reader.onload = function(e) {
-    processLivePhoto(e.target.result);
-    reader.onload = null;
-    reader.onerror = null;
-  };
-  reader.onerror = function() {
-    toast('Failed to read image file');
-    reader.onload = null;
-    reader.onerror = null;
-  };
+  reader.onload = e => { processLivePhoto(e.target.result); };
   reader.readAsDataURL(input.files[0]);
 }
 
@@ -1086,23 +1027,9 @@ async function startAnalysis() {
     return; 
   }
   state.currentGemName = gemName;
-  try {
-    show('s-analyzing');
-    await runAnalysisSteps();
-    await callAI();
-  } catch(e) {
-    console.log('startAnalysis error:', e);
-    show('s-new');
-    let errorMsg = 'Unknown error';
-    if (e instanceof Error) {
-      errorMsg = e.message || e.name || 'Error (no message)';
-    } else if (typeof e === 'string') {
-      errorMsg = e;
-    } else if (e && typeof e === 'object') {
-      errorMsg = JSON.stringify(e).substring(0, 100);
-    }
-    toast('❌ ' + errorMsg.substring(0, 80));
-  }
+  show('s-analyzing');
+  await runAnalysisSteps();
+  await callAI();
 }
 
 async function runAnalysisSteps() {
@@ -1147,19 +1074,8 @@ async function callAI() {
       listingImage = await compressImage(raw);
     }
 
+    // Compress live photo too
     const liveImage = state.livePhotoData ? await compressImage(state.livePhotoData) : null;
-
-    // Compress cert if it's an image (not PDF)
-    let certData = null;
-    if (state.certPdfData) {
-      const mime = state.certPdfData.split(';')[0].split(':')[1] || '';
-      if (mime === 'application/pdf') {
-        certData = state.certPdfData;
-      } else {
-        certData = await compressImage(state.certPdfData);
-      }
-    }
-
 
     console.log('Calling API — gem:', state.currentGemName, '| listing:', !!listingImage, '| live:', !!state.livePhotoData);
 
@@ -1169,7 +1085,7 @@ async function callAI() {
       body: JSON.stringify({
         listingImage,
         liveImage,
-        certPdfData: certData,
+        certPdfData: state.certPdfData || null,
         gemName: state.currentGemName
       })
     });
@@ -1198,7 +1114,7 @@ async function callAI() {
     } else if (e.message && e.message.includes('401')) {
       toast('🔑 API key error — contact support');
     } else {
-      toast('❌ ' + (e.message || 'Unknown error').substring(0, 80));
+      toast('❌ Analysis failed — please retry');
     }
   }
 }

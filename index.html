@@ -1070,15 +1070,8 @@ async function callAI() {
   } catch(e) {
     console.log('AI error:', e);
     show('s-new');
-    if (e.message && (e.message.includes('timeout') || e.message.includes('504') || e.message.includes('abort') || e.name === 'AbortError')) {
-      toast('⏱ Analysis timed out — please try again');
-    } else if (e.message && e.message.includes('fetch')) {
-      toast('📡 Network error — check connection and retry');
-    } else if (e.message && e.message.includes('401')) {
-      toast('🔑 API key error — contact support');
-    } else {
-      toast('❌ Analysis failed — please retry');
-    }
+    const msg = e?.message || e?.name || JSON.stringify(e) || 'unknown';
+    toast('❌ ' + msg.substring(0, 80));
   }
 }
 

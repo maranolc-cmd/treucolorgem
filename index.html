@@ -869,6 +869,10 @@ async function startCamera() {
     cameraStream = stream;
     video.srcObject = stream;
     document.getElementById('cam-placeholder').style.display = 'none';
+    // Forza repaint su Android — nasconde e mostra per aggiornare il renderer
+    video.style.display = 'none';
+    void video.offsetHeight;
+    video.style.display = 'block';
 
     await new Promise((resolve, reject) => {
       const timeout = setTimeout(() => reject(new Error('Video play timeout')), 5000);
@@ -932,7 +936,7 @@ function analyzeLightConditions() {
   const canvas = document.getElementById('cam-analyze');
   const ctx = canvas.getContext('2d');
   
-  if (video.readyState < 2) return;
+  if (!video || video.readyState < 2) return;
   
   ctx.drawImage(video, 0, 0, 50, 50);
   const pixels = ctx.getImageData(0, 0, 50, 50).data;

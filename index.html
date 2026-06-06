@@ -575,19 +575,6 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 <div class="loading-overlay" id="loading" style="display:none!important"><div class="loading-spinner"></div><div class="loading-text">Processing...</div></div>
 
 <script>
-// Global error interceptor (debug mobile)
-window.onerror = function(msg, url, line, col, error) {
-  const info = 'ERR: ' + msg + ' L:' + line;
-  console.error('Global error:', msg, url, line, col, error);
-  if (typeof toast === 'function') toast('🔴 ' + info.substring(0, 100));
-  return false;
-};
-window.onunhandledrejection = function(event) {
-  const reason = event.reason;
-  const msg = reason?.message || reason?.toString() || 'Unhandled rejection';
-  console.error('Unhandled rejection:', reason);
-  if (typeof toast === 'function') toast('🔴 Promise: ' + msg.substring(0, 80));
-};
 // ── LOCAL STORAGE FALLBACK (Firebase to be added via backend) ──
 const db = null;
 const storage = null;
@@ -617,7 +604,20 @@ function show(id) {
     if (target) { target.classList.add('active'); }
     window.scrollTo(0, 0);
     setLoading(false);
-    if (id === 's-camera') setTimeout(startCamera, 100);
+    if (id === 's-camera') {
+      // Reset completo stato camera per ogni accesso
+      cameraInitialized = false;
+      lightOK = false;
+      const shutter = document.getElementById('shutter-btn');
+      if (shutter) { shutter.style.opacity = '0.4'; shutter.style.pointerEvents = 'none'; }
+      const lightDot = document.getElementById('light-dot');
+      if (lightDot) lightDot.style.background = 'var(--yellow)';
+      const lightTxt = document.getElementById('light-txt');
+      if (lightTxt) lightTxt.textContent = 'Checking light...';
+      const hintMain = document.getElementById('cam-hint-main');
+      if (hintMain) hintMain.textContent = 'Checking natural light conditions...';
+      setTimeout(startCamera, 100);
+    }
     if (id === 's-dashboard') {
       // Reset stato certificazione quando si torna alla dashboard
       state.listingFiles = [];
@@ -1030,16 +1030,21 @@ async function startAnalysis() {
   }
   state.currentGemName = gemName;
   try {
-    toast('🔄 Starting analysis...');
     show('s-analyzing');
-    toast('🔄 Running steps...');
     await runAnalysisSteps();
-    toast('🔄 Calling AI...');
     await callAI();
   } catch(e) {
     console.log('startAnalysis error:', e);
     show('s-new');
-    toast('❌ Error: ' + (e.message || e.toString() || 'crash in startAnalysis').substring(0, 100));
+    let errorMsg = 'Unknown error';
+    if (e instanceof Error) {
+      errorMsg = e.message || e.name || 'Error (no message)';
+    } else if (typeof e === 'string') {
+      errorMsg = e;
+    } else if (e && typeof e === 'object') {
+      errorMsg = JSON.stringify(e).substring(0, 100);
+    }
+    toast('❌ ' + errorMsg.substring(0, 80));
   }
 }
 
@@ -1076,24 +1081,20 @@ async function callAI() {
     // Convert listing photo to base64
     let listingImage = null;
     if (state.listingFiles.length > 0) {
-      toast('🔄 Step 1/4: reading listing photo...');
       const raw = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = e => resolve(e.target.result);
         reader.onerror = reject;
         reader.readAsDataURL(state.listingFiles[0]);
       });
-      toast('🔄 Step 2/4: compressing listing photo...');
       listingImage = await compressImage(raw);
     }
 
-    toast('🔄 Step 3/4: compressing live photo...');
     const liveImage = state.livePhotoData ? await compressImage(state.livePhotoData) : null;
 
     // Compress cert if it's an image (not PDF)
     let certData = null;
     if (state.certPdfData) {
-      toast('🔄 Step 4/4: processing certificate...');
       const mime = state.certPdfData.split(';')[0].split(':')[1] || '';
       if (mime === 'application/pdf') {
         certData = state.certPdfData;
@@ -1102,7 +1103,6 @@ async function callAI() {
       }
     }
 
-    toast('🔄 Sending to AI...');
 
     console.log('Calling API — gem:', state.currentGemName, '| listing:', !!listingImage, '| live:', !!state.livePhotoData);
 

@@ -977,6 +977,7 @@ function handleCamFile(input) {
   if (!input.files[0]) return;
   const reader = new FileReader();
   reader.onload = e => { processLivePhoto(e.target.result); };
+  reader.onerror = () => toast('❌ Failed to read photo — try again');
   reader.readAsDataURL(input.files[0]);
 }
 
@@ -991,9 +992,20 @@ async function startAnalysis() {
     return; 
   }
   state.currentGemName = gemName;
-  show('s-analyzing');
-  await runAnalysisSteps();
-  await callAI();
+  try {
+    show('s-analyzing');
+    await runAnalysisSteps();
+    await callAI();
+  } catch(e) {
+    console.log('startAnalysis error:', e);
+    show('s-new');
+    // isTrusted = DOM event thrown as error
+    if (e && e.isTrusted !== undefined) {
+      toast('❌ DOM error — please retry');
+    } else {
+      toast('❌ ' + (e?.message || String(e) || 'Unknown error').substring(0, 80));
+    }
+  }
 }
 
 async function runAnalysisSteps() {
@@ -1022,7 +1034,7 @@ async function callAI() {
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
         resolve(canvas.toDataURL('image/jpeg', 0.75));
       };
-      img.onerror = () => resolve(src);
+      img.onerror = (_e) => resolve(src); // fallback: usa src originale
       img.src = src;
     });
 
@@ -1032,7 +1044,7 @@ async function callAI() {
       const raw = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = e => resolve(e.target.result);
-        reader.onerror = reject;
+        reader.onerror = (e) => reject(new Error('Failed to read listing photo: ' + (e.target?.error?.message || 'unknown')));
         reader.readAsDataURL(state.listingFiles[0]);
       });
       listingImage = await compressImage(raw);

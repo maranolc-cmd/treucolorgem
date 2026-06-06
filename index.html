@@ -606,6 +606,9 @@ function show(id) {
       if (lightTxt) lightTxt.textContent = 'Checking light...';
       const hintMain = document.getElementById('cam-hint-main');
       if (hintMain) hintMain.textContent = 'Checking natural light conditions...';
+      // Ripristina visibilità overlay (nascosto dopo scatto)
+      const overlay = document.getElementById('cam-overlay');
+      if (overlay) overlay.style.opacity = '1';
       lightOK = false;
       setTimeout(startCamera, 100);
     }

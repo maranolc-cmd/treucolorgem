@@ -3,8 +3,26 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   try {
-    const { listingImage, liveImage, gemName } = req.body;
+    const { listingImage, liveImage, gemName, certPdfData } = req.body;
     const msgContent = [];
+
+    // Certificato gemologico (opzionale) — PDF o immagine
+    if (certPdfData) {
+      const certMime = certPdfData.split(';')[0].split(':')[1] || 'application/pdf';
+      const certBase64 = certPdfData.split(',')[1];
+      if (certMime === 'application/pdf') {
+        msgContent.push({
+          type: 'document',
+          source: { type: 'base64', media_type: 'application/pdf', data: certBase64 }
+        });
+      } else {
+        msgContent.push({
+          type: 'image',
+          source: { type: 'base64', media_type: certMime, data: certBase64 }
+        });
+      }
+      msgContent.push({ type: 'text', text: 'DOCUMENT — GEMOLOGICAL CERTIFICATE: Use this to identify the gemstone species, origin, treatments, and any optical properties (pleochroism, color-change) that should be considered when evaluating the listing photo. Do NOT use the certificate photo as a color reference — lab cert photos are explicitly approximate. Use only the text data.' });
+    }
 
     if (listingImage) {
       const base64Data = listingImage.split(',')[1];

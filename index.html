@@ -1412,42 +1412,65 @@ function downloadCert() {
     const qrImg = qrContainer?.querySelector('img');
 
     const finalize = () => {
-      const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
       const filename = 'TrueColorGem-' + (state.currentGemName||'gem').replace(/\s+/g,'-') + '.jpg';
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
       const isAndroid = /Android/i.test(navigator.userAgent);
+
       if (isIOS) {
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
         const win = window.open();
         win.document.write('<img src="' + dataUrl + '" style="max-width:100%"><br><p style="font-family:sans-serif;font-size:13px">Tieni premuto → Salva foto</p>');
         win.document.title = filename;
+        toast('Photo ready ✓');
       } else if (isAndroid) {
-        // Android: usa fetch + blob per download affidabile
-        fetch(dataUrl)
-          .then(r => r.blob())
-          .then(blob => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 1000);
-          })
-          .catch(() => {
-            // Fallback: apri in nuova tab
-            const win = window.open();
-            win.document.write('<img src="' + dataUrl + '" style="max-width:100%"><br><p style="font-family:sans-serif;font-size:13px">Tieni premuto → Salva foto</p>');
-          });
+        // ANDROID: canvas.toBlob() mantiene il contesto gesto utente
+        canvas.toBlob((blob) => {
+          if (!blob) { androidFallback(); return; }
+          // Web Share API — salva direttamente in galleria
+          if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/jpeg' })] })) {
+            navigator.share({
+              files: [new File([blob], filename, { type: 'image/jpeg' })],
+              title: 'TrueColorGem Certificate'
+            }).then(() => {
+              toast('Photo shared ✓');
+            }).catch((err) => {
+              if (err.name !== 'AbortError') downloadBlob(blob, filename);
+            });
+          } else {
+            downloadBlob(blob, filename);
+          }
+        }, 'image/jpeg', 1.0);
       } else {
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
         const a = document.createElement('a');
         a.href = dataUrl;
         a.download = filename;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        toast('Photo downloaded ✓');
       }
-      toast('Photo downloaded ✓');
+
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 150);
+        toast('Photo downloaded ✓');
+      }
+
+      function androidFallback() {
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const win = window.open();
+        if (win) {
+          win.document.write('<html><body style="margin:0;background:#111;display:flex;flex-direction:column;align-items:center;padding:20px"><img src="' + dataUrl + '" style="max-width:100%;max-height:80vh"><p style="color:#fff;font-family:sans-serif;font-size:15px;margin-top:20px;text-align:center">📱 Tieni premuto → <b>Scarica immagine</b></p></body></html>');
+          toast('Long-press image to save');
+        }
+      }
     };
 
     // Sfondo bianco QR

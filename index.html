@@ -1526,9 +1526,18 @@ function downloadCert() {
     img.src = src;
   };
 
-  if (state.listingFiles?.length > 0) {
+  // Usa listingImageData (già in memoria) — il File object potrebbe essere scaduto su mobile
+  const listingSrc = state.listingImageData || (() => { try { return sessionStorage.getItem('tcg_listing'); } catch(_) { return null; } })();
+  if (listingSrc) {
+    drawImage(listingSrc);
+  } else if (state.listingFiles?.length > 0) {
     const reader = new FileReader();
     reader.onload = e => drawImage(e.target.result);
+    reader.onerror = () => {
+      ctx.fillStyle = '#0a0a1a';
+      ctx.fillRect(0,0,1080,1080);
+      drawWatermark();
+    };
     reader.readAsDataURL(state.listingFiles[0]);
   } else if (state.livePhotoData) {
     drawImage(state.livePhotoData);

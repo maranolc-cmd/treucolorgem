@@ -837,14 +837,15 @@ async function startCamera() {
   if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
   if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
 
-  // Clona il video element per forzare reset completo su Android Chrome
   const container = document.getElementById('cam-video-container');
   const oldVideo = document.getElementById('cam-video');
   if (oldVideo) {
     oldVideo.pause();
     if (oldVideo.srcObject) { oldVideo.srcObject.getTracks().forEach(t => t.stop()); oldVideo.srcObject = null; }
+    oldVideo.load();
+    oldVideo.remove();
   }
-  // Ricrea solo il video element, non tocca il resto del DOM
+
   const video = document.createElement('video');
   video.id = 'cam-video';
   video.autoplay = true;
@@ -852,13 +853,12 @@ async function startCamera() {
   video.setAttribute('playsinline', '');
   video.setAttribute('webkit-playsinline', '');
   video.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
-  if (oldVideo) container.replaceChild(video, oldVideo);
-  else container.appendChild(video);
+  container.appendChild(video);
 
   document.getElementById('cam-placeholder').style.display = 'block';
   cameraInitialized = false;
 
-  await new Promise(r => setTimeout(r, 200));
+  await new Promise(r => setTimeout(r, 100));
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -894,61 +894,6 @@ async function startCamera() {
   } catch(err) {
     console.log('Camera error:', err);
     if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-    document.getElementById('light-txt').textContent = 'Camera not available — use upload';
-    document.getElementById('light-dot').style.background = 'var(--yellow)';
-    document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
-    document.getElementById('shutter-btn').style.opacity = '1';
-    document.getElementById('shutter-btn').style.pointerEvents = 'auto';
-    lightOK = true;
-  }
-}
-
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: false
-    });
-
-    cameraStream = stream;
-    video.muted = true;
-    video.playsInline = true;
-    video.autoplay = true;
-    video.srcObject = stream;
-    video.style.display = 'block';
-    document.getElementById('cam-placeholder').style.display = 'none';
-    cameraInitialized = false;
-
-    // Usa canplay (readyState 3+) — più affidabile di loadedmetadata su Android
-    await new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('Video play timeout')), 5000);
-
-      const onCanPlay = async () => {
-        video.removeEventListener('canplay', onCanPlay);
-        clearTimeout(timeout);
-        try { await video.play(); resolve(); } catch(e) { reject(e); }
-      };
-
-      video.addEventListener('canplay', onCanPlay);
-
-      // Fallback: se già pronto
-      if (video.readyState >= 3) {
-        video.removeEventListener('canplay', onCanPlay);
-        clearTimeout(timeout);
-        video.play().then(resolve).catch(reject);
-      }
-    });
-
-    // Verifica che lo stream sia effettivamente live
-    const track = stream.getVideoTracks()[0];
-    if (!track || track.readyState !== 'live') throw new Error('Video track not live');
-
-    cameraInitialized = true;
-    startLightAnalysis();
-
-  } catch(err) {
-    console.log('Camera error:', err);
-    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-    video.srcObject = null;
     document.getElementById('light-txt').textContent = 'Camera not available — use upload';
     document.getElementById('light-dot').style.background = 'var(--yellow)';
     document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
@@ -967,6 +912,7 @@ function stopCamera() {
     video.pause();
     if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); }
     video.srcObject = null;
+    video.load();
   }
   if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
   const placeholder = document.getElementById('cam-placeholder');

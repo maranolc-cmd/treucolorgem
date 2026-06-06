@@ -839,11 +839,20 @@ async function startCamera() {
     });
     cameraStream = stream;
     const video = document.getElementById('cam-video');
+    // Cleanup corretto senza video.load() (inutile con srcObject)
+    video.pause();
+    video.onloadedmetadata = null;
+    video.srcObject = null;
+    // Piccola pausa per Android per rilasciare il buffer precedente
+    await new Promise(r => setTimeout(r, 80));
     video.srcObject = stream;
+    video.muted = true;
+    video.setAttribute('playsinline', '');
     video.style.display = 'block';
     document.getElementById('cam-placeholder').style.display = 'none';
     cameraInitialized = false;
     video.onloadedmetadata = () => {
+      video.play().catch(e => console.log('video.play error:', e));
       cameraInitialized = true;
       startLightAnalysis();
     };
@@ -873,9 +882,17 @@ async function startCamera() {
 
 function stopCamera() {
   if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
-  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
   const video = document.getElementById('cam-video');
-  if (video) { video.srcObject = null; video.style.display = 'none'; }
+  if (video) {
+    video.pause();
+    video.onloadedmetadata = null;
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(t => t.stop());
+      video.srcObject = null;
+    }
+    video.style.display = 'none';
+  }
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
   const placeholder = document.getElementById('cam-placeholder');
   if (placeholder) placeholder.style.display = 'block';
   lightOK = false;
@@ -975,11 +992,15 @@ function analyzeLightConditions() {
 
 function capturePhoto() {
   if (cameraStream && lightOK) {
-    // Capture from live video
     const video = document.getElementById('cam-video');
+    // Verifica che il video sia effettivamente live
+    if (!video.videoWidth || !video.videoHeight || video.paused || video.readyState < 2) {
+      toast('📷 Camera not ready — please wait');
+      return;
+    }
     const canvas = document.getElementById('cam-canvas');
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
@@ -1014,7 +1035,16 @@ function processLivePhoto(dataUrl) {
 function handleCamFile(input) {
   if (!input.files[0]) return;
   const reader = new FileReader();
-  reader.onload = e => { processLivePhoto(e.target.result); };
+  reader.onload = function(e) {
+    processLivePhoto(e.target.result);
+    reader.onload = null;
+    reader.onerror = null;
+  };
+  reader.onerror = function() {
+    toast('Failed to read image file');
+    reader.onload = null;
+    reader.onerror = null;
+  };
   reader.readAsDataURL(input.files[0]);
 }
 

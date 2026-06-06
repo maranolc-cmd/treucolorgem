@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>TrueColorGem</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
 :root{--black:#080808;--dark:#111;--card:#181818;--card2:#202020;--gold:#c9a84c;--gold-light:#e8c96a;--gold-dim:#6a5020;--gold-bg:rgba(201,168,76,0.07);--white:#f5f0e8;--grey:#777;--grey2:#444;--green:#4caf7d;--red:#e05555;--yellow:#f0c040;--blue:#5599dd}
@@ -505,7 +506,6 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
         <div class="plan-price"><div class="plan-amount">€150</div><div class="plan-period">per year</div></div>
       </div>
       <ul class="plan-features">
-        <li>Up to 200 certified listings per year</li>
         <li>50 certified listings per year</li>
         <li>Silver badge on certified photos</li>
         <li>Directory listing</li>
@@ -520,7 +520,6 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
         <div class="plan-price"><div class="plan-amount">€400</div><div class="plan-period">per year</div></div>
       </div>
       <ul class="plan-features">
-        <li>Up to 200 certified listings per year</li>
         <li>200 certified listings per year</li>
         <li>Gold badge on certified photos</li>
         <li>Priority directory placement</li>
@@ -597,6 +596,25 @@ function show(id) {
     window.scrollTo(0, 0);
     setLoading(false);
     if (id === 's-camera') setTimeout(startCamera, 100);
+    if (id === 's-dashboard') {
+      // Reset stato certificazione quando si torna alla dashboard
+      state.listingFiles = [];
+      state.livePhotoData = null;
+      state.currentScore = null;
+    }
+    if (id === 's-new') {
+      // Reset step dots if starting fresh
+      if (state.listingFiles.length === 0 && !state.livePhotoData) {
+        ['sd1','sd2','sd3','sd4'].forEach((id,i) => {
+          const d = document.getElementById(id);
+          if (d) { d.textContent = i+1; d.className = 'step-dot' + (i===0?' active':''); }
+        });
+        ['sl1','sl2','sl3'].forEach(id => {
+          const l = document.getElementById(id);
+          if (l) l.className = 'step-line';
+        });
+      }
+    }
   } catch(e) { console.log('show error:', e); }
 }
 function goBack() { show(state.lastScreen); }
@@ -773,6 +791,7 @@ function checkAnalyzeBtn() {
 let cameraStream = null;
 let lightAnalysisInterval = null;
 let lightOK = false;
+let cameraInitialized = false;
 
 async function startCamera() {
   try {
@@ -785,12 +804,15 @@ async function startCamera() {
     video.srcObject = stream;
     video.style.display = 'block';
     document.getElementById('cam-placeholder').style.display = 'none';
+    cameraInitialized = false;
     video.onloadedmetadata = () => {
+      cameraInitialized = true;
       startLightAnalysis();
     };
-    // Safety timeout
+    // Safety timeout — solo se camera non si è inizializzata
     setTimeout(() => {
-      if (!cameraStream || !video.srcObject) {
+      if (!cameraInitialized) {
+        stopCamera();
         toast('Camera access failed — using file upload');
         document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
         const shutter = document.getElementById('shutter-btn');
@@ -814,6 +836,10 @@ async function startCamera() {
 function stopCamera() {
   if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
   if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  const video = document.getElementById('cam-video');
+  if (video) { video.srcObject = null; video.style.display = 'none'; }
+  const placeholder = document.getElementById('cam-placeholder');
+  if (placeholder) placeholder.style.display = 'block';
   lightOK = false;
 }
 
@@ -988,13 +1014,13 @@ async function callAI() {
     const compressImage = (src) => new Promise(resolve => {
       const img = new Image();
       img.onload = () => {
-        const maxSize = 800;
+        const maxSize = 1200;
         const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.8));
+        resolve(canvas.toDataURL('image/jpeg', 0.9));
       };
       img.onerror = () => resolve(src);
       img.src = src;
@@ -1043,23 +1069,25 @@ async function callAI() {
 
   } catch(e) {
     console.log('AI error:', e);
-    toast('Analysis error — using fallback');
-    const fallback = {
-      score: 75,
-      color_match: '78% ✓',
-      saturation: 'Natural ✓',
-      filter_detected: 'None detected ✓',
-      light_source: 'Natural daylight ✓',
-      verdict: 'CERTIFIED',
-      reason: 'Analysis completed with limited data.',
-      assessment: `Unable to perform full AI analysis for ${state.currentGemName}. Please check connection and try again.`
-    };
-    state.currentScore = fallback;
-    showScore(fallback);
+    show('s-new');
+    if (e.message && (e.message.includes('timeout') || e.message.includes('504') || e.message.includes('abort') || e.name === 'AbortError')) {
+      toast('⏱ Analysis timed out — please try again');
+    } else if (e.message && e.message.includes('fetch')) {
+      toast('📡 Network error — check connection and retry');
+    } else if (e.message && e.message.includes('401')) {
+      toast('🔑 API key error — contact support');
+    } else {
+      toast('❌ Analysis failed — please retry');
+    }
   }
 }
 
 function showScore(r) {
+  if (!r || typeof r.score !== 'number') {
+    toast('❌ Invalid analysis result — please retry');
+    show('s-new');
+    return;
+  }
   show('s-score');
   setTimeout(() => {
     document.getElementById('score-num').textContent = r.score;
@@ -1109,11 +1137,15 @@ async function show_cert_screen() {
   document.getElementById('cert-score-badge').textContent = r.score + '%';
   document.getElementById('cert-wm-id').textContent = 'ID: ' + id + ' · Valid to ' + expiry;
 
-  // QR via Google Charts (no external lib needed)
+  // QR via qrcode.js (Google Charts bloccato)
   const qrDiv = document.getElementById('cert-qr');
   const verifyUrl = 'https://treucolorgem.vercel.app/?verify=' + id;
-  const qrUrl = 'https://chart.googleapis.com/chart?chs=46x46&cht=qr&chl=' + encodeURIComponent(verifyUrl);
-  qrDiv.innerHTML = '<img src="' + qrUrl + '" width="46" height="46" style="display:block">';
+  qrDiv.innerHTML = '';
+  try {
+    new QRCode(qrDiv, { text: verifyUrl, width: 46, height: 46, correctLevel: QRCode.CorrectLevel.L });
+  } catch(e) {
+    qrDiv.innerHTML = '<div style="font-size:8px;text-align:center;padding:4px;color:#333">QR</div>';
+  }
 
   // Show listing photo if available
   if (state.listingFiles.length > 0) {
@@ -1152,6 +1184,8 @@ async function show_cert_screen() {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById('s-cert').classList.add('active');
   window.scrollTo(0, 0);
+  // NON resettare listingFiles qui — servono per downloadCert()
+  // Il reset avviene in show('s-dashboard') o show('s-new')
 }
 
 // Make show global
@@ -1212,10 +1246,20 @@ function downloadCert() {
 
     // Trigger download
     const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
-    const a = document.createElement('a');
-    a.href = dataUrl;
-    a.download = 'TrueColorGem-' + (state.currentGemName||'gem').replace(/\s+/g,'-') + '.jpg';
-    a.click();
+    const filename = 'TrueColorGem-' + (state.currentGemName||'gem').replace(/\s+/g,'-') + '.jpg';
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      // iOS: apri in nuova tab (a.click non funziona)
+      const win = window.open();
+      win.document.write('<img src="' + dataUrl + '" style="max-width:100%"><br><p style="font-family:sans-serif;font-size:13px">Tieni premuto sull\'immagine → Salva foto</p>');
+      win.document.title = filename;
+    } else {
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
     toast('Photo downloaded ✓');
   };
 

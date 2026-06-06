@@ -395,7 +395,9 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     <div class="nav-title">Live Photo</div>
   </div>
   <div class="cam-view" style="position:relative;background:#000;min-height:60vh;display:flex;align-items:center;justify-content:center;">
-    <div id="cam-video-container" style="position:absolute;inset:0;"></div>
+    <div id="cam-video-container" style="position:absolute;inset:0;">
+      <video id="cam-video" autoplay playsinline muted webkit-playsinline style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none"></video>
+    </div>
     <canvas id="cam-canvas" style="display:none"></canvas>
     <canvas id="cam-analyze" width="50" height="50" style="display:none"></canvas>
     <img id="preview-img" class="preview-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.4s">
@@ -832,27 +834,30 @@ let lightOK = false;
 let cameraInitialized = false;
 
 async function startCamera() {
-  // Ferma tutto prima
   if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
   if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
 
-  // Ricrea il video element da zero — unico modo affidabile su Android Chrome
+  // Clona il video element per forzare reset completo su Android Chrome
   const container = document.getElementById('cam-video-container');
-  container.innerHTML = '';
+  const oldVideo = document.getElementById('cam-video');
+  if (oldVideo) {
+    oldVideo.pause();
+    if (oldVideo.srcObject) { oldVideo.srcObject.getTracks().forEach(t => t.stop()); oldVideo.srcObject = null; }
+  }
+  // Ricrea solo il video element, non tocca il resto del DOM
   const video = document.createElement('video');
   video.id = 'cam-video';
   video.autoplay = true;
-  video.playsInline = true;
   video.muted = true;
   video.setAttribute('playsinline', '');
   video.setAttribute('webkit-playsinline', '');
   video.style.cssText = 'width:100%;height:100%;object-fit:cover;position:absolute;inset:0;';
-  container.appendChild(video);
+  if (oldVideo) container.replaceChild(video, oldVideo);
+  else container.appendChild(video);
 
   document.getElementById('cam-placeholder').style.display = 'block';
   cameraInitialized = false;
 
-  // Attendi rilascio hardware
   await new Promise(r => setTimeout(r, 200));
 
   try {

@@ -368,15 +368,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div class="uz-sub">Select photos from your gallery<br>JPG, PNG · up to 10 photos</div>
       <div class="uz-count" id="upload-count"></div>
     </div>
-    <div class="info-box" style="margin-top:4px"><strong>Step 2 (optional):</strong> Upload the gemological certificate PDF. Helps AI identify the stone and apply correct evaluation criteria.</div>
-    <div class="upload-zone" id="cert-upload-zone" onclick="document.getElementById('cert-file').click()" style="border-color:rgba(201,168,76,0.2);opacity:0.7;">
-      <input type="file" id="cert-file" accept="application/pdf,image/*" onchange="handleCertFile(this)" style="display:none">
-      <div class="uz-icon">📄</div>
-      <div class="uz-title">Upload Certificate <span style="font-size:11px;color:var(--gold-dim)">(GIA · GRS · IGI · Lotus)</span></div>
-      <div class="uz-sub">PDF or image · Optional but improves accuracy</div>
-      <div class="uz-count" id="cert-count"></div>
-    </div>
-    <div class="info-box" style="margin-top:4px"><strong>Step 3:</strong> Take one mandatory live photo right now in natural daylight. Cannot be uploaded from gallery.</div>
+    <div class="info-box" style="margin-top:4px"><strong>Step 2:</strong> Take one mandatory live photo right now in natural daylight. Cannot be uploaded from gallery.</div>
     <div class="live-zone" id="live-zone" onclick="show('s-camera')">
       <div class="live-badge">LIVE REQUIRED</div>
       <div class="lz-icon" id="lz-icon">📷</div>
@@ -586,7 +578,6 @@ const state = {
   listings: JSON.parse(localStorage.getItem('tc_listings') || '[]'),
   listingFiles: [],
   livePhotoData: null,
-  certPdfData: null,
   currentScore: null,
   currentGemName: '',
   lastScreen: 's-welcome',
@@ -609,7 +600,7 @@ function show(id) {
       // Reset stato certificazione quando si torna alla dashboard
       state.listingFiles = [];
       state.livePhotoData = null;
-      state.certPdfData = null;
+      state.currentScore = null;
     }
     if (id === 's-new') {
       // Reset step dots if starting fresh
@@ -778,22 +769,6 @@ function handleListingFiles(input) {
   toast(state.listingFiles.length + ' listing photos loaded ✓');
 }
 
-function handleCertFile(input) {
-  if (!input.files || input.files.length === 0) return;
-  const file = input.files[0];
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    state.certPdfData = e.target.result;
-    const countEl = document.getElementById('cert-count');
-    if (countEl) countEl.textContent = '📄 ' + file.name + ' ✓';
-    const zone = document.getElementById('cert-upload-zone');
-    zone.style.borderColor = 'var(--green)';
-    zone.style.opacity = '1';
-    toast('Certificate loaded ✓');
-  };
-  reader.readAsDataURL(file);
-}
-
 function stepDone(n) {
   const dot = document.getElementById('sd'+n);
   dot.textContent = '✓';
@@ -819,20 +794,13 @@ let lightOK = false;
 let cameraInitialized = false;
 
 async function startCamera() {
-  // Ferma stream precedente prima di richiederne uno nuovo
-  if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
-  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-  const video = document.getElementById('cam-video');
-  if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
-  video.load(); // Reset decoder Android Chrome
-  await new Promise(r => setTimeout(r, 300));
-
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
       audio: false
     });
     cameraStream = stream;
+    const video = document.getElementById('cam-video');
     video.srcObject = stream;
     video.style.display = 'block';
     document.getElementById('cam-placeholder').style.display = 'none';
@@ -841,7 +809,7 @@ async function startCamera() {
       cameraInitialized = true;
       startLightAnalysis();
     };
-    // Safety timeout
+    // Safety timeout — solo se camera non si è inizializzata
     setTimeout(() => {
       if (!cameraInitialized) {
         stopCamera();
@@ -852,9 +820,10 @@ async function startCamera() {
         shutter.style.pointerEvents = 'auto';
         lightOK = true;
       }
-    }, 5000);
+    }, 4000);
   } catch(err) {
     console.log('Camera error:', err);
+    // Fallback to file upload
     document.getElementById('light-txt').textContent = 'Camera not available — use upload';
     document.getElementById('light-dot').style.background = 'var(--yellow)';
     document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
@@ -868,12 +837,7 @@ function stopCamera() {
   if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
   if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
   const video = document.getElementById('cam-video');
-  if (video) {
-    video.pause();
-    if (video.srcObject) { video.srcObject.getTracks().forEach(t => t.stop()); video.srcObject = null; }
-    video.load(); // Reset decoder Android Chrome
-    video.style.display = 'none';
-  }
+  if (video) { video.srcObject = null; video.style.display = 'none'; }
   const placeholder = document.getElementById('cam-placeholder');
   if (placeholder) placeholder.style.display = 'block';
   lightOK = false;
@@ -1085,7 +1049,6 @@ async function callAI() {
       body: JSON.stringify({
         listingImage,
         liveImage,
-        certPdfData: state.certPdfData || null,
         gemName: state.currentGemName
       })
     });

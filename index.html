@@ -739,6 +739,12 @@ function updateDashStats() {
   renderListings();
 }
 
+function showListingDetail(id, name, score, date) {
+  const verdict = score >= 70 ? 'CERTIFIED' : 'REJECTED';
+  const expiry = '31/12/' + (new Date().getFullYear() + 1);
+  toast(`📋 ${name} · Score ${score}% · ${verdict} · ID #${id}`);
+}
+
 function renderListings() {
   const c = document.getElementById('listings-container');
   if (state.listings.length === 0) {
@@ -748,7 +754,7 @@ function renderListings() {
   c.innerHTML = state.listings.slice().reverse().map(l => {
     const pillClass = l.score >= 85 ? 'pill-green' : l.score >= 70 ? 'pill-yellow' : 'pill-red';
     const emoji = getGemEmoji(l.name);
-    return `<div class="listing-row" onclick="toast('Listing: ${l.name} · Score: ${l.score}%')">
+    return `<div class="listing-row" onclick="showListingDetail('${l.id}','${l.name}',${l.score},'${l.date}')">
       <div class="listing-thumb">${emoji}</div>
       <div class="listing-info">
         <div class="listing-name">${l.name}</div>
@@ -1403,13 +1409,33 @@ function downloadCert() {
     const qrImg = qrContainer?.querySelector('img');
 
     const finalize = () => {
-      // Trigger download
       const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
       const filename = 'TrueColorGem-' + (state.currentGemName||'gem').replace(/\s+/g,'-') + '.jpg';
-      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (isIOS) {
         const win = window.open();
-        win.document.write('<img src="' + dataUrl + '" style="max-width:100%"><br><p style="font-family:sans-serif;font-size:13px">Tieni premuto sull\'immagine → Salva foto</p>');
+        win.document.write('<img src="' + dataUrl + '" style="max-width:100%"><br><p style="font-family:sans-serif;font-size:13px">Tieni premuto → Salva foto</p>');
         win.document.title = filename;
+      } else if (isAndroid) {
+        // Android: usa fetch + blob per download affidabile
+        fetch(dataUrl)
+          .then(r => r.blob())
+          .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          })
+          .catch(() => {
+            // Fallback: apri in nuova tab
+            const win = window.open();
+            win.document.write('<img src="' + dataUrl + '" style="max-width:100%"><br><p style="font-family:sans-serif;font-size:13px">Tieni premuto → Salva foto</p>');
+          });
       } else {
         const a = document.createElement('a');
         a.href = dataUrl;

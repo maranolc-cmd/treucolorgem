@@ -575,6 +575,19 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 <div class="loading-overlay" id="loading" style="display:none!important"><div class="loading-spinner"></div><div class="loading-text">Processing...</div></div>
 
 <script>
+// Global error interceptor (debug mobile)
+window.onerror = function(msg, url, line, col, error) {
+  const info = 'ERR: ' + msg + ' L:' + line;
+  console.error('Global error:', msg, url, line, col, error);
+  if (typeof toast === 'function') toast('🔴 ' + info.substring(0, 100));
+  return false;
+};
+window.onunhandledrejection = function(event) {
+  const reason = event.reason;
+  const msg = reason?.message || reason?.toString() || 'Unhandled rejection';
+  console.error('Unhandled rejection:', reason);
+  if (typeof toast === 'function') toast('🔴 Promise: ' + msg.substring(0, 80));
+};
 // ── LOCAL STORAGE FALLBACK (Firebase to be added via backend) ──
 const db = null;
 const storage = null;
@@ -1016,9 +1029,18 @@ async function startAnalysis() {
     return; 
   }
   state.currentGemName = gemName;
-  show('s-analyzing');
-  await runAnalysisSteps();
-  await callAI();
+  try {
+    toast('🔄 Starting analysis...');
+    show('s-analyzing');
+    toast('🔄 Running steps...');
+    await runAnalysisSteps();
+    toast('🔄 Calling AI...');
+    await callAI();
+  } catch(e) {
+    console.log('startAnalysis error:', e);
+    show('s-new');
+    toast('❌ Error: ' + (e.message || e.toString() || 'crash in startAnalysis').substring(0, 100));
+  }
 }
 
 async function runAnalysisSteps() {

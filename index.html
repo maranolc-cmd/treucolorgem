@@ -577,6 +577,7 @@ const state = {
   user: null,
   listings: JSON.parse(localStorage.getItem('tc_listings') || '[]'),
   listingFiles: [],
+  listingImageData: null,
   livePhotoData: null,
   currentScore: null,
   currentGemName: '',
@@ -599,6 +600,7 @@ function show(id) {
     if (id === 's-dashboard') {
       // Reset stato certificazione quando si torna alla dashboard
       state.listingFiles = [];
+      state.listingImageData = null;
       state.livePhotoData = null;
       state.currentScore = null;
     }
@@ -767,6 +769,14 @@ function handleListingFiles(input) {
   stepDone(1);
   checkAnalyzeBtn();
   toast(state.listingFiles.length + ' listing photos loaded ✓');
+  // Leggi subito come base64 — su Android il File object scade dopo navigazione camera
+  const reader = new FileReader();
+  reader.onload = e => { 
+    state.listingImageData = e.target.result;
+    try { sessionStorage.setItem('tcg_listing', e.target.result); } catch(_) {}
+  };
+  reader.onerror = () => { state.listingImageData = null; };
+  reader.readAsDataURL(state.listingFiles[0]);
 }
 
 function stepDone(n) {
@@ -1040,7 +1050,14 @@ async function callAI() {
 
     // Convert listing photo to base64
     let listingImage = null;
-    if (state.listingFiles.length > 0) {
+    // Recupera da sessionStorage se state è stato pulito da Android (batteria bassa)
+    if (!state.listingImageData) {
+      try { state.listingImageData = sessionStorage.getItem('tcg_listing'); } catch(_) {}
+    }
+    if (state.listingImageData) {
+      listingImage = await compressImage(state.listingImageData);
+    } else if (state.listingFiles.length > 0) {
+      // Fallback: rileggi il file
       const raw = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = e => resolve(e.target.result);

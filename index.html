@@ -1230,7 +1230,10 @@ function showScore(r) {
     document.getElementById('ai-text').textContent = r.assessment;
 
     const certBtn = document.getElementById('cert-btn');
-    if (r.verdict !== 'CERTIFIED') {
+    if (r.verdict === 'CERTIFIED') {
+      certBtn.textContent = 'Generate Certified Photo →';
+      certBtn.onclick = show_cert_screen;
+    } else {
       certBtn.textContent = 'Listing Not Certified — Start Over';
       certBtn.onclick = () => {
         // Reset completo — ricomincia da Step 1

@@ -1236,31 +1236,64 @@ function downloadCert() {
     const certId = document.getElementById('cert-wm-id')?.textContent || '';
     ctx.fillText(certId, 44, 958);
 
-    // QR box
+    // QR reale: legge il canvas generato da qrcode.js nel DOM
+    const qrContainer = document.getElementById('cert-qr');
+    const qrCanvas = qrContainer?.querySelector('canvas');
+    const qrImg = qrContainer?.querySelector('img');
+
+    const finalize = () => {
+      // Trigger download
+      const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+      const filename = 'TrueColorGem-' + (state.currentGemName||'gem').replace(/\s+/g,'-') + '.jpg';
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        const win = window.open();
+        win.document.write('<img src="' + dataUrl + '" style="max-width:100%"><br><p style="font-family:sans-serif;font-size:13px">Tieni premuto sull\'immagine → Salva foto</p>');
+        win.document.title = filename;
+      } else {
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+      toast('Photo downloaded ✓');
+    };
+
+    // Sfondo bianco QR
     ctx.fillStyle = 'white';
     ctx.fillRect(938, 868, 106, 106);
-    ctx.fillStyle = '#333';
-    ctx.font = 'bold 11px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('SCAN', 991, 926);
 
-    // Trigger download
-    const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
-    const filename = 'TrueColorGem-' + (state.currentGemName||'gem').replace(/\s+/g,'-') + '.jpg';
-    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-      // iOS: apri in nuova tab (a.click non funziona)
-      const win = window.open();
-      win.document.write('<img src="' + dataUrl + '" style="max-width:100%"><br><p style="font-family:sans-serif;font-size:13px">Tieni premuto sull\'immagine → Salva foto</p>');
-      win.document.title = filename;
+    if (qrCanvas) {
+      // qrcode.js ha generato un <canvas> — copialo direttamente (sincrono)
+      ctx.drawImage(qrCanvas, 938, 868, 106, 106);
+      finalize();
+    } else if (qrImg && qrImg.src) {
+      // qrcode.js ha generato un <img> — aspetta che sia loaded
+      const drawQrImg = () => {
+        ctx.drawImage(qrImg, 938, 868, 106, 106);
+        finalize();
+      };
+      if (qrImg.complete) {
+        drawQrImg();
+      } else {
+        qrImg.onload = drawQrImg;
+        qrImg.onerror = () => {
+          ctx.fillStyle = '#333';
+          ctx.font = 'bold 11px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('SCAN', 991, 926);
+          finalize();
+        };
+      }
     } else {
-      const a = document.createElement('a');
-      a.href = dataUrl;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      // Nessun QR disponibile — fallback
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('SCAN', 991, 926);
+      finalize();
     }
-    toast('Photo downloaded ✓');
   };
 
   const drawImage = (src) => {

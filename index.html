@@ -596,7 +596,19 @@ function show(id) {
     if (target) { target.classList.add('active'); }
     window.scrollTo(0, 0);
     setLoading(false);
-    if (id === 's-camera') setTimeout(startCamera, 100);
+    if (id === 's-camera') {
+      // Reset shutter e semaforo ad ogni accesso
+      const shutter = document.getElementById('shutter-btn');
+      if (shutter) { shutter.style.opacity = '0.35'; shutter.style.pointerEvents = 'none'; }
+      const lightDot = document.getElementById('light-dot');
+      if (lightDot) { lightDot.className = 'light-dot'; lightDot.style.background = 'var(--yellow)'; }
+      const lightTxt = document.getElementById('light-txt');
+      if (lightTxt) lightTxt.textContent = 'Checking light...';
+      const hintMain = document.getElementById('cam-hint-main');
+      if (hintMain) hintMain.textContent = 'Checking natural light conditions...';
+      lightOK = false;
+      setTimeout(startCamera, 100);
+    }
     if (id === 's-dashboard') {
       // Reset stato certificazione quando si torna alla dashboard
       state.listingFiles = [];
@@ -767,15 +779,18 @@ function handleListingFiles(input) {
   zone.classList.add('has-files');
   document.getElementById('upload-count').textContent = state.listingFiles.length + ' photo(s) selected ✓';
   stepDone(1);
-  checkAnalyzeBtn();
   toast(state.listingFiles.length + ' listing photos loaded ✓');
   // Leggi subito come base64 — su Android il File object scade dopo navigazione camera
   const reader = new FileReader();
   reader.onload = e => { 
     state.listingImageData = e.target.result;
     try { sessionStorage.setItem('tcg_listing', e.target.result); } catch(_) {}
+    checkAnalyzeBtn(); // DOPO che listingImageData è disponibile
   };
-  reader.onerror = () => { state.listingImageData = null; };
+  reader.onerror = () => { 
+    state.listingImageData = null;
+    checkAnalyzeBtn();
+  };
   reader.readAsDataURL(state.listingFiles[0]);
 }
 
@@ -791,10 +806,14 @@ function stepDone(n) {
 }
 
 function checkAnalyzeBtn() {
-  const ready = state.listingFiles.length > 0 && state.livePhotoData;
+  const hasListing = state.listingFiles.length > 0 || !!state.listingImageData;
+  const hasLive = !!state.livePhotoData;
+  const ready = hasListing && hasLive;
   const btn = document.getElementById('analyze-btn');
-  btn.style.opacity = ready ? '1' : '0.4';
-  btn.style.pointerEvents = ready ? 'auto' : 'none';
+  if (btn) {
+    btn.style.opacity = ready ? '1' : '0.4';
+    btn.style.pointerEvents = ready ? 'auto' : 'none';
+  }
 }
 
 // ── CAMERA ──
@@ -805,21 +824,66 @@ let cameraInitialized = false;
 
 async function startCamera() {
   try {
+    const video = document.getElementById('cam-video');
+
+    // Step 1: Ferma stream precedente
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
+    }
+
+    // Step 2: Reset completo video element (Android Chrome fix)
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+
+    // Step 3: Force reflow — rilascia frame congelato su Android Chrome
+    video.style.display = 'none';
+    void video.offsetHeight;
+
+    // Step 4: Nuovo stream
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
       audio: false
     });
+
     cameraStream = stream;
-    const video = document.getElementById('cam-video');
+
+    // Step 5: Assegna stream
     video.srcObject = stream;
+    video.setAttribute('autoplay', '');
+    video.setAttribute('playsinline', '');
+    video.muted = true;
+
+    // Step 6: Mostra video
     video.style.display = 'block';
     document.getElementById('cam-placeholder').style.display = 'none';
+
+    // Nascondi preview foto precedente
+    const previewImg = document.getElementById('preview-img');
+    if (previewImg) previewImg.style.opacity = '0';
+
     cameraInitialized = false;
-    video.onloadedmetadata = () => {
-      cameraInitialized = true;
-      startLightAnalysis();
+
+    // Step 7: Play esplicito su metadata
+    video.onloadedmetadata = async () => {
+      try {
+        await video.play();
+        cameraInitialized = true;
+        startLightAnalysis();
+      } catch(playError) {
+        console.log('Play error:', playError);
+      }
     };
-    // Safety timeout — solo se camera non si è inizializzata
+
+    // Step 8: Fallback canplay per Android
+    video.oncanplay = async () => {
+      if (video.paused) {
+        try { await video.play(); } catch(e) {}
+      }
+    };
+
+    // Safety timeout
     setTimeout(() => {
       if (!cameraInitialized) {
         stopCamera();
@@ -831,9 +895,9 @@ async function startCamera() {
         lightOK = true;
       }
     }, 4000);
+
   } catch(err) {
     console.log('Camera error:', err);
-    // Fallback to file upload
     document.getElementById('light-txt').textContent = 'Camera not available — use upload';
     document.getElementById('light-dot').style.background = 'var(--yellow)';
     document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
@@ -845,12 +909,31 @@ async function startCamera() {
 
 function stopCamera() {
   if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
-  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+
   const video = document.getElementById('cam-video');
-  if (video) { video.srcObject = null; video.style.display = 'none'; }
+  if (video) {
+    video.onloadedmetadata = null;
+    video.oncanplay = null;
+    video.pause();
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(track => {
+        track.stop();
+        try { video.srcObject.removeTrack(track); } catch(_) {}
+      });
+    }
+    video.srcObject = null;
+    video.removeAttribute('src');
+    video.load();
+    video.style.display = 'none';
+  }
+
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+
   const placeholder = document.getElementById('cam-placeholder');
   if (placeholder) placeholder.style.display = 'block';
+
   lightOK = false;
+  cameraInitialized = false;
 }
 
 function startLightAnalysis() {
@@ -1146,18 +1229,33 @@ function showScore(r) {
       certBtn.onclick = () => {
         // Reset completo — ricomincia da Step 1
         state.listingFiles = [];
+        state.listingImageData = null;
         state.livePhotoData = null;
         state.currentScore = null;
+        state.currentGemName = '';
+        // Reset camera globals
+        cameraInitialized = false;
+        lightOK = false;
+        if (cameraStream) stopCamera();
         // Reset UI step indicators
-        ['sd1','sd2','sd3','sd4'].forEach(id => {
+        ['sd1','sd2','sd3','sd4'].forEach((id,i) => {
           const el = document.getElementById(id);
-          if (el) { el.textContent = id.replace('sd',''); el.className = 'step-dot'; }
+          if (el) { el.textContent = id.replace('sd',''); el.className = 'step-dot' + (i===0 ? ' active' : ''); }
+        });
+        ['sl1','sl2','sl3'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.className = 'step-line';
         });
         // Reset upload zone
         const uploadZone = document.getElementById('upload-zone');
-        if (uploadZone) uploadZone.style.borderColor = '';
+        if (uploadZone) { uploadZone.style.borderColor = ''; uploadZone.classList.remove('has-files'); }
         const uploadCount = document.getElementById('upload-count');
         if (uploadCount) uploadCount.textContent = '';
+        // Reset input file — Android non triggera onchange se stesso file senza questo
+        const listingInput = document.getElementById('listing-files');
+        if (listingInput) listingInput.value = '';
+        // Pulisci sessionStorage
+        try { sessionStorage.removeItem('tcg_listing'); } catch(_) {}
         // Reset live zone
         const liveZone = document.getElementById('live-zone');
         if (liveZone) liveZone.classList.remove('lz-done');
@@ -1166,7 +1264,19 @@ function showScore(r) {
         // Reset gem name
         const gemName = document.getElementById('gem-name');
         if (gemName) gemName.value = '';
+        // Reset Analyse button
+        const analyzeBtn = document.getElementById('analyze-btn');
+        if (analyzeBtn) {
+          analyzeBtn.style.opacity = '0.4';
+          analyzeBtn.style.pointerEvents = 'none';
+        }
+        // Reset analysis steps UI
+        ['ps1','ps2','ps3','ps4','ps5','ps6'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('active', 'done');
+        });
         show('s-new');
+        toast('Ready for new certification');
       };
     }
   }, 300);
@@ -1194,15 +1304,12 @@ async function show_cert_screen() {
   }
 
   // Show listing photo if available
-  if (state.listingFiles.length > 0) {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = document.getElementById('cert-listing-img');
-      img.src = e.target.result;
-      img.style.display = 'block';
-      document.getElementById('cert-gem-emoji').style.display = 'none';
-    };
-    reader.readAsDataURL(state.listingFiles[0]);
+  const listingDataUrl = state.listingImageData || (() => { try { return sessionStorage.getItem('tcg_listing'); } catch(_) { return null; } })();
+  if (listingDataUrl) {
+    const img = document.getElementById('cert-listing-img');
+    img.src = listingDataUrl;
+    img.style.display = 'block';
+    document.getElementById('cert-gem-emoji').style.display = 'none';
   }
 
   // Table

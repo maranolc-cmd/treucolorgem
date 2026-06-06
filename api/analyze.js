@@ -22,42 +22,55 @@ export default async function handler(req, res) {
         type: 'image',
         source: { type: 'base64', media_type: 'image/jpeg', data: base64Data }
       });
-      msgContent.push({ type: 'text', text: 'IMAGE 2 — LIVE PHOTO: Taken right now by the seller via TrueColorGem app in natural diffused daylight. Not edited.' });
+      msgContent.push({ type: 'text', text: 'IMAGE 2 — LIVE REFERENCE PHOTO: Taken right now via TrueColorGem app in natural diffused daylight. Not edited.' });
     }
 
     msgContent.push({
       type: 'text',
-      text: `You are a professional gemstone photography honesty analyst for TrueColorGem certification.
+      text: `You are a gemstone photo certification expert for TrueColorGem. Your sole purpose is to determine whether a seller's LISTING PHOTO honestly represents a gemstone's appearance compared to a LIVE REFERENCE PHOTO taken in natural diffused daylight.
 
-GEMSTONE: ${gemName}
+Gemstone: ${gemName}
 
-YOUR CORE TASK:
-Determine whether the LISTING PHOTO creates unrealistic buyer expectations compared to how the gemstone actually looks in natural daylight (shown in the LIVE PHOTO).
+YOUR TASK: Compare the two images and determine if the listing photo honestly represents the gemstone, or if artificial lighting or post-processing has been used to deceptively enhance its appearance.
 
-THE KEY DISTINCTION — read carefully:
+CRITICAL EVALUATION PRINCIPLE:
+The ONLY factor that matters is whether the listing photo's lighting or editing artificially inflates the gemstone's perceived color saturation, vividness, or brilliance beyond its true appearance.
+You are NOT judging photo quality, composition, or professionalism. You are judging HONESTY.
 
-HONEST PHOTOGRAPHY (score HIGH 85-100):
-- Listing photo taken in natural light, even if the quality is lower than the live photo
-- Listing photo taken with simple indoor lighting that doesn't dramatically alter color
-- Gemstone appears similar color, saturation and character in both photos
-- A seller who photographed poorly but honestly — the real stone is even better than the listing photo — this is FINE and should score HIGH
-- Minor differences in angle, background, framing, JPEG compression = totally normal
+WHAT IS ACCEPTABLE (HIGH SCORE 70-100):
+- Listing photo shows gemstone looking similar to or less impressive than the live reference
+- Neutral artificial lighting (white LED, softbox, 4500K-6500K) that doesn't exaggerate color
+- Minor white balance differences that don't significantly alter perceived saturation
+- Slightly underexposed or less vibrant listing photos (seller underselling is honest)
+- Lower photo quality, casual photography, less sharp focus
+- Natural pleochroism or color-change properties (tanzanite blue vs violet, alexandrite color shift)
+- Gemstones that naturally appear more vibrant when well-lit due to high refractive index
 
-DECEPTIVE PHOTOGRAPHY (score LOW 0-69):
-- Listing photo uses concentrated spot lighting, ring lights, or accent lights that make the gemstone appear FAR more brilliant, saturated or vivid than it really is
-- Listing photo uses studio lighting that dramatically shifts the perceived color (e.g. appears bright pink in listing but is dark purple in natural light)
-- The buyer would be significantly disappointed when receiving the gemstone because it looks much less impressive in normal conditions
-- Digital filters, HDR, heavy saturation boost = also deceptive
+WHAT IS DECEPTIVE (LOW SCORE 0-59):
+- Spot lighting, ring lights, or accent lighting creating artificially intense brilliance not present in natural light
+- Backlighting making stones appear more transparent or saturated than reality
+- Heavy saturation boosting — colors appear unnaturally vivid or "electric" compared to reference
+- HDR or Instagram-style filters creating unrealistic contrast or color pop
+- Color shifting — hue is materially different (not explainable by known optical properties)
+- Listing photo shows a dramatically more impressive stone than the live reference
 
-IMPORTANT GEMOLOGICAL CONTEXT:
-- Some gems (tanzanite, alexandrite, color-change garnet) genuinely look different under different light sources — this is a natural optical property, NOT deception. If the gem type is known to be color-change, be lenient.
-- Professional macro photography with neutral lighting can reveal brilliance that casual photos miss — this is acceptable
-- The question is always: "Would a buyer be disappointed when they receive this gemstone and look at it in normal daylight?" If YES = low score. If NO = high score.
+GEMSTONE-SPECIFIC CONTEXT:
+- Pleochroic gems (tanzanite, iolite, tourmaline): Different colors at different angles/lighting is NATURAL
+- Color-change gems (alexandrite, some garnets): Different colors under different light sources — NOT deception
+- High-dispersion gems (diamond, sphene, zircon): More fire under point-source lighting is natural, but excessive ring-light "disco ball" effect is deceptive
+- Phenomenal gems (star sapphires, cat's eye, moonstone): Phenomena visibility varies — be lenient
 
 SCORING:
-85-100 = CERTIFIED: Listing photo is honest, buyer expectations will be met
-70-84 = CERTIFIED: Minor enhancement, buyer will not be significantly disappointed  
-0-69 = REJECTED: Listing photo creates unrealistic expectations through deceptive lighting or manipulation
+90-100 = CERTIFIED: Listing faithfully represents or undersells the gemstone
+70-89 = CERTIFIED: Minor differences, buyer would not feel misled
+60-69 = CERTIFIED: Possibly concerning but not egregious
+0-59 = REJECTED: Clear evidence of deceptive lighting or editing
+
+IMPORTANT:
+- Err slightly toward the seller when evidence is ambiguous
+- Focus on saturation and brilliance, not minor color temperature shifts
+- Quality ≠ Honesty — professional photo is not inherently deceptive
+- Never assume deception — look for positive evidence of manipulation
 
 Return ONLY this JSON, no markdown:
 {
@@ -68,9 +81,12 @@ Return ONLY this JSON, no markdown:
   "light_source": "<Natural daylight ✓ or Artificial accent light ✗>",
   "verdict": "<CERTIFIED or REJECTED>",
   "reason": "<one precise sentence: what specifically passes or fails>",
-  "assessment": "<2-3 sentences: describe what you see in each photo and why the score is justified>"
+  "assessment": "<2-4 sentences: specific visual evidence from both photos and why score is justified>"
 }`
     });
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -83,16 +99,38 @@ Return ONLY this JSON, no markdown:
         model: 'claude-sonnet-4-5',
         max_tokens: 1000,
         messages: [{ role: 'user', content: msgContent }]
-      })
+      }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}));
+      throw new Error(`Anthropic API error ${response.status}: ${errBody.error?.message || JSON.stringify(errBody)}`);
+    }
 
     const data = await response.json();
     const text = data.content?.[0]?.text || '';
+    if (!text) throw new Error('Empty response from Anthropic API');
     const clean = text.replace(/```json|```/g, '').trim();
     const result = JSON.parse(clean);
+
+    // Validazione campi obbligatori
+    const required = ['score', 'verdict', 'reason', 'assessment', 'color_match', 'saturation', 'filter_detected', 'light_source'];
+    for (const field of required) {
+      if (result[field] === undefined) throw new Error(`Missing required field: ${field}`);
+    }
+    if (typeof result.score !== 'number' || result.score < 0 || result.score > 100) {
+      throw new Error('Invalid score value');
+    }
+
     res.status(200).json(result);
 
   } catch (err) {
+    if (err.name === 'AbortError') {
+      return res.status(504).json({ error: 'Analysis timeout - please try again' });
+    }
     res.status(500).json({ error: err.message });
   }
 }

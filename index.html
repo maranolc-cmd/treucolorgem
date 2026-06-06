@@ -1054,28 +1054,33 @@ async function callAI() {
     // Convert listing photo to base64
     let listingImage = null;
     if (state.listingFiles.length > 0) {
+      toast('🔄 Step 1/4: reading listing photo...');
       const raw = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = e => resolve(e.target.result);
         reader.onerror = reject;
         reader.readAsDataURL(state.listingFiles[0]);
       });
+      toast('🔄 Step 2/4: compressing listing photo...');
       listingImage = await compressImage(raw);
     }
 
-    // Compress live photo too
+    toast('🔄 Step 3/4: compressing live photo...');
     const liveImage = state.livePhotoData ? await compressImage(state.livePhotoData) : null;
 
     // Compress cert if it's an image (not PDF)
     let certData = null;
     if (state.certPdfData) {
+      toast('🔄 Step 4/4: processing certificate...');
       const mime = state.certPdfData.split(';')[0].split(':')[1] || '';
       if (mime === 'application/pdf') {
-        certData = state.certPdfData; // PDF: mandalo as-is
+        certData = state.certPdfData;
       } else {
-        certData = await compressImage(state.certPdfData); // Immagine: comprimi
+        certData = await compressImage(state.certPdfData);
       }
     }
+
+    toast('🔄 Sending to AI...');
 
     console.log('Calling API — gem:', state.currentGemName, '| listing:', !!listingImage, '| live:', !!state.livePhotoData);
 

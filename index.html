@@ -1066,6 +1066,17 @@ async function callAI() {
     // Compress live photo too
     const liveImage = state.livePhotoData ? await compressImage(state.livePhotoData) : null;
 
+    // Compress cert if it's an image (not PDF)
+    let certData = null;
+    if (state.certPdfData) {
+      const mime = state.certPdfData.split(';')[0].split(':')[1] || '';
+      if (mime === 'application/pdf') {
+        certData = state.certPdfData; // PDF: mandalo as-is
+      } else {
+        certData = await compressImage(state.certPdfData); // Immagine: comprimi
+      }
+    }
+
     console.log('Calling API — gem:', state.currentGemName, '| listing:', !!listingImage, '| live:', !!state.livePhotoData);
 
     const response = await fetch('/api/analyze', {
@@ -1074,7 +1085,7 @@ async function callAI() {
       body: JSON.stringify({
         listingImage,
         liveImage,
-        certPdfData: state.certPdfData || null,
+        certPdfData: certData,
         gemName: state.currentGemName
       })
     });
@@ -1103,7 +1114,7 @@ async function callAI() {
     } else if (e.message && e.message.includes('401')) {
       toast('🔑 API key error — contact support');
     } else {
-      toast('❌ Analysis failed — please retry');
+      toast('❌ ' + (e.message || 'Unknown error').substring(0, 80));
     }
   }
 }

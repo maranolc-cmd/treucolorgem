@@ -403,7 +403,19 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
   </div>
   <div class="cam-bottom">
     <div class="cam-hint" id="cam-hint-main">Point camera at gemstone in natural daylight</div>
-    <div class="shutter" id="shutter-btn" onclick="capturePhoto()" style="opacity:0.4;pointer-events:none"></div>
+    <!-- Zoom slider -->
+    <div id="zoom-bar" style="display:none;width:100%;padding:0 16px;align-items:center;gap:10px">
+      <span style="font-size:13px;color:var(--grey)">🔍</span>
+      <input type="range" id="zoom-slider" min="1" max="5" step="0.1" value="1"
+        style="flex:1;height:3px;accent-color:var(--gold);cursor:pointer"
+        oninput="applyZoom(this.value)">
+      <span id="zoom-label" style="font-size:11px;color:var(--gold);min-width:32px;text-align:right">1×</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:24px;width:100%;justify-content:center">
+      <div style="min-width:70px;text-align:center;font-size:9px;color:var(--grey);letter-spacing:1px">TAP TO<br>FOCUS</div>
+      <div class="shutter" id="shutter-btn" onclick="capturePhoto()" style="opacity:0.4;pointer-events:none"></div>
+      <div style="min-width:70px"></div>
+    </div>
     <div class="cam-hint" style="font-size:9px" id="cam-hint-sub">Shutter activates when light conditions are optimal</div>
     <input type="file" id="cam-file" accept="image/*" capture="environment" onchange="handleCamFile(this)" style="display:none">
   </div>
@@ -618,6 +630,29 @@ function show(id) {
       state.listingImageData = null;
       state.livePhotoData = null;
       state.currentScore = null;
+      state.currentGemName = '';
+      try { sessionStorage.removeItem('tcg_listing'); } catch(_) {}
+      // Reset UI live zone
+      const liveZone = document.getElementById('live-zone');
+      if (liveZone) liveZone.classList.remove('lz-done');
+      const lzIcon = document.getElementById('lz-icon');
+      if (lzIcon) lzIcon.textContent = '📷';
+      const lzTitle = document.getElementById('lz-title');
+      if (lzTitle) lzTitle.textContent = 'Take Live Photo Now';
+      const lzSub = document.getElementById('lz-sub');
+      if (lzSub) lzSub.textContent = 'Open camera and shoot in natural daylight\nThis photo cannot be replaced with a gallery upload';
+      const lzReq = document.getElementById('lz-req');
+      if (lzReq) lzReq.textContent = '⚠ Required for certification';
+      // Reset upload zone
+      const uploadZone = document.getElementById('upload-zone');
+      if (uploadZone) { uploadZone.style.borderColor = ''; uploadZone.classList.remove('has-files'); }
+      const uploadCount = document.getElementById('upload-count');
+      if (uploadCount) uploadCount.textContent = '';
+      const listingInput = document.getElementById('listing-files');
+      if (listingInput) listingInput.value = '';
+      // Reset analyse button
+      const analyzeBtn = document.getElementById('analyze-btn');
+      if (analyzeBtn) { analyzeBtn.style.opacity = '0.4'; analyzeBtn.style.pointerEvents = 'none'; }
     }
     if (id === 's-new') {
       // Reset step dots if starting fresh
@@ -852,7 +887,13 @@ async function startCamera() {
 
     // Step 4: Nuovo stream
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      video: {
+        facingMode: 'environment',
+        width: { ideal: 3840, min: 1280 },
+        height: { ideal: 2160, min: 720 },
+        focusMode: 'continuous',
+        advanced: [{ torch: false }]
+      },
       audio: false
     });
 
@@ -880,6 +921,8 @@ async function startCamera() {
         await video.play();
         cameraInitialized = true;
         startLightAnalysis();
+        setupTapToFocus(video, cameraStream);
+        initZoomSlider();
       } catch(playError) {
         console.log('Play error:', playError);
       }
@@ -941,8 +984,88 @@ function stopCamera() {
   const placeholder = document.getElementById('cam-placeholder');
   if (placeholder) placeholder.style.display = 'block';
 
+  const zoomBar = document.getElementById('zoom-bar');
+  if (zoomBar) zoomBar.style.display = 'none';
+  const zoomSlider = document.getElementById('zoom-slider');
+  if (zoomSlider) zoomSlider.value = 1;
   lightOK = false;
   cameraInitialized = false;
+}
+
+async function applyZoom(value) {
+  if (!cameraStream) return;
+  const track = cameraStream.getVideoTracks()[0];
+  if (!track) return;
+  const label = document.getElementById('zoom-label');
+  if (label) label.textContent = parseFloat(value).toFixed(1) + '×';
+  try {
+    await track.applyConstraints({ advanced: [{ zoom: parseFloat(value) }] });
+  } catch(_) {}
+}
+
+function initZoomSlider() {
+  if (!cameraStream) return;
+  const track = cameraStream.getVideoTracks()[0];
+  if (!track) return;
+  const capabilities = track.getCapabilities();
+  const bar = document.getElementById('zoom-bar');
+  const slider = document.getElementById('zoom-slider');
+  if (capabilities.zoom && bar && slider) {
+    const min = capabilities.zoom.min || 1;
+    const max = Math.min(capabilities.zoom.max || 5, 10);
+    slider.min = min;
+    slider.max = max;
+    slider.step = (max - min) / 50;
+    slider.value = min;
+    document.getElementById('zoom-label').textContent = min.toFixed(1) + '×';
+    bar.style.display = 'flex';
+  }
+}
+
+function setupTapToFocus(video, stream) {
+  // Rimuovi listener precedente se esiste
+  if (video._tapFocusListener) video.removeEventListener('click', video._tapFocusListener);
+
+  video._tapFocusListener = async (e) => {
+    if (!stream) return;
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+    const rect = video.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+
+    showFocusIndicator(e.clientX, e.clientY);
+
+    try {
+      const capabilities = track.getCapabilities();
+      if (capabilities.pointOfInterest) {
+        await track.applyConstraints({ advanced: [{ pointOfInterest: { x, y } }] });
+      }
+      if (capabilities.focusMode?.includes('manual')) {
+        await track.applyConstraints({ advanced: [{ focusMode: 'manual' }] });
+        setTimeout(() => {
+          track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+        }, 3000);
+      }
+    } catch(_) { /* non supportato su questo dispositivo */ }
+  };
+
+  video.addEventListener('click', video._tapFocusListener);
+}
+
+function showFocusIndicator(x, y) {
+  let indicator = document.getElementById('focus-indicator');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.id = 'focus-indicator';
+    indicator.style.cssText = 'position:fixed;width:60px;height:60px;border:2px solid #c9a84c;border-radius:50%;pointer-events:none;z-index:999;transition:opacity 0.3s;box-shadow:0 0 10px rgba(201,168,76,0.5)';
+    document.body.appendChild(indicator);
+  }
+  indicator.style.left = (x - 30) + 'px';
+  indicator.style.top = (y - 30) + 'px';
+  indicator.style.opacity = '1';
+  clearTimeout(indicator._timeout);
+  indicator._timeout = setTimeout(() => { indicator.style.opacity = '0'; }, 1500);
 }
 
 function startLightAnalysis() {

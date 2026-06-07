@@ -411,12 +411,10 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
         oninput="applyZoom(this.value)">
       <span id="zoom-label" style="font-size:11px;color:var(--gold);min-width:32px;text-align:right">1×</span>
     </div>
-    <div style="display:flex;align-items:center;gap:24px;width:100%;justify-content:center">
-      <div style="min-width:70px;text-align:center;font-size:9px;color:var(--grey);letter-spacing:1px">TAP TO<br>FOCUS</div>
+    <div style="display:flex;align-items:center;justify-content:center;width:100%">
       <div class="shutter" id="shutter-btn" onclick="capturePhoto()" style="opacity:0.4;pointer-events:none"></div>
-      <div style="min-width:70px"></div>
     </div>
-    <div class="cam-hint" style="font-size:9px" id="cam-hint-sub">Shutter activates when light conditions are optimal</div>
+    <div class="cam-hint" style="font-size:9px" id="cam-hint-sub">Tap image to focus · Shutter activates when light is optimal</div>
     <input type="file" id="cam-file" accept="image/*" capture="environment" onchange="handleCamFile(this)" style="display:none">
   </div>
 </div>
@@ -1095,12 +1093,12 @@ function analyzeLightConditions() {
   const brightness = (r*0.299 + g*0.587 + b*0.114);
   const rbRatio = r / (b + 1);
 
-  // Sharpness: Laplacian variance on grayscale
-  // High variance = sharp edges = in focus
+  // Sharpness: Laplacian variance solo sul centro (dove si trova la gemma)
   const W = 50;
+  const margin = 15; // analizza solo il 40% centrale del frame
   let lapSum = 0, lapCount = 0;
-  for (let y=1; y<W-1; y++) {
-    for (let x=1; x<W-1; x++) {
+  for (let y = margin; y < W - margin; y++) {
+    for (let x = margin; x < W - margin; x++) {
       const lap = Math.abs(
         -grays[(y-1)*W+x] - grays[(y+1)*W+x] - grays[y*W+(x-1)] - grays[y*W+(x+1)]
         + 4 * grays[y*W+x]
@@ -1108,11 +1106,11 @@ function analyzeLightConditions() {
       lapSum += lap; lapCount++;
     }
   }
-  const sharpness = lapSum / lapCount; // higher = sharper
+  const sharpness = lapCount > 0 ? lapSum / lapCount : 0;
 
   const brightOK = brightness > 40 && brightness < 240;
   const tempOK = rbRatio > 0.85 && rbRatio < 1.7;
-  const sharpOK = sharpness > 3.5; // threshold: gemstone needs good edges
+  const sharpOK = sharpness > 2.0; // soglia abbassata per gemme piccole
 
   const dot = document.getElementById('light-dot');
   const txt = document.getElementById('light-txt');

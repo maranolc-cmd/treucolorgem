@@ -387,8 +387,9 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div id="listing-previews" style="display:none;width:100%;display:none;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px 0"></div>
     </div>
     <div class="info-box" style="margin-top:4px"><strong>Step 2:</strong> Take one mandatory live photo right now in natural daylight. Cannot be uploaded from gallery.</div>
-    <div class="live-zone" id="live-zone" onclick="show('s-camera')">
+    <div class="live-zone" id="live-zone" onclick="show('s-camera')" style="position:relative;overflow:hidden;">
       <div class="live-badge">LIVE REQUIRED</div>
+      <img id="live-preview" style="display:none;width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid rgba(76,175,125,0.4);margin-bottom:8px">
       <div class="lz-icon" id="lz-icon">📷</div>
       <div class="lz-title" id="lz-title">Take Live Photo Now</div>
       <div class="lz-sub" id="lz-sub">Open camera and shoot in natural daylight<br>This photo cannot be replaced with a gallery upload</div>
@@ -1236,7 +1237,10 @@ function processLivePhoto(dataUrl) {
     show('s-new');
     const lz = document.getElementById('live-zone');
     lz.classList.add('lz-done');
-    document.getElementById('lz-icon').textContent = '✅';
+    // Mostra anteprima live
+    const livePreview = document.getElementById('live-preview');
+    if (livePreview) { livePreview.src = dataUrl; livePreview.style.display = 'block'; }
+    document.getElementById('lz-icon').style.display = 'none';
     document.getElementById('lz-title').textContent = 'Live Photo Captured';
     document.getElementById('lz-sub').textContent = 'Natural light verified · Timestamped';
     document.getElementById('lz-req').textContent = '✓ Ready for analysis';
@@ -1452,7 +1456,9 @@ function showScore(r) {
         const liveZone = document.getElementById('live-zone');
         if (liveZone) liveZone.classList.remove('lz-done');
         const lzIcon = document.getElementById('lz-icon');
-        if (lzIcon) lzIcon.textContent = '📷';
+        if (lzIcon) { lzIcon.textContent = '📷'; lzIcon.style.display = ''; }
+        const livePreview = document.getElementById('live-preview');
+        if (livePreview) { livePreview.src = ''; livePreview.style.display = 'none'; }
         const lzTitle = document.getElementById('lz-title');
         if (lzTitle) lzTitle.textContent = 'Take Live Photo Now';
         const lzSub = document.getElementById('lz-sub');

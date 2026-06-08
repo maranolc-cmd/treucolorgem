@@ -321,7 +321,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
         <div class="level-icon">🥈</div>
         <div>
           <div class="level-name" id="dash-level">Silver</div>
-          <div class="level-fee" id="dash-fee">€1,000 / year · Renews Jan 2027</div>
+          <div class="level-fee" id="dash-fee">€15 / month · Renews Jan 2027</div>
         </div>
       </div>
       <div class="prog-labels"><span>Progress to Gold</span><span id="dash-prog-txt">0 / 50 listings</span></div>
@@ -360,13 +360,31 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <label>Gemstone Name / Listing Title</label>
       <input type="text" id="gem-name" placeholder="e.g. Burma Ruby 1.17ct GIA Vivid Red" style="transition:border-color 0.3s">
     </div>
-    <div class="info-box"><strong>Step 1:</strong> Upload your listing photos as shown on eBay / Catawiki / Etsy.</div>
+    <div class="info-box" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <span><strong>Step 1:</strong> Upload your listing photos as shown on eBay / Catawiki / Etsy.</span>
+      <span id="photo-rules-btn" onclick="togglePhotoRules()" style="cursor:pointer;font-size:18px;flex-shrink:0" title="Photo guidelines">ℹ️</span>
+    </div>
+    <!-- Disciplinare foto -->
+    <div id="photo-rules" style="display:none;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:6px;padding:14px 16px;margin-bottom:4px;font-size:11px;line-height:1.8;color:var(--grey)">
+      <div style="font-size:11px;font-weight:600;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Photo Guidelines</div>
+      <div>· <strong style="color:var(--white)">Min 2 photos, max 5</strong></div>
+      <div>· <strong style="color:var(--white)">Photo 1:</strong> Front or top view, centered, neutral background</div>
+      <div>· <strong style="color:var(--white)">Photo 2:</strong> Different angle (side, 3/4, or close-up)</div>
+      <div style="margin-top:8px;color:rgba(245,240,232,0.4);font-size:10px;letter-spacing:1px;text-transform:uppercase">Rules</div>
+      <div>· No filters or post-processing</div>
+      <div>· No accent lighting (ring light, spot, backlight)</div>
+      <div>· Neutral background — no colored or textured surfaces</div>
+      <div>· Even lighting — no harsh shadows</div>
+      <div>· Minimum 1MP resolution</div>
+    </div>
     <div class="upload-zone" id="upload-zone" onclick="document.getElementById('listing-files').click()">
       <input type="file" id="listing-files" multiple accept="image/*" onchange="handleListingFiles(this)" style="display:none">
-      <div class="uz-icon">🖼️</div>
-      <div class="uz-title">Upload Listing Photos</div>
-      <div class="uz-sub">Select photos from your gallery<br>JPG, PNG · up to 10 photos</div>
+      <div class="uz-icon" id="uz-icon">🖼️</div>
+      <div class="uz-title" id="uz-title">Upload Listing Photos</div>
+      <div class="uz-sub" id="uz-sub">Select photos from your gallery<br>JPG, PNG · up to 10 photos</div>
       <div class="uz-count" id="upload-count"></div>
+      <!-- Anteprima foto -->
+      <div id="listing-previews" style="display:none;width:100%;display:none;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px 0"></div>
     </div>
     <div class="info-box" style="margin-top:4px"><strong>Step 2:</strong> Take one mandatory live photo right now in natural daylight. Cannot be uploaded from gallery.</div>
     <div class="live-zone" id="live-zone" onclick="show('s-camera')">
@@ -513,7 +531,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div class="plan-header">
         <div class="plan-icon">🥈</div>
         <div><div class="plan-name">Silver</div><div style="font-size:10px;color:var(--grey)">Entry level</div></div>
-        <div class="plan-price"><div class="plan-amount">€150</div><div class="plan-period">per year</div></div>
+        <div class="plan-price"><div class="plan-amount">€15</div><div class="plan-period">/ month &nbsp;·&nbsp; €150 / year</div></div>
       </div>
       <ul class="plan-features">
         <li>50 certified listings per year</li>
@@ -527,7 +545,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div class="plan-header">
         <div class="plan-icon">🥇</div>
         <div><div class="plan-name">Gold</div><div style="font-size:10px;color:var(--grey)">Professional</div></div>
-        <div class="plan-price"><div class="plan-amount">€400</div><div class="plan-period">per year</div></div>
+        <div class="plan-price"><div class="plan-amount">€40</div><div class="plan-period">/ month &nbsp;·&nbsp; €400 / year</div></div>
       </div>
       <ul class="plan-features">
         <li>200 certified listings per year</li>
@@ -542,7 +560,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div class="plan-header">
         <div class="plan-icon">💎</div>
         <div><div class="plan-name">Diamond</div><div style="font-size:10px;color:var(--grey)">Elite</div></div>
-        <div class="plan-price"><div class="plan-amount">€1,000</div><div class="plan-period">per year</div></div>
+        <div class="plan-price"><div class="plan-amount">€100</div><div class="plan-period">/ month &nbsp;·&nbsp; €1,000 / year</div></div>
       </div>
       <ul class="plan-features">
         <li>Unlimited certified listings</li>
@@ -813,6 +831,11 @@ function getGemEmoji(name) {
   return '💎';
 }
 
+function togglePhotoRules() {
+  const rules = document.getElementById('photo-rules');
+  if (rules) rules.style.display = rules.style.display === 'none' ? 'block' : 'none';
+}
+
 // ── NEW LISTING ──
 function handleListingFiles(input) {
   if (!input.files.length) return;
@@ -820,16 +843,43 @@ function handleListingFiles(input) {
   const zone = document.getElementById('upload-zone');
   zone.classList.add('has-files');
   document.getElementById('upload-count').textContent = state.listingFiles.length + ' photo(s) selected ✓';
+
+  // Nascondi icon e titolo, mostra anteprime
+  const icon = document.getElementById('uz-icon');
+  const title = document.getElementById('uz-title');
+  const sub = document.getElementById('uz-sub');
+  if (icon) icon.style.display = 'none';
+  if (title) title.style.display = 'none';
+  if (sub) sub.style.display = 'none';
+
+  // Genera anteprime
+  const previews = document.getElementById('listing-previews');
+  if (previews) {
+    previews.innerHTML = '';
+    previews.style.display = 'flex';
+    Array.from(input.files).slice(0, 5).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.cssText = 'width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid rgba(201,168,76,0.3)';
+        previews.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   stepDone(1);
   toast(state.listingFiles.length + ' listing photos loaded ✓');
-  // Leggi subito come base64 — su Android il File object scade dopo navigazione camera
+
+  // Leggi prima foto come base64
   const reader = new FileReader();
-  reader.onload = e => { 
+  reader.onload = e => {
     state.listingImageData = e.target.result;
     try { sessionStorage.setItem('tcg_listing', e.target.result); } catch(_) {}
-    checkAnalyzeBtn(); // DOPO che listingImageData è disponibile
+    checkAnalyzeBtn();
   };
-  reader.onerror = () => { 
+  reader.onerror = () => {
     state.listingImageData = null;
     checkAnalyzeBtn();
   };
@@ -1387,6 +1437,15 @@ function showScore(r) {
         // Reset input file — Android non triggera onchange se stesso file senza questo
         const listingInput = document.getElementById('listing-files');
         if (listingInput) listingInput.value = '';
+        // Reset anteprime
+        const previews = document.getElementById('listing-previews');
+        if (previews) { previews.innerHTML = ''; previews.style.display = 'none'; }
+        const uzIcon = document.getElementById('uz-icon');
+        const uzTitle = document.getElementById('uz-title');
+        const uzSub = document.getElementById('uz-sub');
+        if (uzIcon) uzIcon.style.display = '';
+        if (uzTitle) uzTitle.style.display = '';
+        if (uzSub) uzSub.style.display = '';
         // Pulisci sessionStorage
         try { sessionStorage.removeItem('tcg_listing'); } catch(_) {}
         // Reset live zone
@@ -1679,7 +1738,7 @@ function selectPlan(plan, el) {
   el.classList.add('selected');
   state.selectedPlan = plan;
   const btn = document.getElementById('subscribe-btn');
-  const labels = { silver: 'Subscribe — €150 / year', gold: 'Subscribe — €400 / year', diamond: 'Subscribe — €1,000 / year' };
+  const labels = { silver: 'Subscribe — €15/mo or €150/yr', gold: 'Subscribe — €40/mo or €400/yr', diamond: 'Subscribe — €100/mo or €1,000/yr' };
   btn.textContent = labels[plan];
   btn.style.opacity = '1';
   btn.style.pointerEvents = 'auto';

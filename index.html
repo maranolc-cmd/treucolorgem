@@ -214,10 +214,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 .plan-features li{font-size:11px;color:rgba(245,240,232,0.6);display:flex;align-items:center;gap:8px}
 .plan-features li::before{content:'✓';color:var(--gold);font-weight:700;flex-shrink:0}
 
-/* SESSION CODE OVERLAY */
-.session-code-overlay{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.82);border:1.5px solid var(--gold);border-radius:6px;padding:7px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;z-index:10;pointer-events:none;backdrop-filter:blur(2px)}
-.session-code-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim)}
-.session-code-value{font-family:monospace;font-size:22px;font-weight:700;letter-spacing:6px;color:var(--gold);line-height:1}
+/* QR VERIFY */
 #s-verify{background:var(--black)}
 .verify-content{flex:1;padding:28px 24px;overflow-y:auto}
 .verify-result{background:var(--card);border-radius:5px;overflow:hidden;margin-top:20px}
@@ -422,11 +419,6 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       </div>
       <div id="light-detail" style="font-size:10px;color:rgba(255,255,255,0.5);text-align:center;background:rgba(0,0,0,0.6);padding:6px 14px;border-radius:10px;display:none"></div>
     </div>
-    <!-- Session code: deve essere visibile nella foto live per anti-swap -->
-    <div class="session-code-overlay" id="session-code-overlay" style="display:none">
-      <div class="session-code-label">TCG SESSION</div>
-      <div class="session-code-value" id="session-code-display">——————</div>
-    </div>
   </div>
   <div class="cam-bottom">
     <div class="cam-hint" id="cam-hint-main">Point camera at gemstone in natural daylight</div>
@@ -618,9 +610,6 @@ const state = {
   listingFiles: [],
   listingImageData: null,
   livePhotoData: null,
-  liveSource: null,
-  captureMetrics: null,
-  sessionCode: null,       // codice univoco generato per ogni sessione live
   currentScore: null,
   currentGemName: '',
   lastScreen: 's-welcome',
@@ -659,9 +648,6 @@ function show(id) {
       state.listingFiles = [];
       state.listingImageData = null;
       state.livePhotoData = null;
-      state.liveSource = null;
-      state.captureMetrics = null;
-      state.sessionCode = null;
       state.currentScore = null;
       state.currentGemName = '';
       try { sessionStorage.removeItem('tcg_listing'); } catch(_) {}
@@ -930,43 +916,10 @@ let cameraStream = null;
 let lightAnalysisInterval = null;
 let lightOK = false;
 let cameraInitialized = false;
-let lastCaptureMetrics = null;
-
-// ── SESSION CODE (anti-swap) ──
-// Genera un codice alfanumerico univoco a 6 caratteri per ogni sessione live.
-// Il codice viene mostrato sovrapposto al viewfinder e deve essere visibile
-// nella foto scattata — il server verifica che corrisponda.
-function generateSessionCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I,O,0,1 (ambigui)
-  let code = '';
-  const arr = new Uint8Array(6);
-  crypto.getRandomValues(arr);
-  arr.forEach(b => { code += chars[b % chars.length]; });
-  return code;
-}
-
-function showSessionCode(code) {
-  const overlay = document.getElementById('session-code-overlay');
-  const display = document.getElementById('session-code-display');
-  if (overlay && display) {
-    display.textContent = code;
-    overlay.style.display = 'flex';
-  }
-}
-
-function hideSessionCode() {
-  const overlay = document.getElementById('session-code-overlay');
-  if (overlay) overlay.style.display = 'none';
-}
 
 async function startCamera() {
   try {
     const video = document.getElementById('cam-video');
-
-    // Genera codice sessione univoco e mostralo nel viewfinder
-    state.sessionCode = generateSessionCode();
-    showSessionCode(state.sessionCode);
-    console.log('Session code:', state.sessionCode);
 
     // Step 1: Ferma stream precedente
     if (video.srcObject) {
@@ -1082,7 +1035,6 @@ async function startCamera() {
 
 function stopCamera() {
   if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
-  hideSessionCode();
 
   const video = document.getElementById('cam-video');
   if (video) {
@@ -1303,6 +1255,7 @@ function analyzeLightConditions() {
 
 function capturePhoto() {
   if (cameraStream && lightOK) {
+    // Capture from live video
     const video = document.getElementById('cam-video');
     const canvas = document.getElementById('cam-canvas');
     canvas.width = video.videoWidth || 1280;
@@ -1310,16 +1263,10 @@ function capturePhoto() {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-    state.liveSource = 'camera';
-    state.captureMetrics = lastCaptureMetrics ? { ...lastCaptureMetrics } : null;
-    // sessionCode già in state — generato all'avvio camera
     stopCamera();
     processLivePhoto(dataUrl);
   } else {
-    // Fallback gallery: nessun codice verificabile
-    state.liveSource = 'upload';
-    state.captureMetrics = null;
-    state.sessionCode = null;
+    // Fallback: file upload
     document.getElementById('cam-file').click();
   }
 }
@@ -1349,9 +1296,6 @@ function processLivePhoto(dataUrl) {
 
 function handleCamFile(input) {
   if (!input.files[0]) return;
-  state.liveSource = 'upload';
-  state.captureMetrics = null;
-  state.sessionCode = null;
   const reader = new FileReader();
   reader.onload = e => { processLivePhoto(e.target.result); };
   reader.onerror = () => toast('❌ Failed to read photo — try again');
@@ -1445,10 +1389,7 @@ async function callAI() {
       body: JSON.stringify({
         listingImage,
         liveImage,
-        gemName: state.currentGemName,
-        liveSource: state.liveSource || 'upload',
-        captureMetrics: state.captureMetrics,
-        sessionCode: state.sessionCode   // null se live da gallery
+        gemName: state.currentGemName
       })
     });
 
@@ -1521,9 +1462,6 @@ function showScore(r) {
         state.listingFiles = [];
         state.listingImageData = null;
         state.livePhotoData = null;
-        state.liveSource = null;
-        state.captureMetrics = null;
-        state.sessionCode = null;
         state.currentScore = null;
         state.currentGemName = '';
         // Reset camera globals

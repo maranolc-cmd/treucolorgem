@@ -430,8 +430,10 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
         oninput="applyZoom(this.value)">
       <span id="zoom-label" style="font-size:11px;color:var(--gold);min-width:32px;text-align:right">1×</span>
     </div>
-    <div style="display:flex;align-items:center;justify-content:center;width:100%">
+    <div style="display:flex;align-items:center;justify-content:center;width:100%;gap:16px">
+      <button id="cam-switch-btn" onclick="switchCamera()" style="display:none;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);border-radius:20px;padding:6px 14px;font-size:11px;letter-spacing:1px;cursor:pointer">🔭 Wide</button>
       <div class="shutter" id="shutter-btn" onclick="capturePhoto()" style="opacity:0.4;pointer-events:none"></div>
+      <div style="width:70px"></div>
     </div>
     <div class="cam-hint" style="font-size:9px" id="cam-hint-sub">Tap image to focus · Shutter activates when light is optimal</div>
     <input type="file" id="cam-file" accept="image/*" capture="environment" onchange="handleCamFile(this)" style="display:none">
@@ -608,6 +610,8 @@ const state = {
   listingFiles: [],
   listingImageData: null,
   livePhotoData: null,
+  liveSource: null,        // 'camera' | 'upload' — provenienza della live photo
+  captureMetrics: null,    // {brightness, rbRatio, sharpness} al momento dello scatto
   currentScore: null,
   currentGemName: '',
   lastScreen: 's-welcome',
@@ -646,6 +650,8 @@ function show(id) {
       state.listingFiles = [];
       state.listingImageData = null;
       state.livePhotoData = null;
+      state.liveSource = null;
+      state.captureMetrics = null;
       state.currentScore = null;
       state.currentGemName = '';
       try { sessionStorage.removeItem('tcg_listing'); } catch(_) {}
@@ -809,13 +815,13 @@ function renderListings() {
   c.innerHTML = state.listings.slice().reverse().map(l => {
     const pillClass = l.score >= 85 ? 'pill-green' : l.score >= 70 ? 'pill-yellow' : 'pill-red';
     const emoji = getGemEmoji(l.name);
-    return `<div class="listing-row" onclick="showListingDetail('${l.id}','${l.name}',${l.score},'${l.date}')">
+    return `<div class="listing-row" onclick="showListingDetail('${escJs(l.id)}','${escJs(l.name)}',${Number(l.score)||0},'${escJs(l.date)}')">
       <div class="listing-thumb">${emoji}</div>
       <div class="listing-info">
-        <div class="listing-name">${l.name}</div>
-        <div class="listing-meta">Certified ${l.date} · ID #${l.id}</div>
+        <div class="listing-name">${esc(l.name)}</div>
+        <div class="listing-meta">Certified ${esc(l.date)} · ID #${esc(l.id)}</div>
       </div>
-      <div class="score-pill ${pillClass}">${l.score}%</div>
+      <div class="score-pill ${pillClass}">${Number(l.score)||0}%</div>
     </div>`;
   }).join('');
 }
@@ -914,6 +920,7 @@ let cameraStream = null;
 let lightAnalysisInterval = null;
 let lightOK = false;
 let cameraInitialized = false;
+let lastCaptureMetrics = null;
 
 async function startCamera() {
   try {
@@ -934,15 +941,38 @@ async function startCamera() {
     video.style.display = 'none';
     void video.offsetHeight;
 
-    // Step 4: Nuovo stream
+    // Step 4: Cerca camera ultrawide se disponibile (migliore per macro)
+    let videoConstraints = {
+      facingMode: 'environment',
+      width: { ideal: 3840, min: 1280 },
+      height: { ideal: 2160, min: 720 },
+      focusMode: 'continuous'
+    };
+
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const rearCameras = devices.filter(d => d.kind === 'videoinput' && d.label);
+      const ultrawide = rearCameras.find(d =>
+        d.label.toLowerCase().includes('ultrawide') ||
+        d.label.toLowerCase().includes('ultra-wide') ||
+        d.label.toLowerCase().includes('wide angle')
+      );
+      // Mostra pulsante switch solo se ultrawide disponibile
+      const switchBtn = document.getElementById('cam-switch-btn');
+      if (ultrawide && switchBtn) switchBtn.style.display = 'block';
+
+      if (ultrawide && usingWideCamera) {
+        videoConstraints = {
+          deviceId: { exact: ultrawide.deviceId },
+          width: { ideal: 3840, min: 1280 },
+          height: { ideal: 2160, min: 720 }
+        };
+        console.log('Using ultrawide camera:', ultrawide.label);
+      }
+    } catch(_) {}
+
     const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: 'environment',
-        width: { ideal: 3840, min: 1280 },
-        height: { ideal: 2160, min: 720 },
-        focusMode: 'continuous',
-        advanced: [{ torch: false }]
-      },
+      video: videoConstraints,
       audio: false
     });
 
@@ -1071,6 +1101,20 @@ function initZoomSlider() {
   }
 }
 
+let usingWideCamera = false;
+
+async function switchCamera() {
+  usingWideCamera = !usingWideCamera;
+  const btn = document.getElementById('cam-switch-btn');
+  if (btn) {
+    btn.textContent = usingWideCamera ? '📷 Normal' : '🔭 Wide';
+    btn.style.color = usingWideCamera ? 'var(--gold)' : 'rgba(255,255,255,0.6)';
+    btn.style.borderColor = usingWideCamera ? 'var(--gold-dim)' : 'rgba(255,255,255,0.15)';
+  }
+  toast(usingWideCamera ? '🔭 Wide angle — better for small gems' : '📷 Standard camera');
+  await startCamera();
+}
+
 function setupTapToFocus(video, stream) {
   // Rimuovi listener precedente se esiste
   if (video._tapFocusListener) video.removeEventListener('click', video._tapFocusListener);
@@ -1095,6 +1139,11 @@ function setupTapToFocus(video, stream) {
         setTimeout(() => {
           track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
         }, 3000);
+      }
+      // Future-proof: focusDistance (Chrome 123+ su alcuni device)
+      if (capabilities.focusDistance) {
+        const { min } = capabilities.focusDistance;
+        await track.applyConstraints({ advanced: [{ focusDistance: min }] }).catch(() => {});
       }
     } catch(_) { /* non supportato su questo dispositivo */ }
   };
@@ -1163,6 +1212,9 @@ function analyzeLightConditions() {
   const tempOK = rbRatio > 0.85 && rbRatio < 1.7;
   const sharpOK = sharpness > 2.0; // soglia abbassata per gemme piccole
 
+  // Salva le metriche correnti — verranno inviate all'API col flag liveSource
+  lastCaptureMetrics = { brightness, rbRatio, sharpness };
+
   const dot = document.getElementById('light-dot');
   const txt = document.getElementById('light-txt');
   const detail = document.getElementById('light-detail');
@@ -1170,7 +1222,7 @@ function analyzeLightConditions() {
   const hint = document.getElementById('cam-hint-main');
   
   detail.style.display = 'block';
-  detail.textContent = `Light: ${rbRatio < 1.0 ? 'Cool' : rbRatio > 1.6 ? 'Warm' : 'Natural'} · Brightness: ${Math.round(brightness)} · Focus: ${sharpness > 3.5 ? '✓' : '✗'}`;
+  detail.textContent = `Light: ${rbRatio < 1.0 ? 'Cool' : rbRatio > 1.6 ? 'Warm' : 'Natural'} · Brightness: ${Math.round(brightness)} · Focus: ${sharpOK ? '✓' : '✗'}`;
 
   // Priority: check problems in order
   if (!brightOK && brightness <= 40) {
@@ -1219,10 +1271,13 @@ function capturePhoto() {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    // Provenienza verificata: camera in-app con check luce superato
+    state.liveSource = 'camera';
+    state.captureMetrics = lastCaptureMetrics ? { ...lastCaptureMetrics } : null;
     stopCamera();
     processLivePhoto(dataUrl);
   } else {
-    // Fallback: file upload
+    // Fallback: file upload — provenienza NON verificata
     document.getElementById('cam-file').click();
   }
 }
@@ -1242,7 +1297,9 @@ function processLivePhoto(dataUrl) {
     if (livePreview) { livePreview.src = dataUrl; livePreview.style.display = 'block'; }
     document.getElementById('lz-icon').style.display = 'none';
     document.getElementById('lz-title').textContent = 'Live Photo Captured';
-    document.getElementById('lz-sub').textContent = 'Natural light verified · Timestamped';
+    document.getElementById('lz-sub').textContent = state.liveSource === 'camera'
+      ? 'Natural light verified · Timestamped'
+      : 'Uploaded from gallery · Stricter AI review applies';
     document.getElementById('lz-req').textContent = '✓ Ready for analysis';
     stepDone(2);
     checkAnalyzeBtn();
@@ -1252,6 +1309,9 @@ function processLivePhoto(dataUrl) {
 
 function handleCamFile(input) {
   if (!input.files[0]) return;
+  // Provenienza non verificata: il server applicherà criteri più severi
+  state.liveSource = 'upload';
+  state.captureMetrics = null;
   const reader = new FileReader();
   reader.onload = e => { processLivePhoto(e.target.result); };
   reader.onerror = () => toast('❌ Failed to read photo — try again');
@@ -1259,6 +1319,31 @@ function handleCamFile(input) {
 }
 
 // ── AI ANALYSIS ──
+// Reset della sola live photo (per RETAKE): le foto listing restano caricate
+function resetLivePhotoOnly() {
+  state.livePhotoData = null;
+  state.liveSource = null;
+  state.captureMetrics = null;
+  const liveZone = document.getElementById('live-zone');
+  if (liveZone) liveZone.classList.remove('lz-done');
+  const livePreview = document.getElementById('live-preview');
+  if (livePreview) { livePreview.src = ''; livePreview.style.display = 'none'; }
+  const lzIcon = document.getElementById('lz-icon');
+  if (lzIcon) { lzIcon.textContent = '📷'; lzIcon.style.display = ''; }
+  const lzTitle = document.getElementById('lz-title');
+  if (lzTitle) lzTitle.textContent = 'Retake Live Photo';
+  const lzSub = document.getElementById('lz-sub');
+  if (lzSub) lzSub.textContent = 'Previous photo quality was too low\nShoot again in natural daylight, closer and in focus';
+  const lzReq = document.getElementById('lz-req');
+  if (lzReq) lzReq.textContent = '⚠ Required for certification';
+  // Reset step indicator e animazione analisi
+  ['ps1','ps2','ps3','ps4','ps5','ps6'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('active', 'done');
+  });
+  checkAnalyzeBtn();
+}
+
 async function startAnalysis() {
   const gemName = document.getElementById('gem-name').value.trim();
   if (!gemName) { 
@@ -1271,7 +1356,9 @@ async function startAnalysis() {
   state.currentGemName = gemName;
   try {
     show('s-analyzing');
-    await runAnalysisSteps();
+    // Animazione e chiamata API in parallelo: l'ultimo step resta "active"
+    // finché la risposta non arriva (chiuso in callAI)
+    runAnalysisSteps();
     await callAI();
   } catch(e) {
     console.log('startAnalysis error:', e);
@@ -1293,23 +1380,31 @@ async function runAnalysisSteps() {
     document.getElementById(steps[i]).classList.add('active');
     if (i > 0) document.getElementById(steps[i-1]).classList.add('done');
   }
-  await sleep(500);
-  document.getElementById(steps[steps.length-1]).classList.add('done');
+  // L'ultimo step (Generating TrueColor score) resta attivo finché
+  // la risposta API non arriva — vedi completeAnalysisSteps()
+}
+
+function completeAnalysisSteps() {
+  ['ps1','ps2','ps3','ps4','ps5','ps6'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.add('done');
+  });
 }
 
 async function callAI() {
   try {
-    // Compress image to max 800px and 75% quality before sending
+    // Compress image to max 1568px (ottimale per Claude vision) e qualità 0.88
+    // — a 800px/0.75 si perde fedeltà cromatica e dettaglio inclusioni
     const compressImage = (src) => new Promise(resolve => {
       const img = new Image();
       img.onload = () => {
-        const maxSize = 800;
+        const maxSize = 1568;
         const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(img.width * scale);
         canvas.height = Math.round(img.height * scale);
         canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.75));
+        resolve(canvas.toDataURL('image/jpeg', 0.88));
       };
       img.onerror = (_e) => resolve(src); // fallback: usa src originale
       img.src = src;
@@ -1345,7 +1440,9 @@ async function callAI() {
       body: JSON.stringify({
         listingImage,
         liveImage,
-        gemName: state.currentGemName
+        gemName: state.currentGemName,
+        liveSource: state.liveSource || 'upload',
+        captureMetrics: state.captureMetrics
       })
     });
 
@@ -1360,12 +1457,18 @@ async function callAI() {
     console.log('API result:', JSON.stringify(result));
     if (result.error) throw new Error(result.error);
 
+    completeAnalysisSteps();
+    await sleep(400);
     state.currentScore = result;
     showScore(result);
 
   } catch(e) {
     console.log('AI error:', e);
     show('s-new');
+    ['ps1','ps2','ps3','ps4','ps5','ps6'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active', 'done');
+    });
     const msg = e?.message || e?.name || JSON.stringify(e) || 'unknown';
     toast('❌ ' + msg.substring(0, 80));
   }
@@ -1377,6 +1480,16 @@ function showScore(r) {
     show('s-new');
     return;
   }
+
+  // RETAKE: qualità foto insufficiente — non è né CERTIFIED né REJECTED,
+  // si rifà la foto senza consumare la certificazione
+  if (r.verdict === 'RETAKE') {
+    show('s-new');
+    resetLivePhotoOnly();
+    toast('📷 ' + (r.reason || 'Photo quality too low — please retake'), 4500);
+    return;
+  }
+
   show('s-score');
   setTimeout(() => {
     document.getElementById('score-num').textContent = r.score;
@@ -1392,18 +1505,22 @@ function showScore(r) {
       chip.innerHTML = '✓ CERTIFIED';
     } else {
       chip.className = 'verdict-chip chip-fail';
-      chip.innerHTML = '✗ REJECTED';
+      chip.innerHTML = r.identity_match === false ? '✗ DIFFERENT STONE' : '✗ REJECTED';
     }
     document.getElementById('verdict-reason').textContent = r.reason;
 
-    const passFail = (v) => v.includes('✓') ? 'an-pass' : 'an-fail';
-    document.getElementById('an-color').className = 'an-val ' + passFail(r.color_match);
+    // Usa i booleani *_pass se presenti, fallback al simbolo ✓ nella stringa
+    const passClass = (boolField, str) => {
+      const ok = typeof boolField === 'boolean' ? boolField : String(str || '').includes('✓');
+      return ok ? 'an-pass' : 'an-fail';
+    };
+    document.getElementById('an-color').className = 'an-val ' + passClass(r.color_match_pass, r.color_match);
     document.getElementById('an-color').textContent = r.color_match;
-    document.getElementById('an-sat').className = 'an-val ' + passFail(r.saturation);
+    document.getElementById('an-sat').className = 'an-val ' + passClass(r.saturation_pass, r.saturation);
     document.getElementById('an-sat').textContent = r.saturation;
-    document.getElementById('an-filter').className = 'an-val ' + passFail(r.filter_detected);
+    document.getElementById('an-filter').className = 'an-val ' + passClass(r.filter_pass, r.filter_detected);
     document.getElementById('an-filter').textContent = r.filter_detected;
-    document.getElementById('an-light').className = 'an-val ' + passFail(r.light_source);
+    document.getElementById('an-light').className = 'an-val ' + passClass(r.light_pass, r.light_source);
     document.getElementById('an-light').textContent = r.light_source;
     document.getElementById('ai-text').textContent = r.assessment;
 
@@ -1418,6 +1535,8 @@ function showScore(r) {
         state.listingFiles = [];
         state.listingImageData = null;
         state.livePhotoData = null;
+        state.liveSource = null;
+        state.captureMetrics = null;
         state.currentScore = null;
         state.currentGemName = '';
         // Reset camera globals
@@ -1492,7 +1611,10 @@ function showScore(r) {
 async function show_cert_screen() {
   if (!state.currentScore || state.currentScore.verdict !== 'CERTIFIED') return;
   const r = state.currentScore;
-  const id = 'TC-' + String(Date.now()).slice(-5);
+  // ID non prevedibile (crypto), fallback timestamp se API non disponibile
+  const id = 'TC-' + (window.crypto?.randomUUID
+    ? crypto.randomUUID().replace(/-/g,'').slice(0,6).toUpperCase()
+    : String(Date.now()).slice(-6));
   const today = new Date().toLocaleDateString('en-GB');
   const expiry = '31/12/' + (new Date().getFullYear() + 1);
 
@@ -1521,7 +1643,7 @@ async function show_cert_screen() {
   // Table
   document.getElementById('cert-table').innerHTML = [
     ['Certification ID', id],
-    ['Gemstone', state.currentGemName],
+    ['Gemstone', esc(state.currentGemName)],
     ['Score', r.score + ' / 100'],
     ['Level', '🥈 Silver'],
     ['Certified', today],
@@ -1776,12 +1898,12 @@ function doVerify() {
       result.innerHTML = `<div class="verify-result">
         <div class="verify-header">
           <div class="verify-status"><div class="verify-icon">✅</div><div class="verify-title">Certification Valid</div></div>
-          <div class="verify-id">${id}</div>
+          <div class="verify-id">${esc(id)}</div>
         </div>
         <div class="verify-body">
-          <div class="verify-row"><span style="color:var(--grey)">Gemstone</span><span>${saved.name}</span></div>
-          <div class="verify-row"><span style="color:var(--grey)">Score</span><span style="color:var(--gold)">${saved.score}/100</span></div>
-          <div class="verify-row"><span style="color:var(--grey)">Certified</span><span>${saved.date}</span></div>
+          <div class="verify-row"><span style="color:var(--grey)">Gemstone</span><span>${esc(saved.name)}</span></div>
+          <div class="verify-row"><span style="color:var(--grey)">Score</span><span style="color:var(--gold)">${Number(saved.score)||0}/100</span></div>
+          <div class="verify-row"><span style="color:var(--grey)">Certified</span><span>${esc(saved.date)}</span></div>
           <div class="verify-row"><span style="color:var(--grey)">Status</span><span style="color:var(--green)">Active ✓</span></div>
         </div>
       </div>`;
@@ -1789,7 +1911,7 @@ function doVerify() {
       result.innerHTML = `<div class="verify-result">
         <div class="verify-header" style="background:rgba(224,85,85,0.1);border-color:rgba(224,85,85,0.2)">
           <div class="verify-status"><div class="verify-icon">❌</div><div class="verify-title" style="color:var(--red)">Not Found</div></div>
-          <div class="verify-id">${id}</div>
+          <div class="verify-id">${esc(id)}</div>
         </div>
         <div class="verify-body"><div style="font-size:12px;color:var(--grey);line-height:1.7">This certification ID was not found in the TrueColorGem database. The listing may not be certified or the ID may be incorrect.</div></div>
       </div>`;
@@ -1799,6 +1921,17 @@ function doVerify() {
 
 // ── UTILS ──
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Escape per inserimento sicuro in innerHTML (anti-XSS)
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+// Escape per stringhe dentro attributi onclick
+function escJs(s) {
+  return String(s ?? '').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+}
 
 // Init — Firebase handles data loading after auth
 // Attach welcome button events after DOM ready

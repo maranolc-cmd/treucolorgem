@@ -135,6 +135,9 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 .shutter{width:74px;height:74px;border-radius:50%;background:white;border:5px solid rgba(255,255,255,0.25);cursor:pointer;transition:transform 0.1s;box-shadow:0 0 24px rgba(255,255,255,0.15)}
 .shutter:active{transform:scale(0.88)}
 .cam-hint{font-size:10px;color:var(--grey);text-align:center;letter-spacing:1px}
+.session-code-overlay{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);border:1.5px solid var(--gold);border-radius:6px;padding:7px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;z-index:10;pointer-events:none;display:none}
+.sc-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim)}
+.sc-value{font-family:monospace;font-size:24px;font-weight:700;letter-spacing:6px;color:var(--gold);line-height:1}
 .preview-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.4s}
 .preview-img.show{opacity:1}
 
@@ -377,17 +380,26 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div>· Even lighting — no harsh shadows</div>
       <div>· Minimum 1MP resolution</div>
     </div>
-    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('listing-files').click()">
+    <div class="info-box"><strong>Step 1:</strong> Upload your listing photos as shown on eBay / Catawiki / Etsy. <strong style="color:var(--gold)">At least one must be shot in natural daylight using the in-app camera.</strong></div>
+    <!-- Bottone scatta listing in-app -->
+    <div onclick="state.camMode='listing';show('s-camera')" style="background:linear-gradient(135deg,#0a1208,#080f08);border:2px solid rgba(201,168,76,0.5);border-radius:6px;padding:18px 20px;text-align:center;margin-bottom:10px;cursor:pointer;position:relative">
+      <div style="position:absolute;top:8px;right:12px;font-size:9px;letter-spacing:2px;color:var(--gold);background:rgba(201,168,76,0.12);padding:2px 8px;border-radius:10px;border:1px solid rgba(201,168,76,0.25)">REQUIRED</div>
+      <div id="listing-cam-icon" style="font-size:40px;margin-bottom:6px">📸</div>
+      <div id="listing-cam-title" style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:4px">Shoot Listing Photo In-App</div>
+      <div id="listing-cam-sub" style="font-size:11px;color:rgba(245,240,232,0.45);line-height:1.6">Natural daylight · Session code verified<br>This is the photo the AI will compare against your live reference</div>
+      <div id="listing-cam-status" style="font-size:10px;color:var(--gold);margin-top:8px;letter-spacing:1px">⚠ Required for full certification</div>
+    </div>
+    <!-- Upload gallery (opzionale — foto aggiuntive per l'annuncio) -->
+    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('listing-files').click()" style="margin-bottom:4px">
       <input type="file" id="listing-files" multiple accept="image/*" onchange="handleListingFiles(this)" style="display:none">
       <div class="uz-icon" id="uz-icon">🖼️</div>
-      <div class="uz-title" id="uz-title">Upload Listing Photos</div>
-      <div class="uz-sub" id="uz-sub">Select photos from your gallery<br>JPG, PNG · up to 10 photos</div>
+      <div class="uz-title" id="uz-title">Add Extra Listing Photos</div>
+      <div class="uz-sub" id="uz-sub">Optional — additional photos for your eBay/Catawiki listing<br>JPG, PNG · up to 10 photos</div>
       <div class="uz-count" id="upload-count"></div>
-      <!-- Anteprima foto -->
-      <div id="listing-previews" style="display:none;width:100%;display:none;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px 0"></div>
+      <div id="listing-previews" style="display:none;width:100%;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px 0"></div>
     </div>
     <div class="info-box" style="margin-top:4px"><strong>Step 2:</strong> Take one mandatory live photo right now in natural daylight. Cannot be uploaded from gallery.</div>
-    <div class="live-zone" id="live-zone" onclick="show('s-camera')" style="position:relative;overflow:hidden;">
+    <div class="live-zone" id="live-zone" onclick="state.camMode='live';show('s-camera')" style="position:relative;overflow:hidden;">
       <div class="live-badge">LIVE REQUIRED</div>
       <img id="live-preview" style="display:none;width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid rgba(76,175,125,0.4);margin-bottom:8px">
       <div class="lz-icon" id="lz-icon">📷</div>
@@ -403,7 +415,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 <div id="s-camera" class="screen">
   <div class="nav" style="background:#000;border-color:rgba(255,255,255,0.05)">
     <button class="nav-back" onclick="stopCamera();show('s-new')">←</button>
-    <div class="nav-title">Live Photo</div>
+    <div class="nav-title" id="cam-nav-title">Live Photo</div>
   </div>
   <div class="cam-view" style="position:relative;background:#000;min-height:60vh;display:flex;align-items:center;justify-content:center;">
     <video id="cam-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none"></video>
@@ -418,6 +430,11 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
         <div class="light-txt" id="light-txt" style="color:var(--grey)">Starting camera...</div>
       </div>
       <div id="light-detail" style="font-size:10px;color:rgba(255,255,255,0.5);text-align:center;background:rgba(0,0,0,0.6);padding:6px 14px;border-radius:10px;display:none"></div>
+    </div>
+    <!-- Session code anti-swap: deve essere visibile nella foto -->
+    <div class="session-code-overlay" id="session-code-overlay">
+      <div class="sc-label">TCG SESSION</div>
+      <div class="sc-value" id="sc-display">——————</div>
     </div>
   </div>
   <div class="cam-bottom">
@@ -613,7 +630,15 @@ const state = {
   currentScore: null,
   currentGemName: '',
   lastScreen: 's-welcome',
-  selectedPlan: null
+  selectedPlan: null,
+  // Doppio session code
+  camMode: null,           // 'listing' | 'live' — quale foto si sta scattando
+  listingSessionCode: null,
+  liveSessionCode: null,
+  listingCapturedInApp: false,
+  // Sensor fingerprinting
+  listingSensorSnap: null,
+  liveSensorSnap: null,
 };
 
 // ── NAVIGATION ──
@@ -628,6 +653,14 @@ function show(id) {
     window.scrollTo(0, 0);
     setLoading(false);
     if (id === 's-camera') {
+      // Aggiorna titolo e hint in base al modo (listing vs live)
+      const isListing = state.camMode === 'listing';
+      const navTitle = document.getElementById('cam-nav-title');
+      if (navTitle) navTitle.textContent = isListing ? 'Listing Photo' : 'Live Reference Photo';
+      const hintMain = document.getElementById('cam-hint-main');
+      if (hintMain) hintMain.textContent = isListing
+        ? 'Shoot listing photo in natural daylight — same conditions as live'
+        : 'Point camera at gemstone in natural daylight';
       // Reset shutter e semaforo ad ogni accesso
       const shutter = document.getElementById('shutter-btn');
       if (shutter) { shutter.style.opacity = '0.35'; shutter.style.pointerEvents = 'none'; }
@@ -635,9 +668,7 @@ function show(id) {
       if (lightDot) { lightDot.className = 'light-dot'; lightDot.style.background = 'var(--yellow)'; }
       const lightTxt = document.getElementById('light-txt');
       if (lightTxt) lightTxt.textContent = 'Checking light...';
-      const hintMain = document.getElementById('cam-hint-main');
-      if (hintMain) hintMain.textContent = 'Checking natural light conditions...';
-      // Ripristina visibilità overlay (nascosto dopo scatto)
+      // Ripristina visibilità overlay
       const overlay = document.getElementById('cam-overlay');
       if (overlay) overlay.style.opacity = '1';
       lightOK = false;
@@ -901,9 +932,10 @@ function stepDone(n) {
 }
 
 function checkAnalyzeBtn() {
-  const hasListing = state.listingFiles.length > 0 || !!state.listingImageData;
+  // La foto listing in-app è ora obbligatoria per la certificazione completa
+  const hasListingInApp = state.listingCapturedInApp && !!state.listingImageData;
   const hasLive = !!state.livePhotoData;
-  const ready = hasListing && hasLive;
+  const ready = hasListingInApp && hasLive;
   const btn = document.getElementById('analyze-btn');
   if (btn) {
     btn.style.opacity = ready ? '1' : '0.4';
@@ -917,7 +949,74 @@ let lightAnalysisInterval = null;
 let lightOK = false;
 let cameraInitialized = false;
 
+// ── SENSOR FINGERPRINTING (anti-spoof) ──
+// Lettura passiva di sensori ambientali al momento dello scatto.
+// Invisibile all'utente — crea evidenza forense legata al session code.
+let _sensorSnapshot = null;
+
+function startSensorCapture() {
+  _sensorSnapshot = { ts: Date.now(), alpha: null, beta: null, gamma: null, ax: null, ay: null, az: null, battery: null };
+  // Orientamento dispositivo
+  const onOrient = (e) => {
+    if (_sensorSnapshot) { _sensorSnapshot.alpha = Math.round(e.alpha||0); _sensorSnapshot.beta = Math.round(e.beta||0); _sensorSnapshot.gamma = Math.round(e.gamma||0); }
+  };
+  // Accelerometro
+  const onMotion = (e) => {
+    const a = e.accelerationIncludingGravity;
+    if (_sensorSnapshot && a) { _sensorSnapshot.ax = +(a.x||0).toFixed(2); _sensorSnapshot.ay = +(a.y||0).toFixed(2); _sensorSnapshot.az = +(a.z||0).toFixed(2); }
+  };
+  window.addEventListener('deviceorientation', onOrient, {once:false});
+  window.addEventListener('devicemotion', onMotion, {once:false});
+  // Batteria (dove disponibile)
+  if (navigator.getBattery) {
+    navigator.getBattery().then(b => { if (_sensorSnapshot) _sensorSnapshot.battery = Math.round(b.level * 100); }).catch(()=>{});
+  }
+  // Salva i listener per rimozione
+  window._sensorListeners = { onOrient, onMotion };
+}
+
+function stopSensorCapture() {
+  if (window._sensorListeners) {
+    window.removeEventListener('deviceorientation', window._sensorListeners.onOrient);
+    window.removeEventListener('devicemotion', window._sensorListeners.onMotion);
+    window._sensorListeners = null;
+  }
+}
+
+function takeSensorSnapshot() {
+  // Restituisce la snapshot corrente e stoppa la cattura
+  const snap = _sensorSnapshot ? { ..._sensorSnapshot, ts: Date.now() } : null;
+  stopSensorCapture();
+  _sensorSnapshot = null;
+  return snap;
+}
+function generateSessionCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const arr = new Uint8Array(6);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => chars[b % chars.length]).join('');
+}
+function showSessionCode(code) {
+  const el = document.getElementById('session-code-overlay');
+  if (el) { el.style.display = 'flex'; document.getElementById('sc-display').textContent = code; }
+}
+function hideSessionCode() {
+  const el = document.getElementById('session-code-overlay');
+  if (el) el.style.display = 'none';
+}
+
 async function startCamera() {
+  // Avvia sensor fingerprinting passivo
+  startSensorCapture();
+  // Genera session code per questa sessione di scatto
+  const code = generateSessionCode();
+  if (state.camMode === 'listing') {
+    state.listingSessionCode = code;
+  } else {
+    state.liveSessionCode = code;
+  }
+  showSessionCode(code);
+  console.log('Session code [' + state.camMode + ']:', code);
   try {
     const video = document.getElementById('cam-video');
 
@@ -1035,6 +1134,7 @@ async function startCamera() {
 
 function stopCamera() {
   if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
+  hideSessionCode();
 
   const video = document.getElementById('cam-video');
   if (video) {
@@ -1255,7 +1355,6 @@ function analyzeLightConditions() {
 
 function capturePhoto() {
   if (cameraStream && lightOK) {
-    // Capture from live video
     const video = document.getElementById('cam-video');
     const canvas = document.getElementById('cam-canvas');
     canvas.width = video.videoWidth || 1280;
@@ -1263,12 +1362,36 @@ function capturePhoto() {
     const ctx = canvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    // Cattura sensor snapshot prima di stopCamera
+    const snap = takeSensorSnapshot();
     stopCamera();
-    processLivePhoto(dataUrl);
+    if (state.camMode === 'listing') {
+      state.listingSensorSnap = snap;
+      processListingPhoto(dataUrl);
+    } else {
+      state.liveSensorSnap = snap;
+      processLivePhoto(dataUrl);
+    }
   } else {
-    // Fallback: file upload
     document.getElementById('cam-file').click();
   }
+}
+
+function processListingPhoto(dataUrl) {
+  state.listingImageData = dataUrl;
+  state.listingCapturedInApp = true;
+  try { sessionStorage.setItem('tcg_listing', dataUrl); } catch(_) {}
+  show('s-new');
+  // Aggiorna bottone listing in-app
+  document.getElementById('listing-cam-icon').textContent = '✅';
+  document.getElementById('listing-cam-icon').style.fontSize = '32px';
+  document.getElementById('listing-cam-title').textContent = 'Listing Photo Captured';
+  document.getElementById('listing-cam-sub').textContent = 'Natural light verified · Session code recorded';
+  document.getElementById('listing-cam-status').textContent = '✓ Ready';
+  document.getElementById('listing-cam-status').style.color = 'var(--green)';
+  stepDone(1);
+  checkAnalyzeBtn();
+  toast('Listing photo captured ✓');
 }
 
 function processLivePhoto(dataUrl) {
@@ -1297,7 +1420,13 @@ function processLivePhoto(dataUrl) {
 function handleCamFile(input) {
   if (!input.files[0]) return;
   const reader = new FileReader();
-  reader.onload = e => { processLivePhoto(e.target.result); };
+  reader.onload = e => {
+    if (state.camMode === 'listing') {
+      processListingPhoto(e.target.result);
+    } else {
+      processLivePhoto(e.target.result);
+    }
+  };
   reader.onerror = () => toast('❌ Failed to read photo — try again');
   reader.readAsDataURL(input.files[0]);
 }
@@ -1389,7 +1518,12 @@ async function callAI() {
       body: JSON.stringify({
         listingImage,
         liveImage,
-        gemName: state.currentGemName
+        gemName: state.currentGemName,
+        listingSessionCode: state.listingSessionCode,
+        liveSessionCode: state.liveSessionCode,
+        listingCapturedInApp: state.listingCapturedInApp,
+        listingSensorSnap: state.listingSensorSnap,
+        liveSensorSnap: state.liveSensorSnap
       })
     });
 

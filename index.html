@@ -340,7 +340,19 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div style="text-align:center;padding:40px;color:var(--grey);font-size:12px">No listings yet.<br>Tap + to certify your first listing.</div>
     </div>
   </div>
-  <button class="fab" onclick="show('s-new')">+</button>
+  <button class="fab" onclick="show('s-category')">+</button>
+</div>
+
+<!-- CATEGORY SELECTION -->
+<div id="s-category" class="screen">
+  <div class="nav">
+    <button class="nav-back" onclick="show('s-dashboard')">←</button>
+    <div class="nav-title">Choose Category</div>
+  </div>
+  <div style="flex:1;padding:24px 20px;overflow-y:auto;padding-bottom:40px">
+    <div style="font-size:12px;color:var(--grey);line-height:1.7;margin-bottom:24px">What are you certifying? Each category uses a specialized analysis tuned for that type of item.</div>
+    <div id="category-grid" style="display:flex;flex-direction:column;gap:12px"></div>
+  </div>
 </div>
 
 <!-- NEW LISTING -->
@@ -370,33 +382,19 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     <!-- Disciplinare foto -->
     <div id="photo-rules" style="display:none;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:6px;padding:14px 16px;margin-bottom:4px;font-size:11px;line-height:1.8;color:var(--grey)">
       <div style="font-size:11px;font-weight:600;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Photo Guidelines</div>
-      <div>· <strong style="color:var(--white)">Min 2 photos, max 5</strong></div>
-      <div>· <strong style="color:var(--white)">Photo 1:</strong> Front or top view, centered, neutral background</div>
-      <div>· <strong style="color:var(--white)">Photo 2:</strong> Different angle (side, 3/4, or close-up)</div>
-      <div style="margin-top:8px;color:rgba(245,240,232,0.4);font-size:10px;letter-spacing:1px;text-transform:uppercase">Rules</div>
+      <div>· Natural diffused daylight — no direct sun, no artificial accent light</div>
+      <div>· Gemstone clearly visible, in focus, neutral background</div>
       <div>· No filters or post-processing</div>
-      <div>· No accent lighting (ring light, spot, backlight)</div>
-      <div>· Neutral background — no colored or textured surfaces</div>
-      <div>· Even lighting — no harsh shadows</div>
-      <div>· Minimum 1MP resolution</div>
+      <div>· Hold steady — the session code must be readable in the photo</div>
     </div>
-    <div class="info-box"><strong>Step 1:</strong> Upload your listing photos as shown on eBay / Catawiki / Etsy. <strong style="color:var(--gold)">At least one must be shot in natural daylight using the in-app camera.</strong></div>
+    <div class="info-box"><strong>Step 1:</strong> Shoot your listing photo in natural daylight using the in-app camera. <strong style="color:var(--gold)">This is the reference photo for AI comparison.</strong></div>
     <!-- Bottone scatta listing in-app -->
     <div onclick="state.camMode='listing';show('s-camera')" style="background:linear-gradient(135deg,#0a1208,#080f08);border:2px solid rgba(201,168,76,0.5);border-radius:6px;padding:18px 20px;text-align:center;margin-bottom:10px;cursor:pointer;position:relative">
       <div style="position:absolute;top:8px;right:12px;font-size:9px;letter-spacing:2px;color:var(--gold);background:rgba(201,168,76,0.12);padding:2px 8px;border-radius:10px;border:1px solid rgba(201,168,76,0.25)">REQUIRED</div>
       <div id="listing-cam-icon" style="font-size:40px;margin-bottom:6px">📸</div>
       <div id="listing-cam-title" style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:4px">Shoot Listing Photo In-App</div>
       <div id="listing-cam-sub" style="font-size:11px;color:rgba(245,240,232,0.45);line-height:1.6">Natural daylight · Session code verified<br>This is the photo the AI will compare against your live reference</div>
-      <div id="listing-cam-status" style="font-size:10px;color:var(--gold);margin-top:8px;letter-spacing:1px">⚠ Required for full certification</div>
-    </div>
-    <!-- Upload gallery (opzionale — foto aggiuntive per l'annuncio) -->
-    <div class="upload-zone" id="upload-zone" onclick="document.getElementById('listing-files').click()" style="margin-bottom:4px">
-      <input type="file" id="listing-files" multiple accept="image/*" onchange="handleListingFiles(this)" style="display:none">
-      <div class="uz-icon" id="uz-icon">🖼️</div>
-      <div class="uz-title" id="uz-title">Add Extra Listing Photos</div>
-      <div class="uz-sub" id="uz-sub">Optional — additional photos for your eBay/Catawiki listing<br>JPG, PNG · up to 10 photos</div>
-      <div class="uz-count" id="upload-count"></div>
-      <div id="listing-previews" style="display:none;width:100%;flex-wrap:wrap;gap:6px;justify-content:center;padding:8px 0"></div>
+      <div id="listing-cam-status" style="font-size:10px;color:var(--gold);margin-top:8px;letter-spacing:1px">⚠ Required for certification</div>
     </div>
     <div class="info-box" style="margin-top:4px"><strong>Step 2:</strong> Take one mandatory live photo right now in natural daylight. Cannot be uploaded from gallery.</div>
     <div class="live-zone" id="live-zone" onclick="state.camMode='live';show('s-camera')" style="position:relative;overflow:hidden;">
@@ -406,6 +404,16 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div class="lz-title" id="lz-title">Take Live Photo Now</div>
       <div class="lz-sub" id="lz-sub">Open camera and shoot in natural daylight<br>This photo cannot be replaced with a gallery upload</div>
       <div class="lz-req" id="lz-req">⚠ Required for certification</div>
+    </div>
+    <!-- Certificato gemologico opzionale (solo verticale gemme) -->
+    <div id="cert-upload-section" style="margin-top:14px">
+      <div class="info-box" style="margin-bottom:8px"><strong>Optional:</strong> Upload the lab certificate (GIA, IGI, GRS…) if available. It helps the AI identify species, origin and treatments — and is preserved as part of the certification record.</div>
+      <div onclick="document.getElementById('cert-file').click()" id="cert-zone" style="border:1.5px dashed rgba(201,168,76,0.3);border-radius:6px;padding:16px;text-align:center;cursor:pointer;position:relative">
+        <input type="file" id="cert-file" accept="application/pdf,image/*" onchange="handleCertFile(this)" style="display:none">
+        <div id="cert-icon" style="font-size:28px;margin-bottom:6px">📄</div>
+        <div id="cert-title" style="font-size:13px;font-weight:500;color:var(--white);margin-bottom:3px">Add Lab Certificate</div>
+        <div id="cert-sub" style="font-size:10px;color:var(--grey);line-height:1.5">PDF or image · optional</div>
+      </div>
     </div>
     <button class="btn btn-gold" id="analyze-btn" onclick="startAnalysis()" style="opacity:0.4;pointer-events:none;margin-top:8px">Analyse with AI →</button>
   </div>
@@ -623,6 +631,7 @@ const auth = null;
 // ── STATE ──
 const state = {
   user: null,
+  vertical: 'gems',       // verticale selezionato — alimenta il prompt
   listings: JSON.parse(localStorage.getItem('tc_listings') || '[]'),
   listingFiles: [],
   listingImageData: null,
@@ -639,7 +648,43 @@ const state = {
   // Sensor fingerprinting
   listingSensorSnap: null,
   liveSensorSnap: null,
+  // Certificato gemologico opzionale
+  certData: null,
 };
+
+// ── VERTICALS ──
+const VERTICALS = [
+  { id: 'gems',        icon: '💎', name: 'Gems & Jewelry', sub: 'TrueColorGem — color honesty for gemstones & jewelry', active: true, beta: false },
+  { id: 'watches',     icon: '⌚', name: 'Watches',         sub: 'Dial, case & movement verification', active: true, beta: true },
+  { id: 'sneakers',    icon: '👟', name: 'Sneakers & Streetwear', sub: 'Condition & authenticity proof', active: true, beta: true },
+  { id: 'electronics', icon: '📱', name: 'Electronics',     sub: 'Device condition & working proof', active: true, beta: true },
+  { id: 'other',       icon: '📦', name: 'Other Items',     sub: 'Any physical object', active: true, beta: true },
+];
+
+function renderCategories() {
+  const grid = document.getElementById('category-grid');
+  if (!grid) return;
+  grid.innerHTML = VERTICALS.map(v => {
+    const betaBadge = v.beta
+      ? `<div style="position:absolute;top:8px;right:10px;font-size:8px;letter-spacing:2px;color:var(--yellow);border:1px solid rgba(240,192,64,0.35);background:rgba(240,192,64,0.1);padding:2px 7px;border-radius:10px;text-transform:uppercase">Beta</div>`
+      : '';
+    return `<div onclick="selectVertical('${v.id}')" style="position:relative;background:var(--card);border:1px solid ${v.beta ? 'rgba(255,255,255,0.08)' : 'var(--gold-dim)'};border-radius:6px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:16px;transition:border-color 0.2s" onmouseover="this.style.borderColor='${v.beta ? 'rgba(240,192,64,0.4)' : 'var(--gold)'}'" onmouseout="this.style.borderColor='${v.beta ? 'rgba(255,255,255,0.08)' : 'var(--gold-dim)'}'">
+        ${betaBadge}
+        <div style="font-size:34px">${v.icon}</div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:600;color:${v.beta ? 'var(--white)' : 'var(--gold)'};margin-bottom:3px">${v.name}</div>
+          <div style="font-size:11px;color:var(--grey);line-height:1.5">${v.sub}</div>
+          ${v.beta ? `<div style="font-size:9px;color:rgba(240,192,64,0.7);margin-top:4px;line-height:1.4">Analysis quality still improving — feedback welcome</div>` : ''}
+        </div>
+        <div style="font-size:20px;color:${v.beta ? 'var(--grey)' : 'var(--gold)'}">→</div>
+      </div>`;
+  }).join('');
+}
+
+function selectVertical(id) {
+  state.vertical = id;
+  show('s-new');
+}
 
 // ── NAVIGATION ──
 function show(id) {
@@ -652,6 +697,7 @@ function show(id) {
     if (target) { target.classList.add('active'); }
     window.scrollTo(0, 0);
     setLoading(false);
+    if (id === 's-category') renderCategories();
     if (id === 's-camera') {
       // Aggiorna titolo e hint in base al modo (listing vs live)
       const isListing = state.camMode === 'listing';
@@ -681,6 +727,17 @@ function show(id) {
       state.livePhotoData = null;
       state.currentScore = null;
       state.currentGemName = '';
+      state.certData = null;
+      state.listingCapturedInApp = false;
+      state.listingSessionCode = null;
+      state.liveSessionCode = null;
+      state.listingSensorSnap = null;
+      state.liveSensorSnap = null;
+      // Reset UI cert zone
+      const ci = document.getElementById('cert-icon'); if (ci) ci.textContent = '📄';
+      const ct = document.getElementById('cert-title'); if (ct) ct.textContent = 'Add Lab Certificate';
+      const cs = document.getElementById('cert-sub'); if (cs) cs.textContent = 'PDF or image · optional';
+      const cz = document.getElementById('cert-zone'); if (cz) cz.style.borderColor = 'rgba(201,168,76,0.3)';
       try { sessionStorage.removeItem('tcg_listing'); } catch(_) {}
       // Reset UI live zone
       const liveZone = document.getElementById('live-zone');
@@ -705,6 +762,25 @@ function show(id) {
       if (analyzeBtn) { analyzeBtn.style.opacity = '0.4'; analyzeBtn.style.pointerEvents = 'none'; }
     }
     if (id === 's-new') {
+      // Certificato gemologico solo per il verticale gemme
+      const certSec = document.getElementById('cert-upload-section');
+      if (certSec) certSec.style.display = (state.vertical === 'gems') ? 'block' : 'none';
+      // Banner Beta per verticali non-gemme
+      const vConf = VERTICALS.find(v => v.id === state.vertical);
+      let betaBanner = document.getElementById('vertical-beta-banner');
+      if (vConf && vConf.beta) {
+        if (!betaBanner) {
+          betaBanner = document.createElement('div');
+          betaBanner.id = 'vertical-beta-banner';
+          betaBanner.style = 'background:rgba(240,192,64,0.08);border:1px solid rgba(240,192,64,0.25);border-radius:6px;padding:12px 14px;margin-bottom:14px;font-size:11px;color:rgba(245,240,232,0.7);line-height:1.6';
+          const newContent = document.querySelector('#s-new .new-content');
+          if (newContent) newContent.insertBefore(betaBanner, newContent.firstChild);
+        }
+        betaBanner.innerHTML = '<strong style="color:var(--yellow)">⚠ Beta category:</strong> Analysis for ' + vConf.name + ' is still being refined. Results may be less precise than the Gems & Jewelry category.';
+        betaBanner.style.display = 'block';
+      } else if (betaBanner) {
+        betaBanner.style.display = 'none';
+      }
       // Reset step dots if starting fresh
       if (state.listingFiles.length === 0 && !state.livePhotoData) {
         ['sd1','sd2','sd3','sd4'].forEach((id,i) => {
@@ -1432,6 +1508,40 @@ function handleCamFile(input) {
 }
 
 // ── AI ANALYSIS ──
+// ── CERTIFICATO GEMOLOGICO ──
+function handleCertFile(input) {
+  if (!input.files[0]) return;
+  const file = input.files[0];
+  // Limite 10MB
+  if (file.size > 10 * 1024 * 1024) { toast('⚠ Certificate too large (max 10MB)'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.certData = e.target.result;
+    document.getElementById('cert-icon').textContent = '✅';
+    document.getElementById('cert-title').textContent = file.name.length > 28 ? file.name.slice(0,25)+'…' : file.name;
+    document.getElementById('cert-sub').textContent = 'Certificate attached · tap to replace';
+    document.getElementById('cert-zone').style.borderColor = 'var(--green)';
+    toast('Certificate attached ✓');
+  };
+  reader.onerror = () => toast('❌ Failed to read certificate');
+  reader.readAsDataURL(file);
+}
+
+// ── RATE LIMIT (protezione credito API su link aperto gratis) ──
+const DAILY_LIMIT = 5;
+function checkRateLimit() {
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  let data;
+  try { data = JSON.parse(localStorage.getItem('tcg_ratelimit') || '{}'); } catch(_) { data = {}; }
+  if (data.date !== today) { data = { date: today, count: 0 }; }
+  return { allowed: data.count < DAILY_LIMIT, remaining: Math.max(0, DAILY_LIMIT - data.count), data };
+}
+function incrementRateLimit() {
+  const { data } = checkRateLimit();
+  data.count = (data.count || 0) + 1;
+  try { localStorage.setItem('tcg_ratelimit', JSON.stringify(data)); } catch(_) {}
+}
+
 async function startAnalysis() {
   const gemName = document.getElementById('gem-name').value.trim();
   if (!gemName) { 
@@ -1441,15 +1551,20 @@ async function startAnalysis() {
     setTimeout(() => { document.getElementById('gem-name').style.borderColor = ''; }, 2000);
     return; 
   }
+  // Rate limit check
+  const rl = checkRateLimit();
+  if (!rl.allowed) {
+    toast('⚠ Daily limit reached (' + DAILY_LIMIT + ' analyses). Try again tomorrow.', 4500);
+    return;
+  }
   state.currentGemName = gemName;
   try {
     show('s-analyzing');
-    await runAnalysisSteps();
+    runAnalysisSteps();
     await callAI();
   } catch(e) {
     console.log('startAnalysis error:', e);
     show('s-new');
-    // isTrusted = DOM event thrown as error
     if (e && e.isTrusted !== undefined) {
       toast('❌ DOM error — please retry');
     } else {
@@ -1519,6 +1634,9 @@ async function callAI() {
         listingImage,
         liveImage,
         gemName: state.currentGemName,
+        vertical: state.vertical,
+        isBeta: VERTICALS.find(v => v.id === state.vertical)?.beta || false,
+        certPdfData: state.certData,
         listingSessionCode: state.listingSessionCode,
         liveSessionCode: state.liveSessionCode,
         listingCapturedInApp: state.listingCapturedInApp,
@@ -1537,6 +1655,9 @@ async function callAI() {
     const result = await response.json();
     console.log('API result:', JSON.stringify(result));
     if (result.error) throw new Error(result.error);
+
+    // Conta solo le analisi completate (non i RETAKE per foto scadente)
+    if (result.verdict !== 'RETAKE') incrementRateLimit();
 
     state.currentScore = result;
     showScore(result);
@@ -1573,6 +1694,22 @@ function showScore(r) {
       chip.innerHTML = '✗ REJECTED';
     }
     document.getElementById('verdict-reason').textContent = r.reason;
+
+    // Indicatore beta se il verticale è in fase di test
+    let scoreBetaTag = document.getElementById('score-beta-tag');
+    const scoreContent = document.querySelector('#s-score .score-content');
+    if (r.is_beta) {
+      if (!scoreBetaTag) {
+        scoreBetaTag = document.createElement('div');
+        scoreBetaTag.id = 'score-beta-tag';
+        scoreBetaTag.style = 'font-size:9px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:10px;border:1px solid rgba(240,192,64,0.3);padding:4px 12px;border-radius:10px';
+        scoreBetaTag.textContent = '⚠ Beta Category Result';
+        if (scoreContent) scoreContent.insertBefore(scoreBetaTag, scoreContent.firstChild);
+      }
+      scoreBetaTag.style.display = 'block';
+    } else if (scoreBetaTag) {
+      scoreBetaTag.style.display = 'none';
+    }
 
     const passFail = (v) => v.includes('✓') ? 'an-pass' : 'an-fail';
     document.getElementById('an-color').className = 'an-val ' + passFail(r.color_match);

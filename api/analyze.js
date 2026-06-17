@@ -6,7 +6,7 @@ export default async function handler(req, res) {
     const { listingImage, liveImage, gemName, certPdfData, vertical, isBeta,
             listingSessionCode, liveSessionCode, listingCapturedInApp,
             listingSensorSnap, liveSensorSnap } = req.body;
-    const v = ['gems','watches','sneakers','electronics','other'].includes(vertical) ? vertical : 'gems';
+    const v = ['gems','jewelry','watches','coins','wine','art','fashion','cars','tribal','cards','toys','archaeology','sports','media','books','interiors','electronics','other'].includes(vertical) ? vertical : 'gems';
 
     if (!listingImage || !liveImage) {
       return res.status(400).json({ error: 'Both listing photo and live photo are required' });
@@ -70,6 +70,17 @@ export default async function handler(req, res) {
 - High-dispersion gems (diamond, sphene, zircon): more fire under directional light — natural, but ring-light excess is deceptive
 - Phenomenal gems (star sapphires, cat's eye, moonstone): phenomena vary with lighting — be lenient`
       },
+      jewelry: {
+        expert: 'jewelry listing verification expert',
+        item: 'piece of jewelry',
+        itemLabel: safeGemName,
+        focus: 'metal color/finish, mounted stone color, and overall condition',
+        knowledge: `JEWELRY-SPECIFIC NOTES:
+- Metal reflections (gold, platinum, silver) vary with light angle — minor variation natural
+- Mounted stone color following the same honesty rules as loose gemstones, but harder to assess due to setting — be appropriately lenient on subtle color claims
+- Scratches, dents, missing stones, or resizing marks visible in live but hidden in listing → deceptive
+- Patina or tarnish concealed via angle/editing in listing → deceptive`
+      },
       watches: {
         expert: 'watch listing verification expert',
         item: 'watch',
@@ -81,15 +92,140 @@ export default async function handler(req, res) {
 - Scratches and wear visible in live but hidden in listing via angle/light → deceptive
 - Lume glow varies with charge — not relevant to honesty`
       },
-      sneakers: {
-        expert: 'sneaker listing verification expert',
-        item: 'pair of sneakers',
+      coins: {
+        expert: 'coin and stamp listing verification expert',
+        item: 'coin or stamp',
         itemLabel: safeGemName,
-        focus: 'colorway accuracy, material condition, creasing, and wear',
-        knowledge: `SNEAKER-SPECIFIC NOTES:
-- Colorway must match — saturation boosting that makes faded colors look fresh is deceptive
-- Creasing, yellowing, scuffs visible in live but hidden in listing → deceptive
-- Material sheen (patent, suede) varies with light — minor variation natural`
+        focus: 'patina color, toning, surface condition, and print/ink clarity',
+        knowledge: `COINS & STAMPS NOTES:
+- Patina and toning color can shift with light angle and color temperature — moderate variation natural
+- Luster (mint bloom) is angle-dependent — natural
+- Scratches, corrosion, foxing (stamps), or repairs hidden via angle/editing in listing → deceptive
+- Color enhancement of toning to appear more valuable (rainbow toning faked via filter) → strongly deceptive`
+      },
+      wine: {
+        expert: 'wine and spirits listing verification expert',
+        item: 'bottle',
+        itemLabel: safeGemName,
+        focus: 'label condition, fill level, capsule/seal condition, and liquid color',
+        knowledge: `WINE & WHISKY NOTES:
+- Label color can shift slightly with lighting — minor variation natural
+- Fill level and ullage must be honestly represented — concealing low fill level via angle is deceptive
+- Label damage, staining, or tears hidden via angle/cropping in listing → deceptive
+- Liquid color (especially whisky) should not be artificially enhanced or darkened in listing`
+      },
+      art: {
+        expert: 'fine art listing verification expert',
+        item: 'artwork',
+        itemLabel: safeGemName,
+        focus: 'color fidelity, surface condition, and visible damage or restoration',
+        knowledge: `ART-SPECIFIC NOTES:
+- Color accuracy is critical — paintings are highly sensitive to white balance and saturation editing
+- Glare/reflection from glass or varnish is expected — not deception unless hiding damage
+- Craquelure, tears, restoration, or fading concealed in listing via lighting/angle → deceptive
+- Color boosted to make a faded/dull artwork look vibrant → strongly deceptive (this is the single most common art listing deception)`
+      },
+      fashion: {
+        expert: 'fashion and accessories listing verification expert',
+        item: 'item',
+        itemLabel: safeGemName,
+        focus: 'color accuracy, material condition, and visible wear',
+        knowledge: `FASHION-SPECIFIC NOTES:
+- Color must match — saturation boosting that makes faded/discolored items look fresh is deceptive
+- Creasing, scuffs, stains, or hardware tarnish visible in live but hidden in listing → deceptive
+- Material sheen (leather, patent, suede) varies with light — minor variation natural`
+      },
+      cars: {
+        expert: 'car and motorcycle listing verification expert',
+        item: 'vehicle',
+        itemLabel: safeGemName,
+        focus: 'paint color, bodywork condition, and interior condition',
+        knowledge: `CARS & MOTORCYCLES NOTES:
+- Paint color/metallic flake reflections vary with light angle — moderate variation natural
+- Dents, scratches, rust, or interior wear hidden via angle/lighting in listing → deceptive
+- Color correction making faded paint look fresh, or hiding repaint mismatch → deceptive
+- Reflections and glare on bodywork are expected — not deception unless concealing damage`
+      },
+      tribal: {
+        expert: 'Asian and tribal art listing verification expert',
+        item: 'piece',
+        itemLabel: safeGemName,
+        focus: 'patina color, material authenticity appearance, and surface condition',
+        knowledge: `ASIAN & TRIBAL ART NOTES:
+- Natural patina varies with light — moderate variation natural; artificially darkened/lightened patina to suggest age → deceptive
+- Wood/bronze/stone surface texture and color must be honestly represented
+- Cracks, repairs, or missing elements hidden via angle/cropping in listing → deceptive`
+      },
+      cards: {
+        expert: 'trading card listing verification expert',
+        item: 'card',
+        itemLabel: safeGemName,
+        focus: 'print color accuracy, foil/holo appearance, and surface/edge condition',
+        knowledge: `TRADING CARDS NOTES:
+- Holo/foil sheen and glare vary dramatically with angle — this is expected and NOT deception by itself
+- Edge whitening, scratches, or print defects hidden via angle/lighting in listing → deceptive
+- Color saturation boosted to hide fading or print lines → deceptive
+- Centering and corners must be assessable — cropping that hides poor centering is deceptive`
+      },
+      toys: {
+        expert: 'toy and model listing verification expert',
+        item: 'toy or model',
+        itemLabel: safeGemName,
+        focus: 'paint color accuracy, completeness, and surface condition',
+        knowledge: `TOYS & MODELS NOTES:
+- Paint color can shift slightly with light — minor variation natural
+- Chips, fading, missing parts/accessories, or restoration hidden via angle/cropping in listing → deceptive
+- Box/packaging condition claims must match what is shown`
+      },
+      archaeology: {
+        expert: 'archaeological item listing verification expert',
+        item: 'artifact',
+        itemLabel: safeGemName,
+        focus: 'surface patina/encrustation color, restoration extent, and condition',
+        knowledge: `ARCHAEOLOGY NOTES:
+- Natural surface patina/encrustation color varies with light — moderate variation natural
+- Extent of restoration or reconstruction must be honestly visible, not concealed via angle/lighting
+- Color enhancement to suggest greater age or different material → deceptive`
+      },
+      sports: {
+        expert: 'sports memorabilia listing verification expert',
+        item: 'item',
+        itemLabel: safeGemName,
+        focus: 'signature/ink color clarity, material condition, and authenticity-relevant detail',
+        knowledge: `SPORTS MEMORABILIA NOTES:
+- Signature ink color and fading must be honestly represented — boosted contrast to make faded signature look fresh → deceptive
+- Jersey/equipment fabric color, staining, wear hidden via angle/lighting in listing → deceptive
+- Lighting glare on glass/acrylic display cases is expected — not deception unless hiding damage`
+      },
+      media: {
+        expert: 'music, film and camera equipment listing verification expert',
+        item: 'item',
+        itemLabel: safeGemName,
+        focus: 'cosmetic condition, screen/lens condition, and color accuracy',
+        knowledge: `MUSIC, FILM & CAMERAS NOTES:
+- Lens/glass reflections expected — not deception unless hiding scratches or fungus
+- Body scuffs, vinyl record surface marks, or case damage hidden via angle/lighting → deceptive
+- Color of album art/packaging must be honestly represented, not saturation-boosted`
+      },
+      books: {
+        expert: 'rare books and historical items listing verification expert',
+        item: 'item',
+        itemLabel: safeGemName,
+        focus: 'paper/cover color, foxing, binding condition, and overall condition',
+        knowledge: `BOOKS & HISTORICAL ITEMS NOTES:
+- Paper aging/yellowing color varies with light — moderate variation natural
+- Foxing, tears, water damage, or rebinding hidden via angle/cropping in listing → deceptive
+- Color correction to make aged paper look whiter/fresher than reality → deceptive`
+      },
+      interiors: {
+        expert: 'interior and design items listing verification expert',
+        item: 'piece',
+        itemLabel: safeGemName,
+        focus: 'material color/finish, upholstery condition, and surface wear',
+        knowledge: `INTERIOR & DESIGN NOTES:
+- Wood grain/finish and upholstery color vary with light — moderate variation natural
+- Stains, tears, fading, or structural damage hidden via angle/lighting in listing → deceptive
+- Color correction to make a faded/worn finish look new → deceptive`
       },
       electronics: {
         expert: 'electronics listing verification expert',
@@ -99,17 +235,19 @@ export default async function handler(req, res) {
         knowledge: `ELECTRONICS-SPECIFIC NOTES:
 - Screen scratches/cracks visible in live but hidden in listing via angle/glare → deceptive
 - Body scuffs and dents must be honestly represented
-- Screen-on brightness varies — not relevant; cosmetic condition is what matters`
+- Screen-on brightness/wallpaper varies — not relevant; cosmetic condition is what matters
+- Screen-on photos showing model/serial/IMEI can help confirm functional status, but evaluate cosmetic honesty primarily`
       },
       other: {
-        expert: 'product listing verification expert',
+        expert: 'item existence and possession verification expert',
         item: 'item',
         itemLabel: safeGemName,
-        focus: 'color, condition, and overall appearance',
-        knowledge: `GENERAL NOTES:
-- Focus on whether the listing photo makes the item look better than it really is
-- Hidden defects, exaggerated colors, or concealed wear → deceptive
-- Minor lighting/angle differences are natural`
+        focus: 'whether the item shown genuinely exists and matches between the two photos — color/condition honesty is secondary here',
+        knowledge: `PROOF OF EXISTENCE — DIFFERENT GOAL THAN OTHER CATEGORIES:
+This category prioritizes confirming the seller genuinely possesses the item shown, over judging color honesty in detail.
+- Primary check: does the live photo show a real, physical, three-dimensional object consistent with the listing photo (same general type, shape, distinguishing features)? Reject only on clear evidence of a different item or a photo-of-a-photo/screen (flat reflections, screen bezel, moiré pattern, unnatural sharpness uniformity).
+- Secondary check: apply the same lighting-honesty principles as other categories, but be more lenient on color/saturation since the goal here is existence verification, not color fidelity.
+- If the live photo appears to be a photograph of a screen or printed image rather than a real object, flag this clearly and lean toward REJECTED.`
       }
     };
     const vc = VERTICAL_CONFIG[v];

@@ -317,7 +317,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
   </div>
   <div class="dash">
     <div class="greeting fu">Good evening,</div>
-    <div class="seller-name fu" id="user-display-name">Luca Marano</div>
+    <div class="seller-name fu" id="user-display-name">Seller</div>
     <div class="level-card fu">
       <div class="lbl">Current Certification</div>
       <div class="level-row">
@@ -376,7 +376,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <input type="text" id="gem-name" placeholder="e.g. Burma Ruby 1.17ct GIA Vivid Red" style="transition:border-color 0.3s">
     </div>
     <div class="info-box" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-      <span><strong>Step 1:</strong> Upload your listing photos as shown on eBay / Catawiki / Etsy.</span>
+      <span><strong>Step 1:</strong> Shoot your listing photo in natural daylight using the in-app camera. <strong style="color:var(--gold)">This is the reference photo for AI comparison.</strong></span>
       <span id="photo-rules-btn" onclick="togglePhotoRules()" style="cursor:pointer;font-size:18px;flex-shrink:0" title="Photo guidelines">ℹ️</span>
     </div>
     <!-- Disciplinare foto -->
@@ -387,7 +387,6 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div>· No filters or post-processing</div>
       <div>· Hold steady — the session code must be readable in the photo</div>
     </div>
-    <div class="info-box"><strong>Step 1:</strong> Shoot your listing photo in natural daylight using the in-app camera. <strong style="color:var(--gold)">This is the reference photo for AI comparison.</strong></div>
     <!-- Bottone scatta listing in-app -->
     <div onclick="state.camMode='listing';show('s-camera')" style="background:linear-gradient(135deg,#0a1208,#080f08);border:2px solid rgba(201,168,76,0.5);border-radius:6px;padding:18px 20px;text-align:center;margin-bottom:10px;cursor:pointer;position:relative">
       <div style="position:absolute;top:8px;right:12px;font-size:9px;letter-spacing:2px;color:var(--gold);background:rgba(201,168,76,0.12);padding:2px 8px;border-radius:10px;border:1px solid rgba(201,168,76,0.25)">REQUIRED</div>
@@ -831,7 +830,10 @@ function doLogin() {
 }
 
 function demoLogin() {
-  state.user = { name: 'Luca Marano', email: 'luca@etc.it', initials: 'LM' };
+  // Nome generico per la modalità demo — non personale
+  const guestId = Math.random().toString(36).slice(2, 6).toUpperCase();
+  state.user = { name: 'Guest Seller', email: 'guest-' + guestId + '@demo.local', initials: 'GS' };
+  state.listings = []; // demo sempre vuota, non eredita listing di altri guest
   initDashboard();
   show('s-dashboard');
   toast('Demo mode active');

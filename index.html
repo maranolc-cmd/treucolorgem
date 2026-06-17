@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>TrueColorGem</title>
+<title>LiveProof</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -251,19 +251,15 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 <div id="s-welcome" class="screen active">
   <div class="gem-logo">
     <svg viewBox="0 0 88 88" fill="none">
-      <polygon points="44,8 76,24 76,64 44,80 12,64 12,24" fill="none" stroke="#c9a84c" stroke-width="1.2" opacity="0.35"/>
-      <polygon points="44,16 66,28 66,60 44,72 22,60 22,28" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0.55"/>
-      <polygon points="44,24 58,32 58,56 44,64 30,56 30,32" fill="rgba(201,168,76,0.12)" stroke="#c9a84c" stroke-width="1.5"/>
-      <line x1="44" y1="24" x2="30" y2="56" stroke="#c9a84c" stroke-width="0.6" opacity="0.5"/>
-      <line x1="44" y1="24" x2="58" y2="56" stroke="#c9a84c" stroke-width="0.6" opacity="0.5"/>
-      <line x1="30" y1="32" x2="58" y2="32" stroke="#c9a84c" stroke-width="0.6" opacity="0.5"/>
-      <line x1="44" y1="24" x2="44" y2="64" stroke="#c9a84c" stroke-width="0.5" opacity="0.3"/>
+      <circle cx="44" cy="44" r="36" fill="none" stroke="#c9a84c" stroke-width="1.2" opacity="0.35"/>
+      <circle cx="44" cy="44" r="26" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0.55"/>
+      <path d="M30 44 L40 54 L60 32" fill="none" stroke="#c9a84c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
       <circle cx="44" cy="44" r="3" fill="#c9a84c" opacity="0.7"/>
     </svg>
   </div>
-  <div class="brand">TrueColorGem</div>
-  <div class="brand-sub">Gems Certification</div>
-  <div class="tagline">The world standard for<br>authentic gemstone photography</div>
+  <div class="brand">LiveProof</div>
+  <div class="brand-sub">Photo Honesty Certification</div>
+  <div class="tagline">Certify that what you're selling<br>looks exactly as shown</div>
   <button class="btn btn-gold" id="btn-login">Seller Login</button>
   <button class="btn btn-outline" id="btn-verify">Verify a Purchase</button>
   <button class="btn btn-grey" id="btn-plans" style="margin-top:10px">View Plans</button>
@@ -277,7 +273,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
   </div>
   <div class="auth-content">
     <div class="auth-title fu">Welcome back</div>
-    <div class="auth-sub fu">Sign in to your TrueColorGem account</div>
+    <div class="auth-sub fu">Sign in to your LiveProof account</div>
     <div class="field fu"><label>Email</label><input type="email" id="login-email" placeholder="your@email.com"></div>
     <div class="field fu"><label>Password</label><input type="password" id="login-pw" placeholder="••••••••"></div>
     <button class="btn btn-gold fu" onclick="doLogin()" style="margin-top:8px">Sign In</button>
@@ -294,7 +290,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     <div class="nav-title">Create Account</div>
   </div>
   <div class="auth-content">
-    <div class="auth-title fu">Join TrueColorGem</div>
+    <div class="auth-title fu">Join LiveProof</div>
     <div class="auth-sub fu">Start certifying your listings today</div>
     <div class="field fu"><label>Full Name</label><input type="text" id="reg-name" placeholder="John Smith"></div>
     <div class="field fu"><label>Email</label><input type="email" id="reg-email" placeholder="your@email.com"></div>
@@ -312,7 +308,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 <!-- DASHBOARD -->
 <div id="s-dashboard" class="screen">
   <div class="topbar">
-    <div class="topbar-logo">TrueColorGem</div>
+    <div class="topbar-logo">LiveProof</div>
     <div class="avatar" id="user-avatar" onclick="show('s-plans')">LM</div>
   </div>
   <div class="dash">
@@ -469,14 +465,14 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
   <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;text-align:center">
     <div style="font-size:60px;margin-bottom:24px;animation:spin 4s linear infinite">🔬</div>
     <div style="font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--gold);margin-bottom:10px">AI Analysis</div>
-    <div style="font-size:11px;color:var(--grey);line-height:1.8;margin-bottom:36px">Comparing listing photos with live photo<br>using TrueColor AI engine</div>
+    <div style="font-size:11px;color:var(--grey);line-height:1.8;margin-bottom:36px">Comparing listing photo with live photo<br>using LiveProof AI engine</div>
     <div class="progress-steps" id="analysis-steps">
       <div class="prog-step" id="ps1"><div class="prog-step-dot"></div>Uploading photos</div>
       <div class="prog-step" id="ps2"><div class="prog-step-dot"></div>Detecting color properties</div>
       <div class="prog-step" id="ps3"><div class="prog-step-dot"></div>Measuring Delta-E color distance</div>
       <div class="prog-step" id="ps4"><div class="prog-step-dot"></div>Detecting filters & enhancements</div>
       <div class="prog-step" id="ps5"><div class="prog-step-dot"></div>Verifying light source</div>
-      <div class="prog-step" id="ps6"><div class="prog-step-dot"></div>Generating TrueColor score</div>
+      <div class="prog-step" id="ps6"><div class="prog-step-dot"></div>Generating honesty score</div>
     </div>
   </div>
 </div>
@@ -488,7 +484,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     <div class="nav-title">Analysis Result</div>
   </div>
   <div class="score-content">
-    <div style="font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--grey);margin-bottom:28px">TrueColor Accuracy Score</div>
+    <div style="font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--grey);margin-bottom:28px">LiveProof Accuracy Score</div>
     <div class="score-ring">
       <svg viewBox="0 0 190 190">
         <circle class="ring-track" cx="95" cy="95" r="85"/>
@@ -531,7 +527,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div class="cert-score-badge" id="cert-score-badge">—</div>
       <div class="cert-wm">
         <div class="cert-wm-l">
-          <div class="cert-wm-logo">TrueColorGem</div>
+          <div class="cert-wm-logo" id="cert-wm-logo">LiveProof</div>
           <div class="cert-wm-badge" id="cert-wm-level">🥈 Silver Certified</div>
           <div class="cert-wm-id" id="cert-wm-id">ID: TC-00001 · Valid to 31/12/2026</div>
         </div>
@@ -553,7 +549,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     <div class="nav-title">Certification Plans</div>
   </div>
   <div class="plans-content">
-    <div style="font-size:11px;color:var(--grey);line-height:1.7;margin-bottom:24px">Choose your certification level. Higher levels unlock more certified listings and premium placement in the TrueColorGem directory.</div>
+    <div style="font-size:11px;color:var(--grey);line-height:1.7;margin-bottom:24px">Choose your certification level. Higher levels unlock more certified listings and premium placement in the LiveProof directory.</div>
     <div class="plan-card" onclick="selectPlan('silver',this)">
       <div class="plan-header">
         <div class="plan-icon">🥈</div>
@@ -611,7 +607,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     <div class="nav-title">Verify Purchase</div>
   </div>
   <div class="verify-content">
-    <div style="font-size:11px;color:var(--grey);line-height:1.7;margin-bottom:20px">Enter the TrueColor certification ID found on the seller's listing photo to verify authenticity.</div>
+    <div style="font-size:11px;color:var(--grey);line-height:1.7;margin-bottom:20px">Enter the certification ID found on the seller's listing photo to verify authenticity.</div>
     <div class="field"><label>Certification ID</label><input type="text" id="verify-id" placeholder="e.g. TC-00441" oninput="this.value=this.value.toUpperCase()"></div>
     <button class="btn btn-gold" onclick="doVerify()">Verify Now</button>
     <div id="verify-result"></div>
@@ -653,11 +649,24 @@ const state = {
 
 // ── VERTICALS ──
 const VERTICALS = [
-  { id: 'gems',        icon: '💎', name: 'Gems & Jewelry', sub: 'TrueColorGem — color honesty for gemstones & jewelry', active: true, beta: false },
-  { id: 'watches',     icon: '⌚', name: 'Watches',         sub: 'Dial, case & movement verification', active: true, beta: true },
-  { id: 'sneakers',    icon: '👟', name: 'Sneakers & Streetwear', sub: 'Condition & authenticity proof', active: true, beta: true },
-  { id: 'electronics', icon: '📱', name: 'Electronics',     sub: 'Device condition & working proof', active: true, beta: true },
-  { id: 'other',       icon: '📦', name: 'Other Items',     sub: 'Any physical object', active: true, beta: true },
+  { id: 'gems',        icon: '💎', name: 'Gemstones',       sub: 'TrueColorGem — color honesty for loose gemstones', active: true, beta: false },
+  { id: 'jewelry',     icon: '💍', name: 'Jewelry',         sub: 'Rings, necklaces & mounted stones', active: true, beta: true },
+  { id: 'watches',     icon: '⌚', name: 'Wrist Watches',    sub: 'Dial, case & movement verification', active: true, beta: true },
+  { id: 'coins',       icon: '🪙', name: 'Coins & Stamps',   sub: 'Patina, condition & color accuracy', active: true, beta: true },
+  { id: 'wine',        icon: '🍷', name: 'Wine & Whisky',    sub: 'Label, fill level & bottle condition', active: true, beta: true },
+  { id: 'art',         icon: '🖼️', name: 'Art',             sub: 'Color fidelity for paintings & prints', active: true, beta: true },
+  { id: 'fashion',     icon: '👜', name: 'Fashion',          sub: 'Bags, shoes & designer items condition', active: true, beta: true },
+  { id: 'cars',        icon: '🚗', name: 'Cars & Motorcycles', sub: 'Bodywork, paint condition & interior', active: true, beta: true },
+  { id: 'tribal',      icon: '🗿', name: 'Asian & Tribal Art', sub: 'Patina, material color & condition', active: true, beta: true },
+  { id: 'cards',       icon: '🃏', name: 'Trading Cards',    sub: 'Print color, foil & surface condition', active: true, beta: true },
+  { id: 'toys',        icon: '🚂', name: 'Toys & Models',    sub: 'Paint condition & completeness', active: true, beta: true },
+  { id: 'archaeology', icon: '🏺', name: 'Archaeology',      sub: 'Surface patina, restoration & condition', active: true, beta: true },
+  { id: 'sports',      icon: '⚽', name: 'Sports Memorabilia', sub: 'Signature, color fidelity & condition', active: true, beta: true },
+  { id: 'media',       icon: '📷', name: 'Music, Film & Cameras', sub: 'Cosmetic & functional condition', active: true, beta: true },
+  { id: 'books',       icon: '📜', name: 'Books & Historical Items', sub: 'Paper condition, color & binding', active: true, beta: true },
+  { id: 'interiors',   icon: '🛋️', name: 'Interior & Design', sub: 'Material color, finish & condition', active: true, beta: true },
+  { id: 'electronics', icon: '📱', name: 'Electronics',     sub: 'Device condition, screen & cosmetic state', active: true, beta: true },
+  { id: 'other',       icon: '📦', name: 'Proof of Existence', sub: 'Any item — verifies you physically have it, as shown', active: true, beta: true },
 ];
 
 function renderCategories() {
@@ -1815,6 +1824,9 @@ async function show_cert_screen() {
 
   document.getElementById('cert-score-badge').textContent = r.score + '%';
   document.getElementById('cert-wm-id').textContent = 'ID: ' + id + ' · Valid to ' + expiry;
+  // Logo: TrueColorGem per il verticale gemme, LiveProof per gli altri
+  const wmLogo = document.getElementById('cert-wm-logo');
+  if (wmLogo) wmLogo.textContent = (state.vertical === 'gems') ? 'TrueColorGem' : 'LiveProof';
 
   // QR via qrcode.js (Google Charts bloccato)
   const qrDiv = document.getElementById('cert-qr');
@@ -1904,7 +1916,7 @@ function downloadCert() {
     ctx.textAlign = 'left';
     ctx.fillStyle = '#c9a84c';
     ctx.font = '34px Georgia, serif';
-    ctx.fillText('TrueColorGem', 44, 896);
+    ctx.fillText(state.vertical === 'gems' ? 'TrueColorGem' : 'LiveProof', 44, 896);
     ctx.font = '16px Arial';
     ctx.fillText('🥈 SILVER CERTIFIED', 44, 930);
     ctx.fillStyle = 'rgba(245,240,232,0.45)';
@@ -1918,7 +1930,8 @@ function downloadCert() {
     const qrImg = qrContainer?.querySelector('img');
 
     const finalize = () => {
-      const filename = 'TrueColorGem-' + (state.currentGemName||'gem').replace(/\s+/g,'-') + '.jpg';
+      const brandPrefix = state.vertical === 'gems' ? 'TrueColorGem' : 'LiveProof';
+      const filename = brandPrefix + '-' + (state.currentGemName||'item').replace(/\s+/g,'-') + '.jpg';
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
       const isAndroid = /Android/i.test(navigator.userAgent);
 
@@ -1936,7 +1949,7 @@ function downloadCert() {
           if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/jpeg' })] })) {
             navigator.share({
               files: [new File([blob], filename, { type: 'image/jpeg' })],
-              title: 'TrueColorGem Certificate'
+              title: brandPrefix + ' Certificate'
             }).then(() => {
               toast('Photo shared ✓');
             }).catch((err) => {
@@ -2083,7 +2096,7 @@ function subscribePlan() {
 // ── VERIFY ──
 function doVerify() {
   const id = document.getElementById('verify-id').value.trim().toUpperCase();
-  if (!id || !id.startsWith('TC-')) { toast('Please enter a valid TrueColor ID (e.g. TC-00441)'); return; }
+  if (!id || !id.startsWith('TC-')) { toast('Please enter a valid certification ID (e.g. TC-00441)'); return; }
   setLoading(true);
   setTimeout(() => {
     setLoading(false);
@@ -2108,7 +2121,7 @@ function doVerify() {
           <div class="verify-status"><div class="verify-icon">❌</div><div class="verify-title" style="color:var(--red)">Not Found</div></div>
           <div class="verify-id">${id}</div>
         </div>
-        <div class="verify-body"><div style="font-size:12px;color:var(--grey);line-height:1.7">This certification ID was not found in the TrueColorGem database. The listing may not be certified or the ID may be incorrect.</div></div>
+        <div class="verify-body"><div style="font-size:12px;color:var(--grey);line-height:1.7">This certification ID was not found in the LiveProof database. The listing may not be certified or the ID may be incorrect.</div></div>
       </div>`;
     }
   }, 1200);

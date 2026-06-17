@@ -58,26 +58,32 @@ export default async function handler(req, res) {
     const bothInApp = !!(listingCapturedInApp && safeListingCode && safeLiveCode);
 
     // ── KNOWLEDGE BASE PER VERTICALE ──
+    // Conoscenza ottica delle gemme — condivisa tra Gemstones e Jewelry,
+    // perché una pietra montata segue le stesse leggi fisiche di una sciolta.
+    const GEM_OPTICS = `GEMSTONE OPTICAL PROPERTIES (always apply):
+- Pleochroic gems (tanzanite, iolite, tourmaline): different colors at different angles — NATURAL
+- Color-change gems (alexandrite, some garnets): different colors under different light — NOT deception
+- High-dispersion gems (diamond, sphene, zircon): more fire under directional light — natural, but ring-light excess is deceptive
+- Phenomenal gems (star sapphires, cat's eye, moonstone): phenomena vary with lighting — be lenient`;
+
     const VERTICAL_CONFIG = {
       gems: {
         expert: 'gemstone photo certification expert',
         item: 'gemstone',
         itemLabel: safeGemName,
         focus: 'color saturation, vividness, hue, and brilliance',
-        knowledge: `GEMSTONE OPTICAL PROPERTIES (always apply):
-- Pleochroic gems (tanzanite, iolite, tourmaline): different colors at different angles — NATURAL
-- Color-change gems (alexandrite, some garnets): different colors under different light — NOT deception
-- High-dispersion gems (diamond, sphene, zircon): more fire under directional light — natural, but ring-light excess is deceptive
-- Phenomenal gems (star sapphires, cat's eye, moonstone): phenomena vary with lighting — be lenient`
+        knowledge: GEM_OPTICS
       },
       jewelry: {
         expert: 'jewelry listing verification expert',
         item: 'piece of jewelry',
         itemLabel: safeGemName,
         focus: 'metal color/finish, mounted stone color, and overall condition',
-        knowledge: `JEWELRY-SPECIFIC NOTES:
+        knowledge: GEM_OPTICS + `
+
+JEWELRY-SPECIFIC NOTES (apply in addition to the gemstone properties above, if a stone is mounted):
 - Metal reflections (gold, platinum, silver) vary with light angle — minor variation natural
-- Mounted stone color following the same honesty rules as loose gemstones, but harder to assess due to setting — be appropriately lenient on subtle color claims
+- Mounted stone color follows the same optical rules as loose gemstones above, but is harder to assess due to the setting — be appropriately lenient on subtle color claims
 - Scratches, dents, missing stones, or resizing marks visible in live but hidden in listing → deceptive
 - Patina or tarnish concealed via angle/editing in listing → deceptive`
       },

@@ -650,7 +650,7 @@ const state = {
 // ── VERTICALS ──
 const VERTICALS = [
   { id: 'gems',        icon: '💎', name: 'Gemstones',       sub: 'TrueColorGem — color honesty for loose gemstones', active: true, beta: false },
-  { id: 'jewelry',     icon: '💍', name: 'Jewelry',         sub: 'Rings, necklaces & mounted stones', active: true, beta: true },
+  { id: 'jewelry',     icon: '💍', name: 'Jewelry',         sub: 'Rings, necklaces & mounted stones', active: true, beta: false },
   { id: 'watches',     icon: '⌚', name: 'Wrist Watches',    sub: 'Dial, case & movement verification', active: true, beta: true },
   { id: 'coins',       icon: '🪙', name: 'Coins & Stamps',   sub: 'Patina, condition & color accuracy', active: true, beta: true },
   { id: 'wine',        icon: '🍷', name: 'Wine & Whisky',    sub: 'Label, fill level & bottle condition', active: true, beta: true },
@@ -772,7 +772,7 @@ function show(id) {
     if (id === 's-new') {
       // Certificato gemologico solo per il verticale gemme
       const certSec = document.getElementById('cert-upload-section');
-      if (certSec) certSec.style.display = (state.vertical === 'gems') ? 'block' : 'none';
+      if (certSec) certSec.style.display = (['gems','jewelry'].includes(state.vertical)) ? 'block' : 'none';
       // Banner Beta per verticali non-gemme
       const vConf = VERTICALS.find(v => v.id === state.vertical);
       let betaBanner = document.getElementById('vertical-beta-banner');
@@ -1826,7 +1826,7 @@ async function show_cert_screen() {
   document.getElementById('cert-wm-id').textContent = 'ID: ' + id + ' · Valid to ' + expiry;
   // Logo: TrueColorGem per il verticale gemme, LiveProof per gli altri
   const wmLogo = document.getElementById('cert-wm-logo');
-  if (wmLogo) wmLogo.textContent = (state.vertical === 'gems') ? 'TrueColorGem' : 'LiveProof';
+  if (wmLogo) wmLogo.textContent = (['gems','jewelry'].includes(state.vertical)) ? 'TrueColorGem' : 'LiveProof';
 
   // QR via qrcode.js (Google Charts bloccato)
   const qrDiv = document.getElementById('cert-qr');
@@ -1916,7 +1916,7 @@ function downloadCert() {
     ctx.textAlign = 'left';
     ctx.fillStyle = '#c9a84c';
     ctx.font = '34px Georgia, serif';
-    ctx.fillText(state.vertical === 'gems' ? 'TrueColorGem' : 'LiveProof', 44, 896);
+    ctx.fillText(['gems','jewelry'].includes(state.vertical) ? 'TrueColorGem' : 'LiveProof', 44, 896);
     ctx.font = '16px Arial';
     ctx.fillText('🥈 SILVER CERTIFIED', 44, 930);
     ctx.fillStyle = 'rgba(245,240,232,0.45)';
@@ -1930,7 +1930,7 @@ function downloadCert() {
     const qrImg = qrContainer?.querySelector('img');
 
     const finalize = () => {
-      const brandPrefix = state.vertical === 'gems' ? 'TrueColorGem' : 'LiveProof';
+      const brandPrefix = ['gems','jewelry'].includes(state.vertical) ? 'TrueColorGem' : 'LiveProof';
       const filename = brandPrefix + '-' + (state.currentGemName||'item').replace(/\s+/g,'-') + '.jpg';
       const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
       const isAndroid = /Android/i.test(navigator.userAgent);

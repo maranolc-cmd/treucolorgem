@@ -1065,6 +1065,8 @@ function selectVertical(id) {
 function show(id) {
   try {
     const prev = document.querySelector('.screen.active')?.id;
+    console.log('👁️ show called:', id, 'prev:', prev);
+    if (prev === id) { console.log('👁️ already active, skipping'); return; } // già sulla schermata giusta, non fare nulla
     if (prev === 's-camera' && id !== 's-camera') stopCamera();
     state.lastScreen = prev || 's-welcome';
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -2669,6 +2671,7 @@ window.show_cert_screen = typeof show_cert_screen !== 'undefined' ? show_cert_sc
 
 // Auth state listener
 onAuthStateChanged(auth, async (user) => {
+  console.log('🔥 AUTH:', user?.email || 'null', 'verified:', user?.emailVerified, 'active screen:', document.querySelector('.screen.active')?.id);
   if (user && user.emailVerified) {
     const userDoc = await getDoc(doc(db, 'users', user.uid));
     const userData = userDoc.exists() ? userDoc.data() : {};

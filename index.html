@@ -926,6 +926,20 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
   </div>
 </div>
 
+<div id="s-email-confirm" class="screen">
+  <div class="nav">
+    <div class="nav-title">Verify Your Email</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 28px;text-align:center;gap:20px">
+    <div style="font-size:48px">✉️</div>
+    <div style="font-size:20px;font-weight:700;color:var(--gold)">Check your inbox</div>
+    <div id="confirm-email-text" style="font-size:14px;color:var(--grey);line-height:1.7">We sent a verification link to your email address.</div>
+    <div style="font-size:13px;color:var(--grey);line-height:1.6">Click the link in the email to activate your account, then come back here to sign in.</div>
+    <button class="btn btn-gold" style="margin-top:16px" onclick="justRegistered=false;show('s-login')">Go to Login</button>
+    <button class="btn btn-outline" style="margin-top:4px" onclick="resendVerificationEmail()">Resend Email</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 <div class="loading-overlay" id="loading" style="display:none!important"><div class="loading-spinner"></div><div class="loading-text">Processing...</div></div>
 
@@ -969,6 +983,11 @@ window.doLogout = async function() {
 // ── STATE ──
 // Flag per evitare che onAuthStateChanged sovrascriva la schermata di conferma email
 let justRegistered = false;
+// Esponi globalmente per accesso da onclick inline
+Object.defineProperty(window, 'justRegistered', {
+  get() { return justRegistered; },
+  set(v) { justRegistered = v; }
+});
 
 // ── DEVICE FINGERPRINT ──
 let deviceFingerprint = null;
@@ -1269,11 +1288,11 @@ async function doRegister() {
       deviceFingerprint: deviceFingerprint || 'unknown'
     });
     await sendEmailVerification(cred.user);
-    await window._fs.signOut(window._auth);
+    justRegistered = true;
     const confirmText = document.getElementById('confirm-email-text');
     if (confirmText) confirmText.textContent = 'We sent a verification link to ' + email;
-    justRegistered = true;
     show('s-email-confirm');
+    await window._fs.signOut(window._auth);
   } catch(e) {
     toast(e.code === 'auth/email-already-in-use' ? 'Email already registered.' : 'Registration failed. Try again.');
   } finally {
@@ -2695,10 +2714,11 @@ onAuthStateChanged(auth, async (user) => {
     // Non sovrascrivere la schermata di conferma email o registrazione
     const currentScreen = document.querySelector('.screen.active')?.id;
     const protectedScreens = ['s-email-confirm', 's-register'];
-    if (!justRegistered && !protectedScreens.includes(currentScreen)) {
-      show('s-welcome');
+    if (justRegistered || protectedScreens.includes(currentScreen)) {
+      // Mantieni la schermata corrente, non fare nulla
+      return;
     }
-    justRegistered = false;
+    show('s-welcome');
   }
 });
 

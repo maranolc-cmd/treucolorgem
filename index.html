@@ -952,8 +952,10 @@ async function doRegister() {
     await sendEmailVerification(cred.user);
     // Non loggare ancora — aspetta verifica email
     await window._fs.signOut(window._auth);
-    show('s-welcome');
-    toast('✉ Check your email and click the verification link to activate your account.');
+    // Mostra schermata di conferma email
+    const confirmText = document.getElementById('confirm-email-text');
+    if (confirmText) confirmText.textContent = 'We sent a verification link to ' + email;
+    show('s-email-confirm');
   } catch(e) {
     toast(e.code === 'auth/email-already-in-use' ? 'Email already registered.' : 'Registration failed. Try again.');
   } finally {
@@ -2318,6 +2320,17 @@ document.addEventListener('DOMContentLoaded', function() {
   if(bp) { bp.onclick = function(e){ e.preventDefault(); show('s-plans'); return false; }; }
   console.log('Buttons attached:', !!bl, !!bv, !!bp);
 });
+
+async function resendVerificationEmail() {
+  try {
+    if (window._auth.currentUser) {
+      await sendEmailVerification(window._auth.currentUser);
+      toast('Verification email resent — check your inbox.');
+    }
+  } catch(e) {
+    toast('Could not resend email. Please try registering again.');
+  }
+}
 
 // ── EXPOSE GLOBAL FUNCTIONS (required for HTML onclick in module context) ──
 window.doLogin = doLogin;

@@ -248,15 +248,8 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 </head>
 <body>
 
-<!-- LOADING SPLASH -->
-<div id="app-loading" style="position:fixed;inset:0;background:#080808;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px">
-  <div style="width:40px;height:40px;border:3px solid rgba(201,168,76,0.2);border-top-color:#c9a84c;border-radius:50%;animation:spin 0.8s linear infinite"></div>
-  <div style="color:rgba(201,168,76,0.6);font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:3px">LIVEPROOF</div>
-</div>
-<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-
 <!-- WELCOME -->
-<div id="s-welcome" class="screen">
+<div id="s-welcome" class="screen active">
   <div class="gem-logo">
     <svg viewBox="0 0 88 88" fill="none">
       <circle cx="44" cy="44" r="36" fill="none" stroke="#c9a84c" stroke-width="1.2" opacity="0.35"/>
@@ -983,14 +976,9 @@ onAuthStateChanged(auth, async (user) => {
     };
     await loadListingsFromFirebase();
     initDashboard();
-    const splash = document.getElementById('app-loading');
-    if (splash) splash.style.display = 'none';
     show('s-dashboard');
   } else {
     state.user = null;
-    const splash = document.getElementById('app-loading');
-    if (splash) splash.style.display = 'none';
-    // Non sovrascrivere la schermata di conferma email dopo la registrazione
     if (!justRegistered) {
       show('s-welcome');
     }
@@ -1041,9 +1029,7 @@ const state = {
 
 // Mostra welcome screen subito dopo state inizializzato
 (function() {
-  const splash = document.getElementById('app-loading');
-  if (splash) splash.style.display = 'none';
-  show('s-welcome');
+
 })();
 
 // ── VERTICALS ──

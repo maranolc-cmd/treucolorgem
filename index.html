@@ -2692,8 +2692,10 @@ onAuthStateChanged(auth, async (user) => {
     state.user = null;
     const splash = document.getElementById('app-loading');
     if (splash) splash.style.display = 'none';
-    // Non sovrascrivere la schermata di conferma email dopo la registrazione
-    if (!justRegistered) {
+    // Non sovrascrivere la schermata di conferma email o registrazione
+    const currentScreen = document.querySelector('.screen.active')?.id;
+    const protectedScreens = ['s-email-confirm', 's-register'];
+    if (!justRegistered && !protectedScreens.includes(currentScreen)) {
       show('s-welcome');
     }
     justRegistered = false;

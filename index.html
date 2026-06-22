@@ -934,7 +934,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, sendEmailVerification, initializeRecaptchaConfig } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAZps1d9rbO5zOxVsbe1eE1uppJZ5K3SJU",
@@ -949,6 +949,9 @@ const _app = initializeApp(firebaseConfig);
 const db = getFirestore(_app);
 const storage = getStorage(_app);
 const auth = getAuth(_app);
+auth.settings.appVerificationDisabledForTesting = false;
+// Disabilita reCAPTCHA Enterprise che causa 400 su nuovi progetti Firebase
+try { await initializeRecaptchaConfig(auth); } catch(e) { console.warn('reCAPTCHA init skipped:', e); }
 
 // Expose Firestore helpers globally
 window._db = db;
@@ -964,6 +967,15 @@ window.doLogout = async function() {
   show('s-welcome');
   toast('Logged out.');
 };
+
+// Timeout di sicurezza — mostra welcome se Firebase non risponde entro 3 secondi
+setTimeout(() => {
+  const splash = document.getElementById('app-loading');
+  if (splash && splash.style.display !== 'none') {
+    splash.style.display = 'none';
+    show('s-welcome');
+  }
+}, 3000);
 
 // Auth state listener
 onAuthStateChanged(auth, async (user) => {
@@ -987,11 +999,18 @@ onAuthStateChanged(auth, async (user) => {
     state.user = null;
     const splash = document.getElementById('app-loading');
     if (splash) splash.style.display = 'none';
-    show('s-welcome');
+    // Non sovrascrivere la schermata di conferma email dopo la registrazione
+    if (!justRegistered) {
+      show('s-welcome');
+    }
+    justRegistered = false;
   }
 });
 
 // ── STATE ──
+// Flag per evitare che onAuthStateChanged sovrascriva la schermata di conferma email
+let justRegistered = false;
+
 // ── DEVICE FINGERPRINT ──
 let deviceFingerprint = null;
 (async () => {
@@ -1285,6 +1304,7 @@ async function doRegister() {
     await window._fs.signOut(window._auth);
     const confirmText = document.getElementById('confirm-email-text');
     if (confirmText) confirmText.textContent = 'We sent a verification link to ' + email;
+    justRegistered = true;
     show('s-email-confirm');
   } catch(e) {
     toast(e.code === 'auth/email-already-in-use' ? 'Email already registered.' : 'Registration failed. Try again.');

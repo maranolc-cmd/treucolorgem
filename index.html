@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js"></script>
   <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>LiveProof</title>
@@ -314,6 +315,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
   <div class="dash">
     <div class="greeting fu">Good evening,</div>
     <div class="seller-name fu" id="user-display-name">Seller</div>
+    <div id="free-trials-badge" style="display:none;font-size:11px;color:#c9a84c;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:4px 10px;margin:6px auto 0;width:fit-content"></div>
     <div class="level-card fu">
       <div class="lbl">Current Certification</div>
       <div class="level-row">
@@ -617,13 +619,77 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 <div class="toast" id="toast"></div>
 <div class="loading-overlay" id="loading" style="display:none!important"><div class="loading-spinner"></div><div class="loading-text">Processing...</div></div>
 
-<script>
-// ── LOCAL STORAGE FALLBACK (Firebase to be added via backend) ──
-const db = null;
-const storage = null;
-const auth = null;
+<script type="module">
+// ── FIREBASE SDK ──
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAZps1d9rbO5zOxVsbe1eE1uppJZ5K3SJU",
+  authDomain: "truecolorgem.firebaseapp.com",
+  projectId: "truecolorgem",
+  storageBucket: "truecolorgem.firebasestorage.app",
+  messagingSenderId: "353462308228",
+  appId: "1:353462308228:web:c33ff21aa9818f768421d1"
+};
+
+const _app = initializeApp(firebaseConfig);
+const db = getFirestore(_app);
+const storage = getStorage(_app);
+const auth = getAuth(_app);
+
+// Expose Firestore helpers globally
+window._db = db;
+window._storage = storage;
+window._auth = auth;
+window._fs = { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, orderBy, storageRef, uploadString, getDownloadURL, signOut };
+
+// Global logout callable from non-module context
+window.doLogout = async function() {
+  try { await signOut(auth); } catch(e) {}
+  state.user = null;
+  state.listings = [];
+  show('s-welcome');
+  toast('Logged out.');
+};
+
+// Auth state listener
+onAuthStateChanged(auth, async (user) => {
+  if (user && user.emailVerified) {
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    const userData = userDoc.exists() ? userDoc.data() : {};
+    state.user = {
+      name: user.displayName || userData.name || user.email.split('@')[0],
+      email: user.email,
+      uid: user.uid,
+      initials: (user.displayName || user.email).substring(0,2).toUpperCase(),
+      plan: userData.plan || 'free',
+      freeTrials: userData.freeTrials ?? 3
+    };
+    await loadListingsFromFirebase();
+    initDashboard();
+  } else {
+    state.user = null;
+  }
+});
 
 // ── STATE ──
+// ── DEVICE FINGERPRINT ──
+let deviceFingerprint = null;
+(async () => {
+  try {
+    const fp = await FingerprintJS.load();
+    const result = await fp.get();
+    deviceFingerprint = result.visitorId;
+    console.log('Device fingerprint:', deviceFingerprint);
+  } catch(e) {
+    console.warn('Fingerprint failed:', e);
+    deviceFingerprint = Math.random().toString(36).slice(2);
+  }
+})();
+
 const state = {
   user: null,
   vertical: 'gems',       // verticale selezionato — alimenta il prompt
@@ -820,22 +886,26 @@ function setLoading(v) {
 }
 
 // ── AUTH ──
-function doLogin() {
+async function doLogin() {
   const email = document.getElementById('login-email').value.trim();
   const pw = document.getElementById('login-pw').value;
   if (!email || !pw) { toast('Please fill in all fields'); return; }
   setLoading(true);
-  setTimeout(() => {
-    setLoading(false);
-    const stored = JSON.parse(localStorage.getItem('tc_user_' + email) || 'null');
-    if (!stored) { toast('Account not found. Please register first.'); return; }
-    if (stored.pw !== pw) { toast('Incorrect password.'); return; }
-    state.user = { name: stored.name, email, uid: email, initials: stored.initials };
-    state.listings = JSON.parse(localStorage.getItem('tc_listings_' + email) || '[]');
-    initDashboard();
+  try {
+    const cred = await signInWithEmailAndPassword(window._auth, email, pw);
+    if (!cred.user.emailVerified) {
+      await window._fs.signOut(window._auth);
+      toast('Please verify your email first. Check your inbox for the verification link.');
+      return;
+    }
+    // onAuthStateChanged gestisce il resto
     show('s-dashboard');
     toast('Welcome back!');
-  }, 800);
+  } catch(e) {
+    toast(e.code === 'auth/invalid-credential' ? 'Incorrect email or password.' : 'Login failed. Try again.');
+  } finally {
+    setLoading(false);
+  }
 }
 
 function demoLogin() {
@@ -848,23 +918,48 @@ function demoLogin() {
   toast('Demo mode active');
 }
 
-function doRegister() {
+async function doRegister() {
   const name = document.getElementById('reg-name').value.trim();
   const email = document.getElementById('reg-email').value.trim();
   const pw = document.getElementById('reg-pw').value;
   if (!name || !email || !pw) { toast('Please fill in all fields'); return; }
   if (pw.length < 8) { toast('Password must be at least 8 characters'); return; }
   setLoading(true);
-  setTimeout(() => {
+  try {
+    // Check device fingerprint — blocca dispositivi che hanno già esaurito le prove
+    if (deviceFingerprint) {
+      const fs = window._fs;
+      const fpQuery = fs.query(
+        fs.collection(window._db, 'users'),
+        fs.where('deviceFingerprint', '==', deviceFingerprint),
+        fs.where('freeTrials', '==', 0)
+      );
+      const fpSnap = await fs.getDocs(fpQuery);
+      if (!fpSnap.empty) {
+        setLoading(false);
+        toast('This device has already used its free certifications. Please choose a plan to continue.');
+        show('s-plans');
+        return;
+      }
+    }
+    const cred = await createUserWithEmailAndPassword(window._auth, email, pw);
+    await updateProfile(cred.user, { displayName: name });
     const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    localStorage.setItem('tc_user_' + email, JSON.stringify({ name, email, pw, initials, plan: 'none' }));
-    state.user = { name, email, uid: email, initials };
-    state.listings = [];
+    // Crea documento utente con 5 prove gratuite
+    await window._fs.setDoc(window._fs.doc(window._db, 'users', cred.user.uid), {
+      name, email, initials, plan: 'free', freeTrials: 3, createdAt: new Date().toISOString(), deviceFingerprint: deviceFingerprint || 'unknown'
+    });
+    // Invia email di verifica
+    await sendEmailVerification(cred.user);
+    // Non loggare ancora — aspetta verifica email
+    await window._fs.signOut(window._auth);
+    show('s-welcome');
+    toast('✉ Check your email and click the verification link to activate your account.');
+  } catch(e) {
+    toast(e.code === 'auth/email-already-in-use' ? 'Email already registered.' : 'Registration failed. Try again.');
+  } finally {
     setLoading(false);
-    initDashboard();
-    show('s-plans');
-    toast('Account created! Choose your plan to get started.');
-  }, 800);
+  }
 }
 
 // ── DASHBOARD ──
@@ -872,13 +967,36 @@ function initDashboard() {
   if (!state.user) return;
   document.getElementById('user-display-name').textContent = state.user.name;
   document.getElementById('user-avatar').textContent = state.user.initials;
+  // Mostra badge free trials se piano free
+  const trialsBadge = document.getElementById('free-trials-badge');
+  if (trialsBadge) {
+    if (state.user.plan === 'free') {
+      trialsBadge.textContent = state.user.freeTrials + ' free certification' + (state.user.freeTrials===1?'':'s') + ' remaining';
+      trialsBadge.style.display = 'block';
+    } else {
+      trialsBadge.style.display = 'none';
+    }
+  }
   updateDashStats();
 }
 
-function loadListingsFromFirebase() {
+async function loadListingsFromFirebase() {
   if (!state.user) return;
-  state.listings = JSON.parse(localStorage.getItem('tc_listings_' + state.user.email) || '[]');
-  updateDashStats();
+  try {
+    const fs = window._fs;
+    const q = fs.query(
+      fs.collection(window._db, 'certifications'),
+      fs.where('uid', '==', state.user.uid),
+      fs.orderBy('createdAt', 'desc')
+    );
+    const snap = await fs.getDocs(q);
+    state.listings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    updateDashStats();
+  } catch(e) {
+    console.error('loadListings error:', e);
+    state.listings = [];
+    updateDashStats();
+  }
 }
 
 function updateDashStats() {
@@ -1554,6 +1672,12 @@ function incrementRateLimit() {
 }
 
 async function startAnalysis() {
+  // Controllo free trials per utenti free
+  if (state.user && state.user.plan === 'free' && state.user.freeTrials <= 0) {
+    toast('No free certifications remaining. Please upgrade your plan.');
+    show('s-plans');
+    return;
+  }
   const gemName = document.getElementById('gem-name').value.trim();
   if (!gemName) { 
     toast('⚠ Please enter the gemstone name first');
@@ -1638,9 +1762,21 @@ async function callAI() {
 
     console.log('Calling API — gem:', state.currentGemName, '| listing:', !!listingImage, '| live:', !!state.livePhotoData);
 
+    // Ottieni token Firebase per autenticazione lato server
+    let idToken = null;
+    try {
+      if (window._auth.currentUser) {
+        idToken = await window._auth.currentUser.getIdToken();
+      }
+    } catch(e) { console.warn('getIdToken failed:', e); }
+
     const response = await fetch('/api/analyze', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(idToken ? { 'Authorization': 'Bearer ' + idToken } : {}),
+        ...(deviceFingerprint ? { 'X-Device-Id': deviceFingerprint } : {})
+      },
       body: JSON.stringify({
         listingImage,
         liveImage,
@@ -1864,7 +2000,26 @@ async function show_cert_screen() {
   };
   state.listings.unshift(listingData);
   if (state.user) {
-    localStorage.setItem('tc_listings_' + state.user.email, JSON.stringify(state.listings));
+    // Salva su Firestore
+  (async () => {
+    try {
+      const fs = window._fs;
+      const listing = state.listings[state.listings.length - 1];
+      await fs.addDoc(fs.collection(window._db, 'certifications'), {
+        ...listing,
+        uid: state.user.uid,
+        email: state.user.email,
+        createdAt: new Date().toISOString()
+      });
+      // Decrementa freeTrials se piano free
+      if (state.user.plan === 'free' && state.user.freeTrials > 0) {
+        state.user.freeTrials--;
+        await fs.updateDoc(fs.doc(window._db, 'users', state.user.uid), { freeTrials: state.user.freeTrials });
+        if (state.user.freeTrials === 0) toast('You have used all your free certifications. Upgrade to continue.');
+        else toast(state.user.freeTrials + ' free certification' + (state.user.freeTrials===1?'':'s') + ' remaining.');
+      }
+    } catch(e) { console.error('Save certification error:', e); }
+  })();
   }
   stepDone(3);
   updateDashStats();

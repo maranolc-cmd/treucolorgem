@@ -968,11 +968,6 @@ window.doLogout = async function() {
   toast('Logged out.');
 };
 
-// Mostra welcome screen immediatamente — Firebase aggiornerà se c'è un utente loggato
-const splash = document.getElementById('app-loading');
-if (splash) splash.style.display = 'none';
-show('s-welcome');
-
 // Auth state listener
 onAuthStateChanged(auth, async (user) => {
   if (user && user.emailVerified) {
@@ -1043,6 +1038,13 @@ const state = {
   // Certificato gemologico opzionale
   certData: null,
 };
+
+// Mostra welcome screen subito dopo state inizializzato
+(function() {
+  const splash = document.getElementById('app-loading');
+  if (splash) splash.style.display = 'none';
+  show('s-welcome');
+})();
 
 // ── VERTICALS ──
 const VERTICALS = [

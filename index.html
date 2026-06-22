@@ -15,6 +15,7 @@
 body{background:var(--black);color:var(--white);font-family:'Montserrat',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden}
 .screen{display:none;min-height:100vh;flex-direction:column}
 .screen.active{display:flex}
+#s-welcome{display:flex}
 input,textarea,select{font-family:'Montserrat',sans-serif;background:var(--card2);border:1px solid var(--grey2);color:var(--white);border-radius:3px;padding:12px 14px;font-size:13px;width:100%;outline:none;transition:border-color 0.2s}
 input:focus,textarea:focus{border-color:var(--gold)}
 label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--grey);display:block;margin-bottom:6px}
@@ -1058,9 +1059,15 @@ function show(id) {
     const prev = document.querySelector('.screen.active')?.id;
     if (prev === 's-camera' && id !== 's-camera') stopCamera();
     state.lastScreen = prev || 's-welcome';
-    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s => {
+      s.classList.remove('active');
+      if (s.id === 's-welcome') s.style.display = 'none';
+    });
     const target = document.getElementById(id);
-    if (target) { target.classList.add('active'); }
+    if (target) {
+      target.classList.add('active');
+      if (id === 's-welcome') target.style.display = 'flex';
+    }
     window.scrollTo(0, 0);
     setLoading(false);
     if (id === 's-category') renderCategories();

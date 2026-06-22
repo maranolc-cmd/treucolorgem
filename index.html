@@ -958,30 +958,6 @@ window.doLogout = async function() {
   toast('Logged out.');
 };
 
-// Auth state listener
-onAuthStateChanged(auth, async (user) => {
-  if (user && user.emailVerified) {
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    const userData = userDoc.exists() ? userDoc.data() : {};
-    state.user = {
-      name: user.displayName || userData.name || user.email.split('@')[0],
-      email: user.email,
-      uid: user.uid,
-      initials: (user.displayName || user.email).substring(0,2).toUpperCase(),
-      plan: userData.plan || 'free',
-      freeTrials: userData.freeTrials ?? 3
-    };
-    await loadListingsFromFirebase();
-    initDashboard();
-    show('s-dashboard');
-  } else {
-    state.user = null;
-    if (!justRegistered) {
-      show('s-welcome');
-    }
-    justRegistered = false;
-  }
-});
 
 // ── STATE ──
 // Flag per evitare che onAuthStateChanged sovrascriva la schermata di conferma email
@@ -2681,6 +2657,32 @@ window.selectPlan = typeof selectPlan !== 'undefined' ? selectPlan : null;
 window.subscribePlan = typeof subscribePlan !== 'undefined' ? subscribePlan : null;
 window.doVerify = typeof doVerify !== 'undefined' ? doVerify : null;
 window.show_cert_screen = typeof show_cert_screen !== 'undefined' ? show_cert_screen : null;
+
+// Auth state listener (qui state, show e tutte le funzioni sono definiti)
+onAuthStateChanged(auth, async (user) => {
+  if (user && user.emailVerified) {
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    const userData = userDoc.exists() ? userDoc.data() : {};
+    state.user = {
+      name: user.displayName || userData.name || user.email.split('@')[0],
+      email: user.email,
+      uid: user.uid,
+      initials: (user.displayName || user.email).substring(0,2).toUpperCase(),
+      plan: userData.plan || 'free',
+      freeTrials: userData.freeTrials ?? 3
+    };
+    await loadListingsFromFirebase();
+    initDashboard();
+    show('s-dashboard');
+  } else {
+    state.user = null;
+    if (!justRegistered) {
+      show('s-welcome');
+    }
+    justRegistered = false;
+  }
+});
+
 </script>
 </body>
 </html>

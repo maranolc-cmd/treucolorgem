@@ -968,14 +968,10 @@ window.doLogout = async function() {
   toast('Logged out.');
 };
 
-// Timeout di sicurezza — mostra welcome se Firebase non risponde entro 3 secondi
-setTimeout(() => {
-  const splash = document.getElementById('app-loading');
-  if (splash && splash.style.display !== 'none') {
-    splash.style.display = 'none';
-    show('s-welcome');
-  }
-}, 3000);
+// Mostra welcome screen immediatamente — Firebase aggiornerà se c'è un utente loggato
+const splash = document.getElementById('app-loading');
+if (splash) splash.style.display = 'none';
+show('s-welcome');
 
 // Auth state listener
 onAuthStateChanged(auth, async (user) => {

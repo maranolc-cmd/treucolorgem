@@ -909,13 +909,12 @@ async function doLogin() {
 }
 
 function demoLogin() {
-  // Nome generico per la modalità demo — non personale
   const guestId = Math.random().toString(36).slice(2, 6).toUpperCase();
-  state.user = { name: 'Guest Seller', email: 'guest-' + guestId + '@demo.local', initials: 'GS' };
-  state.listings = []; // demo sempre vuota, non eredita listing di altri guest
+  state.user = { name: 'Guest Seller', email: 'guest-' + guestId + '@demo.local', initials: 'GS', isDemo: true, plan: 'free', freeTrials: 3 };
+  state.listings = [];
   initDashboard();
   show('s-dashboard');
-  toast('Demo mode active');
+  toast('Demo mode active — analysis will show a sample result');
 }
 
 async function doRegister() {
@@ -1764,6 +1763,28 @@ async function callAI() {
 
     // Ottieni token Firebase per autenticazione lato server
     let idToken = null;
+
+    // ── DEMO MODE — mock result, no API call ──
+    if (state.user?.isDemo) {
+      await sleep(2500); // simula elaborazione
+      const mockResult = {
+        score: 82,
+        certified: true,
+        colorMatch: 'good',
+        deltaE: 4.2,
+        lightingOk: true,
+        estimatedColorTemp: 'neutral_acceptable',
+        artificialEnhancement: false,
+        consistencyOk: true,
+        summary: 'DEMO RESULT — The listing photo shows good color consistency with the live reference. Lighting conditions appear natural with no significant studio manipulation detected. This is a sample result to demonstrate LiveProof certification.',
+        flags: [],
+        isDemo: true
+      };
+      state.currentScore = mockResult;
+      showScore(mockResult);
+      return;
+    }
+
     try {
       if (window._auth.currentUser) {
         idToken = await window._auth.currentUser.getIdToken();
@@ -2297,6 +2318,25 @@ document.addEventListener('DOMContentLoaded', function() {
   if(bp) { bp.onclick = function(e){ e.preventDefault(); show('s-plans'); return false; }; }
   console.log('Buttons attached:', !!bl, !!bv, !!bp);
 });
+
+// ── EXPOSE GLOBAL FUNCTIONS (required for HTML onclick in module context) ──
+window.doLogin = doLogin;
+window.doRegister = doRegister;
+window.demoLogin = demoLogin;
+window.show = show;
+window.goBack = goBack;
+window.selectVertical = selectVertical;
+window.togglePhotoRules = togglePhotoRules;
+window.startAnalysis = startAnalysis;
+window.capturePhoto = capturePhoto;
+window.stopCamera = stopCamera;
+window.switchCamera = switchCamera;
+window.showListingDetail = showListingDetail;
+window.downloadCert = downloadCert;
+window.selectPlan = typeof selectPlan !== 'undefined' ? selectPlan : null;
+window.subscribePlan = typeof subscribePlan !== 'undefined' ? subscribePlan : null;
+window.doVerify = typeof doVerify !== 'undefined' ? doVerify : null;
+window.show_cert_screen = typeof show_cert_screen !== 'undefined' ? show_cert_screen : null;
 </script>
 </body>
 </html>

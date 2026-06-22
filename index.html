@@ -15,7 +15,6 @@
 body{background:var(--black);color:var(--white);font-family:'Montserrat',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden}
 .screen{display:none;min-height:100vh;flex-direction:column}
 .screen.active{display:flex}
-#s-welcome{display:flex}
 input,textarea,select{font-family:'Montserrat',sans-serif;background:var(--card2);border:1px solid var(--grey2);color:var(--white);border-radius:3px;padding:12px 14px;font-size:13px;width:100%;outline:none;transition:border-color 0.2s}
 input:focus,textarea:focus{border-color:var(--gold)}
 label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--grey);display:block;margin-bottom:6px}
@@ -248,6 +247,13 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 
 </head>
 <body>
+
+<!-- LOADING SPLASH -->
+<div id="app-loading" style="position:fixed;inset:0;background:#080808;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px">
+  <div style="width:40px;height:40px;border:3px solid rgba(201,168,76,0.2);border-top-color:#c9a84c;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+  <div style="color:rgba(201,168,76,0.6);font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:3px">LIVEPROOF</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
 <!-- WELCOME -->
 <div id="s-welcome" class="screen active">
@@ -1003,7 +1009,9 @@ const state = {
 
 // Mostra welcome screen subito dopo state inizializzato
 (function() {
-
+  const splash = document.getElementById('app-loading');
+  if (splash) splash.style.display = 'none';
+  show('s-welcome');
 })();
 
 // ── VERTICALS ──
@@ -1059,15 +1067,9 @@ function show(id) {
     const prev = document.querySelector('.screen.active')?.id;
     if (prev === 's-camera' && id !== 's-camera') stopCamera();
     state.lastScreen = prev || 's-welcome';
-    document.querySelectorAll('.screen').forEach(s => {
-      s.classList.remove('active');
-      if (s.id === 's-welcome') s.style.display = 'none';
-    });
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     const target = document.getElementById(id);
-    if (target) {
-      target.classList.add('active');
-      if (id === 's-welcome') target.style.display = 'flex';
-    }
+    if (target) { target.classList.add('active'); }
     window.scrollTo(0, 0);
     setLoading(false);
     if (id === 's-category') renderCategories();
@@ -2665,7 +2667,7 @@ window.subscribePlan = typeof subscribePlan !== 'undefined' ? subscribePlan : nu
 window.doVerify = typeof doVerify !== 'undefined' ? doVerify : null;
 window.show_cert_screen = typeof show_cert_screen !== 'undefined' ? show_cert_screen : null;
 
-// Auth state listener (qui state, show e tutte le funzioni sono definiti)
+// Auth state listener
 onAuthStateChanged(auth, async (user) => {
   if (user && user.emailVerified) {
     const userDoc = await getDoc(doc(db, 'users', user.uid));
@@ -2680,9 +2682,14 @@ onAuthStateChanged(auth, async (user) => {
     };
     await loadListingsFromFirebase();
     initDashboard();
+    const splash = document.getElementById('app-loading');
+    if (splash) splash.style.display = 'none';
     show('s-dashboard');
   } else {
     state.user = null;
+    const splash = document.getElementById('app-loading');
+    if (splash) splash.style.display = 'none';
+    // Non sovrascrivere la schermata di conferma email dopo la registrazione
     if (!justRegistered) {
       show('s-welcome');
     }

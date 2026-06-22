@@ -973,8 +973,10 @@ onAuthStateChanged(auth, async (user) => {
     };
     await loadListingsFromFirebase();
     initDashboard();
+    show('s-dashboard');
   } else {
     state.user = null;
+    show('s-welcome');
   }
 });
 

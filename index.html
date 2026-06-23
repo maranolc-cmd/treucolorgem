@@ -25,9 +25,9 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 #s-welcome::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 50px,rgba(201,168,76,0.025) 50px,rgba(201,168,76,0.025) 51px);pointer-events:none}
 .gem-logo{width:88px;height:88px;margin:0 auto 28px}
 .gem-logo svg{width:100%;height:100%}
-.brand{font-family:'Cormorant Garamond',serif;font-size:46px;font-weight:300;letter-spacing:4px;color:var(--gold);line-height:1;margin-bottom:6px}
-.brand-sub{font-size:9px;letter-spacing:7px;text-transform:uppercase;color:var(--grey);margin-bottom:52px}
-.tagline{font-family:'Cormorant Garamond',serif;font-size:17px;font-style:italic;color:rgba(245,240,232,0.5);margin-bottom:60px;line-height:1.7}
+.brand{font-family:'Cormorant Garamond',serif;font-size:64px;font-weight:300;letter-spacing:4px;color:var(--gold);line-height:1;margin-bottom:10px}
+.brand-sub{font-size:13px;letter-spacing:5px;text-transform:uppercase;color:var(--grey);margin-bottom:40px}
+.tagline{font-family:'Cormorant Garamond',serif;font-size:26px;font-style:italic;color:rgba(245,240,232,0.85);margin-bottom:52px;line-height:1.5}
 .btn{border:none;border-radius:2px;cursor:pointer;font-family:'Montserrat',sans-serif;font-weight:600;letter-spacing:3px;text-transform:uppercase;transition:all 0.2s;display:block;width:100%;max-width:300px;margin:0 auto}
 .btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--black);padding:16px;font-size:11px}
 .btn-gold:active{opacity:0.85}
@@ -60,8 +60,8 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 /* REGISTER FORM — premium */
 .reg-section-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid rgba(201,168,76,0.12)}
 .reg-field-float{position:relative;margin-bottom:18px}
-.reg-field-float input{padding:20px 14px 8px;height:56px;border-radius:4px;border:1px solid var(--grey2);background:rgba(255,255,255,0.03);transition:border-color 0.2s,background 0.2s}
-.reg-field-float input:focus{border-color:var(--gold);background:rgba(201,168,76,0.04)}
+.reg-field-float input{padding:20px 14px 8px;height:56px;border-radius:4px;border:1px solid #3a3a3a;background:#1a1a1a;transition:border-color 0.2s,background 0.2s;color:var(--white)}
+.reg-field-float input:focus{border-color:var(--gold);background:#1e1a0e}
 .reg-field-float label{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:12px;letter-spacing:0.5px;text-transform:none;color:var(--grey);pointer-events:none;transition:all 0.18s;margin:0}
 .reg-field-float input:focus ~ label,
 .reg-field-float input:not(:placeholder-shown) ~ label{top:10px;transform:translateY(0);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold)}
@@ -74,7 +74,8 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 .reg-phone-row{display:flex;gap:8px;margin-bottom:18px;align-items:flex-end}
 /* Select wrapper */
 .reg-select-wrap{position:relative}
-.reg-select-wrap select{appearance:none;-webkit-appearance:none;padding:14px 36px 14px 14px;border-radius:4px;border:1px solid var(--grey2);background:rgba(255,255,255,0.03);color:var(--white);transition:border-color 0.2s;height:52px;width:100%}
+.reg-select-wrap select{appearance:none;-webkit-appearance:none;padding:14px 36px 14px 14px;border-radius:4px;border:1px solid #3a3a3a;background:#1a1a1a;color:var(--white);transition:border-color 0.2s;height:52px;width:100%}
+.reg-select-wrap select option{background:#1a1a1a;color:var(--white)}
 .reg-select-wrap select:focus{border-color:var(--gold)}
 .reg-select-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--grey);pointer-events:none;font-size:11px}
 /* Country labeled select */
@@ -83,7 +84,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 .reg-select-labeled .reg-select-wrap select{height:52px}
 /* Platform chips */
 .reg-platform-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
-.reg-platform-chip{padding:8px 14px;border:1px solid var(--grey2);border-radius:20px;font-size:11px;letter-spacing:0.5px;color:var(--grey);cursor:pointer;transition:all 0.18s;background:transparent}
+.reg-platform-chip{padding:8px 14px;border:1px solid #3a3a3a;border-radius:20px;font-size:11px;letter-spacing:0.5px;color:#aaa;cursor:pointer;transition:all 0.18s;background:#1a1a1a}
 .reg-platform-chip.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.08)}
 
 /* DASHBOARD */
@@ -295,7 +296,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     </svg>
   </div>
   <div class="brand">LiveProof</div>
-  <div class="brand-sub">Photo Honesty Certification</div>
+  <div class="brand-sub">AI-Powered Visual Verification</div>
   <div class="tagline">Certify that what you're selling<br>looks exactly as shown</div>
   <button class="btn btn-gold" id="btn-login" onclick="show('s-login')">Seller Login</button>
   <button class="btn btn-outline" id="btn-verify" onclick="show('s-verify')">Verify a Purchase</button>
@@ -2679,6 +2680,8 @@ window.doRegister = doRegister;
 window.demoLogin = demoLogin;
 window.show = show;
 window.goBack = goBack;
+window.selectPlatform = selectPlatform;
+window.togglePw = togglePw;
 window.selectVertical = selectVertical;
 window.togglePhotoRules = togglePhotoRules;
 window.startAnalysis = startAnalysis;

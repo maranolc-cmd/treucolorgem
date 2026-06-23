@@ -57,6 +57,35 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 .divider-line{flex:1;height:1px;background:var(--grey2)}
 .divider-text{font-size:10px;color:var(--grey);letter-spacing:2px}
 
+/* REGISTER FORM — premium */
+.reg-section-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid rgba(201,168,76,0.12)}
+.reg-field-float{position:relative;margin-bottom:18px}
+.reg-field-float input{padding:20px 14px 8px;height:56px;border-radius:4px;border:1px solid var(--grey2);background:rgba(255,255,255,0.03);transition:border-color 0.2s,background 0.2s}
+.reg-field-float input:focus{border-color:var(--gold);background:rgba(201,168,76,0.04)}
+.reg-field-float label{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:12px;letter-spacing:0.5px;text-transform:none;color:var(--grey);pointer-events:none;transition:all 0.18s;margin:0}
+.reg-field-float input:focus ~ label,
+.reg-field-float input:not(:placeholder-shown) ~ label{top:10px;transform:translateY(0);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold)}
+.reg-pw-wrap .reg-eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--grey);cursor:pointer;padding:4px;line-height:1}
+.reg-pw-wrap .reg-eye.visible{color:var(--gold)}
+.reg-pw-hint{font-size:10px;color:var(--grey);margin-top:-12px;margin-bottom:16px;min-height:14px;letter-spacing:0.3px}
+/* DOB row */
+.reg-dob-row{display:grid;grid-template-columns:2fr 1fr 1.5fr;gap:8px;margin-bottom:18px}
+/* Phone row */
+.reg-phone-row{display:flex;gap:8px;margin-bottom:18px;align-items:flex-end}
+/* Select wrapper */
+.reg-select-wrap{position:relative}
+.reg-select-wrap select{appearance:none;-webkit-appearance:none;padding:14px 36px 14px 14px;border-radius:4px;border:1px solid var(--grey2);background:rgba(255,255,255,0.03);color:var(--white);transition:border-color 0.2s;height:52px;width:100%}
+.reg-select-wrap select:focus{border-color:var(--gold)}
+.reg-select-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--grey);pointer-events:none;font-size:11px}
+/* Country labeled select */
+.reg-select-labeled{margin-bottom:18px}
+.reg-select-label-text{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--grey);margin-bottom:6px}
+.reg-select-labeled .reg-select-wrap select{height:52px}
+/* Platform chips */
+.reg-platform-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.reg-platform-chip{padding:8px 14px;border:1px solid var(--grey2);border-radius:20px;font-size:11px;letter-spacing:0.5px;color:var(--grey);cursor:pointer;transition:all 0.18s;background:transparent}
+.reg-platform-chip.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.08)}
+
 /* DASHBOARD */
 #s-dashboard{background:var(--black)}
 .dash{flex:1;padding:20px;overflow-y:auto;padding-bottom:100px}
@@ -300,323 +329,226 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
   <div class="auth-content">
     <div class="auth-title fu">Join LiveProof</div>
     <div class="auth-sub fu">Start certifying your listings today</div>
-    <div class="field fu"><label>Full Name</label><input type="text" id="reg-name" placeholder="John Smith"></div>
-    <div class="field fu"><label>Email</label><input type="email" id="reg-email" placeholder="your@email.com"></div>
-    <div class="field fu"><label>Password</label><input type="password" id="reg-pw" placeholder="Min. 8 characters"></div>
-    <div class="field fu"><label>Confirm Password</label><input type="password" id="reg-pw2" placeholder="Repeat password"></div>
-    <div class="field fu"><label>Date of Birth</label><input type="date" id="reg-dob" max="2006-01-01"></div>
-    <div class="field fu">
-      <label>Phone Number</label>
-      <div style="display:flex;gap:8px">
-        <select id="reg-phone-prefix" style="width:110px;flex-shrink:0">
-          <option value="+93">🇦🇫 +93 Afghanistan</option>
-          <option value="+355">🇦🇱 +355 Albania</option>
-          <option value="+213">🇩🇿 +213 Algeria</option>
-          <option value="+376">🇦🇩 +376 Andorra</option>
-          <option value="+244">🇦🇴 +244 Angola</option>
-          <option value="+54">🇦🇷 +54 Argentina</option>
-          <option value="+374">🇦🇲 +374 Armenia</option>
-          <option value="+61">🇦🇺 +61 Australia</option>
-          <option value="+43">🇦🇹 +43 Austria</option>
-          <option value="+994">🇦🇿 +994 Azerbaijan</option>
-          <option value="+973">🇧🇭 +973 Bahrain</option>
-          <option value="+880">🇧🇩 +880 Bangladesh</option>
-          <option value="+32">🇧🇪 +32 Belgium</option>
-          <option value="+501">🇧🇿 +501 Belize</option>
-          <option value="+229">🇧🇯 +229 Benin</option>
-          <option value="+975">🇧🇹 +975 Bhutan</option>
-          <option value="+591">🇧🇴 +591 Bolivia</option>
-          <option value="+387">🇧🇦 +387 Bosnia</option>
-          <option value="+267">🇧🇼 +267 Botswana</option>
-          <option value="+55">🇧🇷 +55 Brazil</option>
-          <option value="+673">🇧🇳 +673 Brunei</option>
-          <option value="+359">🇧🇬 +359 Bulgaria</option>
-          <option value="+226">🇧🇫 +226 Burkina Faso</option>
-          <option value="+855">🇰🇭 +855 Cambodia</option>
-          <option value="+237">🇨🇲 +237 Cameroon</option>
-          <option value="+1">🇨🇦 +1 Canada</option>
-          <option value="+56">🇨🇱 +56 Chile</option>
-          <option value="+86">🇨🇳 +86 China</option>
-          <option value="+57">🇨🇴 +57 Colombia</option>
-          <option value="+506">🇨🇷 +506 Costa Rica</option>
-          <option value="+385">🇭🇷 +385 Croatia</option>
-          <option value="+53">🇨🇺 +53 Cuba</option>
-          <option value="+357">🇨🇾 +357 Cyprus</option>
-          <option value="+420">🇨🇿 +420 Czech Republic</option>
-          <option value="+45">🇩🇰 +45 Denmark</option>
-          <option value="+593">🇪🇨 +593 Ecuador</option>
-          <option value="+20">🇪🇬 +20 Egypt</option>
-          <option value="+503">🇸🇻 +503 El Salvador</option>
-          <option value="+372">🇪🇪 +372 Estonia</option>
-          <option value="+251">🇪🇹 +251 Ethiopia</option>
-          <option value="+358">🇫🇮 +358 Finland</option>
-          <option value="+33">🇫🇷 +33 France</option>
-          <option value="+241">🇬🇦 +241 Gabon</option>
-          <option value="+995">🇬🇪 +995 Georgia</option>
-          <option value="+49">🇩🇪 +49 Germany</option>
-          <option value="+233">🇬🇭 +233 Ghana</option>
-          <option value="+30">🇬🇷 +30 Greece</option>
-          <option value="+502">🇬🇹 +502 Guatemala</option>
-          <option value="+224">🇬🇳 +224 Guinea</option>
-          <option value="+504">🇭🇳 +504 Honduras</option>
-          <option value="+852">🇭🇰 +852 Hong Kong</option>
-          <option value="+36">🇭🇺 +36 Hungary</option>
-          <option value="+354">🇮🇸 +354 Iceland</option>
-          <option value="+91">🇮🇳 +91 India</option>
-          <option value="+62">🇮🇩 +62 Indonesia</option>
-          <option value="+98">🇮🇷 +98 Iran</option>
-          <option value="+964">🇮🇶 +964 Iraq</option>
-          <option value="+353">🇮🇪 +353 Ireland</option>
-          <option value="+972">🇮🇱 +972 Israel</option>
-          <option value="+39" selected>🇮🇹 +39 Italy</option>
-          <option value="+81">🇯🇵 +81 Japan</option>
-          <option value="+962">🇯🇴 +962 Jordan</option>
-          <option value="+7">🇰🇿 +7 Kazakhstan</option>
-          <option value="+254">🇰🇪 +254 Kenya</option>
-          <option value="+82">🇰🇷 +82 Korea (South)</option>
-          <option value="+965">🇰🇼 +965 Kuwait</option>
-          <option value="+996">🇰🇬 +996 Kyrgyzstan</option>
-          <option value="+856">🇱🇦 +856 Laos</option>
-          <option value="+371">🇱🇻 +371 Latvia</option>
-          <option value="+961">🇱🇧 +961 Lebanon</option>
-          <option value="+231">🇱🇷 +231 Liberia</option>
-          <option value="+218">🇱🇾 +218 Libya</option>
-          <option value="+423">🇱🇮 +423 Liechtenstein</option>
-          <option value="+370">🇱🇹 +370 Lithuania</option>
-          <option value="+352">🇱🇺 +352 Luxembourg</option>
-          <option value="+853">🇲🇴 +853 Macau</option>
-          <option value="+261">🇲🇬 +261 Madagascar</option>
-          <option value="+60">🇲🇾 +60 Malaysia</option>
-          <option value="+960">🇲🇻 +960 Maldives</option>
-          <option value="+223">🇲🇱 +223 Mali</option>
-          <option value="+356">🇲🇹 +356 Malta</option>
-          <option value="+222">🇲🇷 +222 Mauritania</option>
-          <option value="+230">🇲🇺 +230 Mauritius</option>
-          <option value="+52">🇲🇽 +52 Mexico</option>
-          <option value="+373">🇲🇩 +373 Moldova</option>
-          <option value="+377">🇲🇨 +377 Monaco</option>
-          <option value="+976">🇲🇳 +976 Mongolia</option>
-          <option value="+212">🇲🇦 +212 Morocco</option>
-          <option value="+258">🇲🇿 +258 Mozambique</option>
-          <option value="+95">🇲🇲 +95 Myanmar</option>
-          <option value="+264">🇳🇦 +264 Namibia</option>
-          <option value="+977">🇳🇵 +977 Nepal</option>
-          <option value="+31">🇳🇱 +31 Netherlands</option>
-          <option value="+64">🇳🇿 +64 New Zealand</option>
-          <option value="+505">🇳🇮 +505 Nicaragua</option>
-          <option value="+227">🇳🇪 +227 Niger</option>
-          <option value="+234">🇳🇬 +234 Nigeria</option>
-          <option value="+47">🇳🇴 +47 Norway</option>
-          <option value="+968">🇴🇲 +968 Oman</option>
-          <option value="+92">🇵🇰 +92 Pakistan</option>
-          <option value="+507">🇵🇦 +507 Panama</option>
-          <option value="+595">🇵🇾 +595 Paraguay</option>
-          <option value="+51">🇵🇪 +51 Peru</option>
-          <option value="+63">🇵🇭 +63 Philippines</option>
-          <option value="+48">🇵🇱 +48 Poland</option>
-          <option value="+351">🇵🇹 +351 Portugal</option>
-          <option value="+974">🇶🇦 +974 Qatar</option>
-          <option value="+40">🇷🇴 +40 Romania</option>
-          <option value="+7">🇷🇺 +7 Russia</option>
-          <option value="+966">🇸🇦 +966 Saudi Arabia</option>
-          <option value="+221">🇸🇳 +221 Senegal</option>
-          <option value="+381">🇷🇸 +381 Serbia</option>
-          <option value="+65">🇸🇬 +65 Singapore</option>
-          <option value="+421">🇸🇰 +421 Slovakia</option>
-          <option value="+386">🇸🇮 +386 Slovenia</option>
-          <option value="+252">🇸🇴 +252 Somalia</option>
-          <option value="+27">🇿🇦 +27 South Africa</option>
-          <option value="+34">🇪🇸 +34 Spain</option>
-          <option value="+94">🇱🇰 +94 Sri Lanka</option>
-          <option value="+249">🇸🇩 +249 Sudan</option>
-          <option value="+46">🇸🇪 +46 Sweden</option>
-          <option value="+41">🇨🇭 +41 Switzerland</option>
-          <option value="+963">🇸🇾 +963 Syria</option>
-          <option value="+886">🇹🇼 +886 Taiwan</option>
-          <option value="+992">🇹🇯 +992 Tajikistan</option>
-          <option value="+255">🇹🇿 +255 Tanzania</option>
-          <option value="+66">🇹🇭 +66 Thailand</option>
-          <option value="+228">🇹🇬 +228 Togo</option>
-          <option value="+216">🇹🇳 +216 Tunisia</option>
-          <option value="+90">🇹🇷 +90 Turkey</option>
-          <option value="+993">🇹🇲 +993 Turkmenistan</option>
-          <option value="+256">🇺🇬 +256 Uganda</option>
-          <option value="+380">🇺🇦 +380 Ukraine</option>
-          <option value="+971">🇦🇪 +971 UAE</option>
-          <option value="+44">🇬🇧 +44 United Kingdom</option>
-          <option value="+1">🇺🇸 +1 United States</option>
-          <option value="+598">🇺🇾 +598 Uruguay</option>
-          <option value="+998">🇺🇿 +998 Uzbekistan</option>
-          <option value="+58">🇻🇪 +58 Venezuela</option>
-          <option value="+84">🇻🇳 +84 Vietnam</option>
-          <option value="+967">🇾🇪 +967 Yemen</option>
-          <option value="+260">🇿🇲 +260 Zambia</option>
-          <option value="+263">🇿🇼 +263 Zimbabwe</option>
+    <!-- Section: Identity -->
+    <div class="reg-section-label fu">Personal Information</div>
+    <div class="reg-field-float fu">
+      <input type="text" id="reg-name" placeholder=" " autocomplete="name">
+      <label>Full Name</label>
+    </div>
+    <div class="reg-field-float fu">
+      <input type="email" id="reg-email" placeholder=" " autocomplete="email">
+      <label>Email Address</label>
+    </div>
+
+    <!-- Section: Password -->
+    <div class="reg-section-label fu">Security</div>
+    <div class="reg-field-float fu reg-pw-wrap">
+      <input type="password" id="reg-pw" placeholder=" " autocomplete="new-password">
+      <label>Password</label>
+      <button type="button" class="reg-eye" onclick="togglePw('reg-pw',this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="reg-field-float fu reg-pw-wrap">
+      <input type="password" id="reg-pw2" placeholder=" " autocomplete="new-password">
+      <label>Confirm Password</label>
+      <button type="button" class="reg-eye" onclick="togglePw('reg-pw2',this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="reg-pw-hint fu" id="reg-pw-hint"></div>
+
+    <!-- Section: Date of Birth -->
+    <div class="reg-section-label fu">Date of Birth <span style="color:var(--grey);font-weight:400;letter-spacing:0;text-transform:none;font-size:10px">(must be 18+)</span></div>
+    <div class="reg-dob-row fu">
+      <div class="reg-select-wrap">
+        <select id="reg-dob-month">
+          <option value="">Month</option>
+          <option value="01">January</option><option value="02">February</option>
+          <option value="03">March</option><option value="04">April</option>
+          <option value="05">May</option><option value="06">June</option>
+          <option value="07">July</option><option value="08">August</option>
+          <option value="09">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
         </select>
-        <input type="tel" id="reg-phone" placeholder="3xx 123 4567" style="flex:1">
+        <div class="reg-select-arrow">&#9662;</div>
+      </div>
+      <div class="reg-select-wrap">
+        <select id="reg-dob-day"><option value="">Day</option></select>
+        <div class="reg-select-arrow">&#9662;</div>
+      </div>
+      <div class="reg-select-wrap">
+        <select id="reg-dob-year"><option value="">Year</option></select>
+        <div class="reg-select-arrow">&#9662;</div>
       </div>
     </div>
-    <div class="field fu">
-      <label>Country of Residence</label>
-      <select id="reg-country">
-        <option value="">Select country...</option>
-        <option value="AF">Afghanistan</option>
-        <option value="AL">Albania</option>
-        <option value="DZ">Algeria</option>
-        <option value="AD">Andorra</option>
-        <option value="AO">Angola</option>
-        <option value="AR">Argentina</option>
-        <option value="AM">Armenia</option>
-        <option value="AU">Australia</option>
-        <option value="AT">Austria</option>
-        <option value="AZ">Azerbaijan</option>
-        <option value="BH">Bahrain</option>
-        <option value="BD">Bangladesh</option>
-        <option value="BE">Belgium</option>
-        <option value="BZ">Belize</option>
-        <option value="BJ">Benin</option>
-        <option value="BT">Bhutan</option>
-        <option value="BO">Bolivia</option>
-        <option value="BA">Bosnia</option>
-        <option value="BW">Botswana</option>
-        <option value="BR">Brazil</option>
-        <option value="BN">Brunei</option>
-        <option value="BG">Bulgaria</option>
-        <option value="BF">Burkina Faso</option>
-        <option value="KH">Cambodia</option>
-        <option value="CM">Cameroon</option>
-        <option value="CA">Canada</option>
-        <option value="CL">Chile</option>
-        <option value="CN">China</option>
-        <option value="CO">Colombia</option>
-        <option value="CR">Costa Rica</option>
-        <option value="HR">Croatia</option>
-        <option value="CU">Cuba</option>
-        <option value="CY">Cyprus</option>
-        <option value="CZ">Czech Republic</option>
-        <option value="DK">Denmark</option>
-        <option value="EC">Ecuador</option>
-        <option value="EG">Egypt</option>
-        <option value="SV">El Salvador</option>
-        <option value="EE">Estonia</option>
-        <option value="ET">Ethiopia</option>
-        <option value="FI">Finland</option>
-        <option value="FR">France</option>
-        <option value="GA">Gabon</option>
-        <option value="GE">Georgia</option>
-        <option value="DE">Germany</option>
-        <option value="GH">Ghana</option>
-        <option value="GR">Greece</option>
-        <option value="GT">Guatemala</option>
-        <option value="GN">Guinea</option>
-        <option value="HN">Honduras</option>
-        <option value="HK">Hong Kong</option>
-        <option value="HU">Hungary</option>
-        <option value="IS">Iceland</option>
-        <option value="IN">India</option>
-        <option value="ID">Indonesia</option>
-        <option value="IR">Iran</option>
-        <option value="IQ">Iraq</option>
-        <option value="IE">Ireland</option>
-        <option value="IL">Israel</option>
-        <option value="IT" selected>Italy</option>
-        <option value="JP">Japan</option>
-        <option value="JO">Jordan</option>
-        <option value="KZ">Kazakhstan</option>
-        <option value="KE">Kenya</option>
-        <option value="KR">Korea (South)</option>
-        <option value="KW">Kuwait</option>
-        <option value="KG">Kyrgyzstan</option>
-        <option value="LA">Laos</option>
-        <option value="LV">Latvia</option>
-        <option value="LB">Lebanon</option>
-        <option value="LR">Liberia</option>
-        <option value="LY">Libya</option>
-        <option value="LI">Liechtenstein</option>
-        <option value="LT">Lithuania</option>
-        <option value="LU">Luxembourg</option>
-        <option value="MO">Macau</option>
-        <option value="MG">Madagascar</option>
-        <option value="MY">Malaysia</option>
-        <option value="MV">Maldives</option>
-        <option value="ML">Mali</option>
-        <option value="MT">Malta</option>
-        <option value="MR">Mauritania</option>
-        <option value="MU">Mauritius</option>
-        <option value="MX">Mexico</option>
-        <option value="MD">Moldova</option>
-        <option value="MC">Monaco</option>
-        <option value="MN">Mongolia</option>
-        <option value="MA">Morocco</option>
-        <option value="MZ">Mozambique</option>
-        <option value="MM">Myanmar</option>
-        <option value="NA">Namibia</option>
-        <option value="NP">Nepal</option>
-        <option value="NL">Netherlands</option>
-        <option value="NZ">New Zealand</option>
-        <option value="NI">Nicaragua</option>
-        <option value="NE">Niger</option>
-        <option value="NG">Nigeria</option>
-        <option value="NO">Norway</option>
-        <option value="OM">Oman</option>
-        <option value="PK">Pakistan</option>
-        <option value="PA">Panama</option>
-        <option value="PY">Paraguay</option>
-        <option value="PE">Peru</option>
-        <option value="PH">Philippines</option>
-        <option value="PL">Poland</option>
-        <option value="PT">Portugal</option>
-        <option value="QA">Qatar</option>
-        <option value="RO">Romania</option>
-        <option value="RU">Russia</option>
-        <option value="SA">Saudi Arabia</option>
-        <option value="SN">Senegal</option>
-        <option value="RS">Serbia</option>
-        <option value="SG">Singapore</option>
-        <option value="SK">Slovakia</option>
-        <option value="SI">Slovenia</option>
-        <option value="SO">Somalia</option>
-        <option value="ZA">South Africa</option>
-        <option value="ES">Spain</option>
-        <option value="LK">Sri Lanka</option>
-        <option value="SD">Sudan</option>
-        <option value="SE">Sweden</option>
-        <option value="CH">Switzerland</option>
-        <option value="SY">Syria</option>
-        <option value="TW">Taiwan</option>
-        <option value="TJ">Tajikistan</option>
-        <option value="TZ">Tanzania</option>
-        <option value="TH">Thailand</option>
-        <option value="TG">Togo</option>
-        <option value="TN">Tunisia</option>
-        <option value="TR">Turkey</option>
-        <option value="TM">Turkmenistan</option>
-        <option value="UG">Uganda</option>
-        <option value="UA">Ukraine</option>
-        <option value="AE">UAE</option>
-        <option value="GB">United Kingdom</option>
-        <option value="US">United States</option>
-        <option value="UY">Uruguay</option>
-        <option value="UZ">Uzbekistan</option>
-        <option value="VE">Venezuela</option>
-        <option value="VN">Vietnam</option>
-        <option value="YE">Yemen</option>
-        <option value="ZM">Zambia</option>
-        <option value="ZW">Zimbabwe</option>
-        <option value="OTHER">Other</option>
-      </select>
+    <input type="hidden" id="reg-dob">
+    <!-- Section: Contact -->
+    <div class="reg-section-label fu">Contact &amp; Location</div>
+    <div class="reg-phone-row fu">
+      <div class="reg-select-wrap" style="flex:0 0 130px">
+        <select id="reg-phone-prefix">
+          <option value="+93">&#127462;&#127467; +93</option>
+          <option value="+355">&#127462;&#127473; +355</option>
+          <option value="+213">&#127465;&#127487; +213</option>
+          <option value="+54">&#127462;&#127479; +54</option>
+          <option value="+61">&#127462;&#127482; +61</option>
+          <option value="+43">&#127462;&#127481; +43</option>
+          <option value="+32">&#127463;&#127466; +32</option>
+          <option value="+55">&#127463;&#127479; +55</option>
+          <option value="+1">&#127464;&#127462; +1</option>
+          <option value="+56">&#127464;&#127473; +56</option>
+          <option value="+86">&#127464;&#127475; +86</option>
+          <option value="+57">&#127464;&#127476; +57</option>
+          <option value="+385">&#127469;&#127479; +385</option>
+          <option value="+420">&#127464;&#127487; +420</option>
+          <option value="+45">&#127465;&#127472; +45</option>
+          <option value="+20">&#127466;&#127468; +20</option>
+          <option value="+358">&#127467;&#127470; +358</option>
+          <option value="+33">&#127467;&#127479; +33</option>
+          <option value="+49">&#127465;&#127466; +49</option>
+          <option value="+30">&#127468;&#127479; +30</option>
+          <option value="+852">&#127469;&#127472; +852</option>
+          <option value="+36">&#127469;&#127482; +36</option>
+          <option value="+91">&#127470;&#127475; +91</option>
+          <option value="+62">&#127470;&#127465; +62</option>
+          <option value="+353">&#127470;&#127466; +353</option>
+          <option value="+972">&#127470;&#127473; +972</option>
+          <option value="+39" selected>&#127470;&#127481; +39</option>
+          <option value="+81">&#127471;&#127477; +81</option>
+          <option value="+82">&#127472;&#127479; +82</option>
+          <option value="+60">&#127474;&#127486; +60</option>
+          <option value="+52">&#127474;&#127485; +52</option>
+          <option value="+31">&#127475;&#127473; +31</option>
+          <option value="+64">&#127475;&#127487; +64</option>
+          <option value="+47">&#127475;&#127476; +47</option>
+          <option value="+92">&#127477;&#127472; +92</option>
+          <option value="+63">&#127477;&#127469; +63</option>
+          <option value="+48">&#127477;&#127473; +48</option>
+          <option value="+351">&#127477;&#127481; +351</option>
+          <option value="+40">&#127479;&#127476; +40</option>
+          <option value="+7">&#127479;&#127482; +7</option>
+          <option value="+966">&#127480;&#127462; +966</option>
+          <option value="+65">&#127480;&#127468; +65</option>
+          <option value="+27">&#127487;&#127462; +27</option>
+          <option value="+34">&#127466;&#127480; +34</option>
+          <option value="+46">&#127480;&#127466; +46</option>
+          <option value="+41">&#127464;&#127469; +41</option>
+          <option value="+886">&#127481;&#127484; +886</option>
+          <option value="+66">&#127481;&#127469; +66</option>
+          <option value="+90">&#127481;&#127479; +90</option>
+          <option value="+380">&#127482;&#127462; +380</option>
+          <option value="+971">&#127462;&#127466; +971</option>
+          <option value="+44">&#127468;&#127463; +44</option>
+          <option value="+1">&#127482;&#127480; +1</option>
+          <option value="+84">&#127483;&#127475; +84</option>
+        </select>
+        <div class="reg-select-arrow">&#9662;</div>
+      </div>
+      <div class="reg-field-float" style="flex:1;margin-bottom:0">
+        <input type="tel" id="reg-phone" placeholder=" " autocomplete="tel">
+        <label>Phone Number</label>
+      </div>
     </div>
-    <div class="field fu"><label>Seller Platform</label>
-      <select id="reg-platform">
-        <option>eBay</option><option>Catawiki</option><option>Etsy</option><option>GemRockAuctions</option><option>PriceScope</option><option>Multiple platforms</option><option>Other</option>
-      </select>
+
+    <div class="reg-select-labeled fu">
+      <div class="reg-select-label-text">Country of Residence</div>
+      <div class="reg-select-wrap">
+        <select id="reg-country">
+          <option value="">Select country...</option>
+          <option value="AF">Afghanistan</option><option value="AL">Albania</option>
+          <option value="DZ">Algeria</option><option value="AD">Andorra</option>
+          <option value="AO">Angola</option><option value="AR">Argentina</option>
+          <option value="AM">Armenia</option><option value="AU">Australia</option>
+          <option value="AT">Austria</option><option value="AZ">Azerbaijan</option>
+          <option value="BH">Bahrain</option><option value="BD">Bangladesh</option>
+          <option value="BE">Belgium</option><option value="BZ">Belize</option>
+          <option value="BO">Bolivia</option><option value="BA">Bosnia</option>
+          <option value="BR">Brazil</option><option value="BN">Brunei</option>
+          <option value="BG">Bulgaria</option><option value="KH">Cambodia</option>
+          <option value="CM">Cameroon</option><option value="CA">Canada</option>
+          <option value="CL">Chile</option><option value="CN">China</option>
+          <option value="CO">Colombia</option><option value="CR">Costa Rica</option>
+          <option value="HR">Croatia</option><option value="CU">Cuba</option>
+          <option value="CY">Cyprus</option><option value="CZ">Czech Republic</option>
+          <option value="DK">Denmark</option><option value="EC">Ecuador</option>
+          <option value="EG">Egypt</option><option value="EE">Estonia</option>
+          <option value="ET">Ethiopia</option><option value="FI">Finland</option>
+          <option value="FR">France</option><option value="GE">Georgia</option>
+          <option value="DE">Germany</option><option value="GH">Ghana</option>
+          <option value="GR">Greece</option><option value="GT">Guatemala</option>
+          <option value="HN">Honduras</option><option value="HK">Hong Kong</option>
+          <option value="HU">Hungary</option><option value="IS">Iceland</option>
+          <option value="IN">India</option><option value="ID">Indonesia</option>
+          <option value="IR">Iran</option><option value="IQ">Iraq</option>
+          <option value="IE">Ireland</option><option value="IL">Israel</option>
+          <option value="IT" selected>Italy</option><option value="JP">Japan</option>
+          <option value="JO">Jordan</option><option value="KZ">Kazakhstan</option>
+          <option value="KE">Kenya</option><option value="KR">Korea (South)</option>
+          <option value="KW">Kuwait</option><option value="LA">Laos</option>
+          <option value="LV">Latvia</option><option value="LB">Lebanon</option>
+          <option value="LY">Libya</option><option value="LI">Liechtenstein</option>
+          <option value="LT">Lithuania</option><option value="LU">Luxembourg</option>
+          <option value="MY">Malaysia</option><option value="MV">Maldives</option>
+          <option value="MT">Malta</option><option value="MU">Mauritius</option>
+          <option value="MX">Mexico</option><option value="MD">Moldova</option>
+          <option value="MC">Monaco</option><option value="MN">Mongolia</option>
+          <option value="MA">Morocco</option><option value="NP">Nepal</option>
+          <option value="NL">Netherlands</option><option value="NZ">New Zealand</option>
+          <option value="NG">Nigeria</option><option value="NO">Norway</option>
+          <option value="OM">Oman</option><option value="PK">Pakistan</option>
+          <option value="PA">Panama</option><option value="PE">Peru</option>
+          <option value="PH">Philippines</option><option value="PL">Poland</option>
+          <option value="PT">Portugal</option><option value="QA">Qatar</option>
+          <option value="RO">Romania</option><option value="RU">Russia</option>
+          <option value="SA">Saudi Arabia</option><option value="RS">Serbia</option>
+          <option value="SG">Singapore</option><option value="SK">Slovakia</option>
+          <option value="SI">Slovenia</option><option value="ZA">South Africa</option>
+          <option value="ES">Spain</option><option value="LK">Sri Lanka</option>
+          <option value="SE">Sweden</option><option value="CH">Switzerland</option>
+          <option value="TW">Taiwan</option><option value="TH">Thailand</option>
+          <option value="TN">Tunisia</option><option value="TR">Turkey</option>
+          <option value="UA">Ukraine</option><option value="AE">UAE</option>
+          <option value="GB">United Kingdom</option><option value="US">United States</option>
+          <option value="UY">Uruguay</option><option value="UZ">Uzbekistan</option>
+          <option value="VE">Venezuela</option><option value="VN">Vietnam</option>
+          <option value="YE">Yemen</option><option value="ZM">Zambia</option>
+          <option value="ZW">Zimbabwe</option><option value="OTHER">Other</option>
+        </select>
+        <div class="reg-select-arrow">&#9662;</div>
+      </div>
     </div>
-    <button class="btn btn-gold fu" onclick="doRegister()" style="margin-top:8px">Create Account</button>
+
+    <!-- Section: Platform -->
+    <div class="reg-section-label fu">Seller Platform</div>
+    <div class="reg-platform-grid fu" id="reg-platform-grid">
+      <div class="reg-platform-chip active" onclick="selectPlatform(this,'eBay')">eBay</div>
+      <div class="reg-platform-chip" onclick="selectPlatform(this,'Catawiki')">Catawiki</div>
+      <div class="reg-platform-chip" onclick="selectPlatform(this,'Etsy')">Etsy</div>
+      <div class="reg-platform-chip" onclick="selectPlatform(this,'GemRockAuctions')">GemRockAuctions</div>
+      <div class="reg-platform-chip" onclick="selectPlatform(this,'PriceScope')">PriceScope</div>
+      <div class="reg-platform-chip" onclick="selectPlatform(this,'Multiple')">Multiple</div>
+      <div class="reg-platform-chip" onclick="selectPlatform(this,'Other')">Other</div>
+    </div>
+    <select id="reg-platform" style="display:none">
+      <option value="eBay" selected>eBay</option>
+      <option value="Catawiki">Catawiki</option>
+      <option value="Etsy">Etsy</option>
+      <option value="GemRockAuctions">GemRockAuctions</option>
+      <option value="PriceScope">PriceScope</option>
+      <option value="Multiple platforms">Multiple platforms</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <button class="btn btn-gold fu" onclick="doRegister()" style="margin-top:24px">Create Account</button>
     <div class="auth-switch fu">Already have an account? <span onclick="show('s-login')">Sign in</span></div>
   </div>
 </div>
 
 <!-- DASHBOARD -->
+<div id="s-dashboard" class="screen">
+  <div class="topbar">
+
 <div id="s-dashboard" class="screen">
   <div class="topbar">
     <div class="topbar-logo">LiveProof</div>
@@ -1206,6 +1138,78 @@ function setLoading(v) {
   const el = document.getElementById('loading'); 
   el.style.display = v ? 'flex' : 'none'; 
 }
+
+// ── REGISTER FORM HELPERS ──
+function togglePw(id, btn) {
+  const el = document.getElementById(id);
+  if (el.type === 'password') { el.type = 'text'; btn.classList.add('visible'); }
+  else { el.type = 'password'; btn.classList.remove('visible'); }
+}
+
+function selectPlatform(chip, value) {
+  document.querySelectorAll('.reg-platform-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  const sel = document.getElementById('reg-platform');
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === value || sel.options[i].value === value + ' platforms') {
+      sel.selectedIndex = i; break;
+    }
+  }
+  sel.value = value === 'Multiple' ? 'Multiple platforms' : value;
+}
+
+// DOB dropdowns — populate day & year, sync hidden field
+(function initDobDropdowns() {
+  const mSel = document.getElementById('reg-dob-month');
+  const dSel = document.getElementById('reg-dob-day');
+  const ySel = document.getElementById('reg-dob-year');
+  const hidden = document.getElementById('reg-dob');
+  if (!mSel) return;
+
+  const currentYear = new Date().getFullYear();
+  const maxYear = currentYear - 18;
+  for (let y = maxYear; y >= 1920; y--) {
+    const o = document.createElement('option');
+    o.value = String(y); o.textContent = String(y);
+    ySel.appendChild(o);
+  }
+
+  function populateDays() {
+    const m = parseInt(mSel.value) || 0;
+    const y = parseInt(ySel.value) || 2000;
+    const max = m ? new Date(y, m, 0).getDate() : 31;
+    const prev = dSel.value;
+    dSel.innerHTML = '<option value="">Day</option>';
+    for (let d = 1; d <= max; d++) {
+      const o = document.createElement('option');
+      o.value = String(d).padStart(2,'0');
+      o.textContent = String(d);
+      dSel.appendChild(o);
+    }
+    if (prev && parseInt(prev) <= max) dSel.value = prev;
+  }
+
+  function syncHidden() {
+    const m = mSel.value, d = dSel.value, y = ySel.value;
+    hidden.value = (y && m && d) ? y + '-' + m + '-' + d : '';
+  }
+
+  mSel.addEventListener('change', () => { populateDays(); syncHidden(); });
+  dSel.addEventListener('change', syncHidden);
+  ySel.addEventListener('change', () => { populateDays(); syncHidden(); });
+  populateDays();
+})();
+
+// Password strength hint
+document.getElementById('reg-pw')?.addEventListener('input', function() {
+  const v = this.value;
+  const hint = document.getElementById('reg-pw-hint');
+  if (!hint) return;
+  if (!v) { hint.textContent = ''; hint.style.color = 'var(--grey)'; return; }
+  if (v.length < 8) { hint.textContent = 'Too short — minimum 8 characters'; hint.style.color = 'var(--red)'; }
+  else if (v.length < 10 || !/[0-9!@#$%^&*]/.test(v)) { hint.textContent = 'Fair — add numbers or symbols for a stronger password'; hint.style.color = 'var(--yellow)'; }
+  else { hint.textContent = 'Strong password ✓'; hint.style.color = 'var(--green)'; }
+});
 
 // ── AUTH ──
 async function doLogin() {

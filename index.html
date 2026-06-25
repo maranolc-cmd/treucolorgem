@@ -1332,10 +1332,26 @@ function initDashboard() {
   if (!state.user) return;
   document.getElementById('user-display-name').textContent = state.user.name;
   document.getElementById('user-avatar').textContent = state.user.initials;
+
+  // Update plan display
+  const plan = state.user.plan || 'free';
+  const planConfig = {
+    free:    { name: 'Free',    icon: '🆓', price: '€0',  color: 'var(--grey)' },
+    single:  { name: 'Single',  icon: '1️⃣', price: '€5/cert', color: 'var(--gold)' },
+    silver:  { name: 'Silver',  icon: '🥈', price: '€19/month', color: '#aaa' },
+    gold:    { name: 'Gold',    icon: '🥇', price: '€49/month', color: 'var(--gold)' },
+    diamond: { name: 'Diamond', icon: '💎', price: '€99/month', color: '#b9f2ff' },
+  };
+  const pc = planConfig[plan] || planConfig.free;
+  const levelEl = document.getElementById('dash-level');
+  const levelIconEl = document.querySelector('.level-icon');
+  if (levelEl) { levelEl.textContent = pc.name; levelEl.style.color = pc.color; }
+  if (levelIconEl) levelIconEl.textContent = pc.icon;
+
   // Mostra badge free trials se piano free
   const trialsBadge = document.getElementById('free-trials-badge');
   if (trialsBadge) {
-    if (state.user.plan === 'free') {
+    if (plan === 'free') {
       trialsBadge.textContent = state.user.freeTrials + ' free certification' + (state.user.freeTrials===1?'':'s') + ' remaining';
       trialsBadge.style.display = 'block';
     } else {
@@ -1374,7 +1390,8 @@ function updateDashStats() {
   document.getElementById('stat-verified').textContent = verified;
 
   // Determine current level based on average score and listing count
-  const plan = state.user?.plan || 'silver';
+  const planPrices = { free: '€0', single: '€5/cert', silver: '€19', gold: '€49', diamond: '€99' };
+  const planPrice = planPrices[plan] || '€0';
   let thresholds = { silver: 70, gold: 85, diamond: 95 };
   let threshold = thresholds[plan] || 70;
 
@@ -1386,7 +1403,7 @@ function updateDashStats() {
   } else if (avg !== null) {
     const fee = document.getElementById('dash-fee');
     if (fee) {
-      fee.textContent = `€${plan==='gold'?'400':plan==='diamond'?'1,000':'150'} / year · Avg score: ${avg}% ${avg >= threshold ? '✓' : ''}`;
+      fee.textContent = `${planPrice} / month · Avg score: ${avg}% ${avg >= threshold ? '✓' : ''}`;
       fee.style.color = avg >= threshold ? 'var(--green)' : 'var(--grey)';
     }
   }

@@ -311,9 +311,10 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
   <div class="auth-content">
     <div class="auth-title fu">Welcome back</div>
     <div class="auth-sub fu">Sign in to your LiveProof account</div>
-    <div class="field fu"><label>Email</label><input type="email" id="login-email" placeholder="your@email.com"></div>
-    <div class="field fu"><label>Password</label><input type="password" id="login-pw" placeholder="••••••••"></div>
+    <div class="field fu"><label>Email</label><input type="email" id="login-email" placeholder="your@email.com" oninput="const e=document.getElementById('login-error');if(e)e.style.display='none'"></div>
+    <div class="field fu"><label>Password</label><input type="password" id="login-pw" placeholder="••••••••" oninput="const e=document.getElementById('login-error');if(e)e.style.display='none'"></div>
     <button class="btn btn-gold fu" onclick="doLogin()" style="margin-top:8px">Sign In</button>
+    <div id="login-error" style="display:none;color:#e07755;font-size:12px;text-align:center;margin-top:12px;padding:10px 16px;background:rgba(224,119,85,0.08);border:1px solid rgba(224,119,85,0.25);border-radius:6px"></div>
     <div class="auth-switch fu">Don't have an account? <span onclick="show('s-register')">Register here</span></div>
     <div class="divider fu"><div class="divider-line"></div><div class="divider-text">OR</div><div class="divider-line"></div></div>
     <button class="btn btn-grey fu" onclick="demoLogin()">Demo Login (no account needed)</button>
@@ -1122,21 +1123,19 @@ function show(id) {
 function goBack() { show(state.lastScreen); }
 
 // ── TOAST ──
-function toast(msg, dur=2800) {
+function toast(msg, dur=4000) {
   const t = document.getElementById('app-toast');
   if (!t) { console.warn('toast element missing, msg was:', msg); return; }
-  t.textContent = msg;
-  t.classList.remove('show');
-  void t.offsetWidth;
-  t.classList.add('show');
-  t.style.opacity = '1';
-  t.style.transform = 'translateX(-50%) translateY(0)';
   clearTimeout(t._hideTimer);
-  t._hideTimer = setTimeout(() => {
-    t.classList.remove('show');
-    t.style.opacity = '0';
-    t.style.transform = 'translateX(-50%) translateY(-16px)';
-  }, dur);
+  t.textContent = msg;
+  t.style.cssText = 'opacity:0;transform:translateX(-50%) translateY(-16px)';
+  // Use double rAF to ensure paint before animating
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    t.style.cssText = 'opacity:1;transform:translateX(-50%) translateY(0);transition:opacity 0.3s,transform 0.3s';
+    t._hideTimer = setTimeout(() => {
+      t.style.cssText = 'opacity:0;transform:translateX(-50%) translateY(-16px);transition:opacity 0.3s,transform 0.3s';
+    }, dur);
+  }));
 }
 
 // ── LOADING ──
@@ -1254,7 +1253,8 @@ async function doLogin() {
       default:
         msg = 'Login failed. Please try again.';
     }
-    toast(msg);
+    const errEl = document.getElementById('login-error');
+    if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
   } finally {
     setLoading(false);
   }

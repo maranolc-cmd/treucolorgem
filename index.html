@@ -42,7 +42,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 .nav-right{margin-left:auto}
 
 /* TOP BAR */
-.topbar{padding:18px 20px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(201,168,76,0.12);flex-shrink:0}
+.topbar{padding:18px 20px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(201,168,76,0.12);flex-shrink:0;position:relative}
 .topbar-logo{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold);letter-spacing:2px}
 .avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dim),var(--gold));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--black);cursor:pointer}
 
@@ -550,7 +550,12 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 <div id="s-dashboard" class="screen">
   <div class="topbar">
     <div class="topbar-logo">LiveProof</div>
-    <div class="avatar" id="user-avatar" onclick="show('s-plans')">LM</div>
+    <div class="avatar" id="user-avatar" onclick="toggleAvatarMenu()">LM</div>
+    <div id="avatar-menu" style="display:none;position:absolute;top:60px;right:16px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;overflow:hidden;z-index:999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.5)">
+      <div style="padding:12px 16px;border-bottom:1px solid #2a2a2a;font-size:11px;color:var(--grey)" id="avatar-email"></div>
+      <div onclick="toggleAvatarMenu();show('s-plans')" style="padding:12px 16px;font-size:12px;cursor:pointer;color:var(--gold)" onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">⭐ View Plans</div>
+      <div onclick="toggleAvatarMenu();doLogout()" style="padding:12px 16px;font-size:12px;cursor:pointer;color:#e07755" onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">← Sign Out</div>
+    </div>
   </div>
   <div class="dash">
     <div class="greeting fu">Good evening,</div>
@@ -1328,10 +1333,26 @@ async function doRegister() {
 }
 
 // ── DASHBOARD ──
+function toggleAvatarMenu() {
+  const menu = document.getElementById('avatar-menu');
+  if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+// Close menu when clicking outside
+document.addEventListener('click', function(e) {
+  const avatar = document.getElementById('user-avatar');
+  const menu = document.getElementById('avatar-menu');
+  if (menu && avatar && !avatar.contains(e.target) && !menu.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+window.toggleAvatarMenu = toggleAvatarMenu;
+
 function initDashboard() {
   if (!state.user) return;
   document.getElementById('user-display-name').textContent = state.user.name;
   document.getElementById('user-avatar').textContent = state.user.initials;
+  const emailEl = document.getElementById('avatar-email');
+  if (emailEl) emailEl.textContent = state.user.email;
 
   // Update plan display
   const plan = state.user.plan || 'free';

@@ -306,7 +306,6 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 <!-- LOGIN -->
 <div id="s-login" class="screen active">
   <div class="nav">
-    <button class="nav-back" onclick="show('s-login')">←</button>
     <div class="nav-title">Sign In</div>
   </div>
   <div class="auth-content">
@@ -1133,7 +1132,7 @@ function toast(msg, dur=2500) {
 // ── LOADING ──
 function setLoading(v) { 
   const el = document.getElementById('loading'); 
-  el.style.display = v ? 'flex' : 'none'; 
+  if (el) el.style.display = v ? 'flex' : 'none'; 
 }
 
 // ── REGISTER FORM HELPERS ──
@@ -1225,7 +1224,13 @@ async function doLogin() {
     show('s-dashboard');
     toast('Welcome back!');
   } catch(e) {
-    toast(e.code === 'auth/invalid-credential' ? 'Incorrect email or password.' : 'Login failed. Try again.');
+    console.error('Login error:', e.code, e.message);
+    const msg = e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found'
+      ? 'Incorrect email or password.'
+      : e.code === 'auth/too-many-requests'
+      ? 'Too many attempts. Please wait a moment.'
+      : 'Login failed. Try again.';
+    toast(msg);
   } finally {
     setLoading(false);
   }

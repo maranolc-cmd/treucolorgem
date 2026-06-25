@@ -2038,8 +2038,14 @@ function incrementRateLimit() {
 async function startAnalysis() {
   // Controllo free trials per utenti free
   if (state.user && state.user.plan === 'free' && state.user.freeTrials <= 0) {
-    toast('No free certifications remaining. Please upgrade your plan.');
-    show('s-plans');
+    // Offri acquisto singolo o upgrade piano
+    const doSingle = confirm('No free certifications remaining.\n\nBuy a single certificate for €5, or upgrade to a plan?\n\nOK = Buy single (€5)\nCancel = View plans');
+    if (doSingle) {
+      state.selectedPlan = 'single';
+      await subscribePlan();
+    } else {
+      show('s-plans');
+    }
     return;
   }
   const gemName = document.getElementById('gem-name').value.trim();
@@ -2641,18 +2647,59 @@ function selectPlan(plan, el) {
   btn.style.pointerEvents = 'auto';
 }
 
-function subscribePlan() {
-  if (!state.selectedPlan) return;
-  toast('Redirecting to secure payment... (Stripe integration pending)');
-  setTimeout(() => {
-    if (state.user) {
-      show('s-dashboard');
-      toast('Plan selected! Payment setup required to activate.');
-    } else {
-      show('s-register');
-    }
-  }, 2000);
+async function subscribePlan() {
+  if (!state.selectedPlan) { toast('Please select a plan first.'); return; }
+  if (!state.user) { show('s-register'); return; }
+
+  const btn = document.getElementById('subscribe-btn');
+  const originalText = btn.textContent;
+  btn.textContent = 'Redirecting...';
+  btn.style.opacity = '0.7';
+  btn.style.pointerEvents = 'none';
+
+  try {
+    const token = await window._auth.currentUser.getIdToken();
+    const res = await fetch('/api/create-checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ plan: state.selectedPlan })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Checkout failed');
+    window.location.href = data.url;
+  } catch (e) {
+    console.error('Checkout error:', e);
+    toast(e.message || 'Could not start checkout. Please try again.');
+    btn.textContent = originalText;
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  }
 }
+
+// Handle Stripe return
+(function handleStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const payment = params.get('payment');
+  const plan = params.get('plan');
+  if (payment === 'success' && plan) {
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => {
+      toast(`🎉 Payment successful! Your ${plan} plan is now active.`);
+      if (state.user) {
+        state.user.plan = plan;
+        initDashboard();
+        show('s-dashboard');
+      }
+    }, 1000);
+  } else if (payment === 'cancelled') {
+    window.history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => toast('Payment cancelled. You can try again anytime.'), 500);
+  }
+})();
 
 // ── VERIFY ──
 function doVerify() {

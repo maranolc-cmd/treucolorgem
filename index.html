@@ -286,7 +286,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 
 <!-- WELCOME -->
-<div id="s-welcome" class="screen active">
+<div id="s-welcome" class="screen">
   <div class="gem-logo">
     <svg viewBox="0 0 88 88" fill="none">
       <circle cx="44" cy="44" r="36" fill="none" stroke="#c9a84c" stroke-width="1.2" opacity="0.35"/>
@@ -304,9 +304,9 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 </div>
 
 <!-- LOGIN -->
-<div id="s-login" class="screen">
+<div id="s-login" class="screen active">
   <div class="nav">
-    <button class="nav-back" onclick="show('s-welcome')">←</button>
+    <button class="nav-back" onclick="show('s-login')">←</button>
     <div class="nav-title">Sign In</div>
   </div>
   <div class="auth-content">
@@ -848,7 +848,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 <!-- VERIFY (BUYER) -->
 <div id="s-verify" class="screen">
   <div class="nav">
-    <button class="nav-back" onclick="show('s-welcome')">←</button>
+    <button class="nav-back" onclick="show('s-login')">←</button>
     <div class="nav-title">Verify Purchase</div>
   </div>
   <div class="verify-content">
@@ -908,7 +908,7 @@ window.doLogout = async function() {
   try { await signOut(auth); } catch(e) {}
   state.user = null;
   state.listings = [];
-  show('s-welcome');
+  show('s-login');
   toast('Logged out.');
 };
 
@@ -929,9 +929,7 @@ let deviceFingerprint = null;
     const fp = await FingerprintJS.load();
     const result = await fp.get();
     deviceFingerprint = result.visitorId;
-    console.log('Device fingerprint:', deviceFingerprint);
   } catch(e) {
-    console.warn('Fingerprint failed:', e);
     deviceFingerprint = Math.random().toString(36).slice(2);
   }
 })();
@@ -945,7 +943,7 @@ const state = {
   livePhotoData: null,
   currentScore: null,
   currentGemName: '',
-  lastScreen: 's-welcome',
+  lastScreen: 's-login',
   selectedPlan: null,
   // Doppio session code
   camMode: null,           // 'listing' | 'live' — quale foto si sta scattando
@@ -959,11 +957,10 @@ const state = {
   certData: null,
 };
 
-// Mostra welcome screen subito dopo state inizializzato
+// Nascondi splash screen
 (function() {
   const splash = document.getElementById('app-loading');
   if (splash) splash.style.display = 'none';
-  show('s-welcome');
 })();
 
 // ── VERTICALS ──
@@ -1017,8 +1014,7 @@ function selectVertical(id) {
 function show(id) {
   try {
     const prev = document.querySelector('.screen.active')?.id;
-    console.log('👁️ show called:', id, 'prev:', prev);
-    if (prev === id) { console.log('👁️ already active, skipping'); return; } // già sulla schermata giusta, non fare nulla
+    if (prev === id) { return; } // già sulla schermata giusta, non fare nulla
     if (prev === 's-camera' && id !== 's-camera') stopCamera();
     state.lastScreen = prev || 's-welcome';
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
@@ -1122,7 +1118,7 @@ function show(id) {
         });
       }
     }
-  } catch(e) { console.log('show error:', e); }
+  } catch(e) { }
 }
 function goBack() { show(state.lastScreen); }
 
@@ -1564,7 +1560,6 @@ async function startCamera() {
     state.liveSessionCode = code;
   }
   showSessionCode(code);
-  console.log('Session code [' + state.camMode + ']:', code);
   try {
     const video = document.getElementById('cam-video');
 
@@ -1609,7 +1604,6 @@ async function startCamera() {
           width: { ideal: 3840, min: 1280 },
           height: { ideal: 2160, min: 720 }
         };
-        console.log('Using ultrawide camera:', ultrawide.label);
       }
     } catch(_) {}
 
@@ -1645,7 +1639,6 @@ async function startCamera() {
         setupTapToFocus(video, cameraStream);
         initZoomSlider();
       } catch(playError) {
-        console.log('Play error:', playError);
       }
     };
 
@@ -1670,7 +1663,6 @@ async function startCamera() {
     }, 4000);
 
   } catch(err) {
-    console.log('Camera error:', err);
     document.getElementById('light-txt').textContent = 'Camera not available — use upload';
     document.getElementById('light-dot').style.background = 'var(--yellow)';
     document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
@@ -2041,7 +2033,7 @@ async function startAnalysis() {
     runAnalysisSteps();
     await callAI();
   } catch(e) {
-    console.log('startAnalysis error:', e);
+    console.error('startAnalysis error:', e);
     show('s-new');
     if (e && e.isTrusted !== undefined) {
       toast('❌ DOM error — please retry');
@@ -2103,7 +2095,6 @@ async function callAI() {
     // Compress live photo too
     const liveImage = state.livePhotoData ? await compressImage(state.livePhotoData) : null;
 
-    console.log('Calling API — gem:', state.currentGemName, '| listing:', !!listingImage, '| live:', !!state.livePhotoData);
 
     // Ottieni token Firebase per autenticazione lato server
     let idToken = null;
@@ -2133,7 +2124,7 @@ async function callAI() {
       if (window._auth.currentUser) {
         idToken = await window._auth.currentUser.getIdToken();
       }
-    } catch(e) { console.warn('getIdToken failed:', e); }
+    } catch(e) { }
 
     const response = await fetch('/api/analyze', {
       method: 'POST',
@@ -2157,15 +2148,12 @@ async function callAI() {
       })
     });
 
-    console.log('API status:', response.status);
     if (!response.ok) {
       const errText = await response.text();
-      console.log('API error:', errText);
       throw new Error('API ' + response.status + ': ' + errText.substring(0, 200));
     }
 
     const result = await response.json();
-    console.log('API result:', JSON.stringify(result));
     if (result.error) throw new Error(result.error);
 
     // Conta solo le analisi completate (non i RETAKE per foto scadente)
@@ -2175,7 +2163,6 @@ async function callAI() {
     showScore(result);
 
   } catch(e) {
-    console.log('AI error:', e);
     show('s-new');
     const msg = e?.message || e?.name || JSON.stringify(e) || 'unknown';
     toast('❌ ' + msg.substring(0, 80));
@@ -2331,7 +2318,7 @@ async function show_cert_screen() {
 
   // QR via qrcode.js (Google Charts bloccato)
   const qrDiv = document.getElementById('cert-qr');
-  const verifyUrl = 'https://treucolorgem.vercel.app/?verify=' + id;
+  const verifyUrl = 'https://liveproof.ai/verify/' + id;
   qrDiv.innerHTML = '';
   try {
     new QRCode(qrDiv, { text: verifyUrl, width: 46, height: 46, correctLevel: QRCode.CorrectLevel.L });
@@ -2370,11 +2357,36 @@ async function show_cert_screen() {
     try {
       const fs = window._fs;
       const listing = state.listings[state.listings.length - 1];
+
+      // Upload listing + live photos to Firebase Storage
+      let listingImageUrl = null, liveImageUrl = null;
+      const certPath = `certifications/${state.user.uid}/${listing.id}`;
+      const listingDataUrl = state.listingImageData || (() => { try { return sessionStorage.getItem('tcg_listing'); } catch(_) { return null; } })();
+      if (listingDataUrl) {
+        try {
+          const lRef = fs.storageRef(storage, `${certPath}/listing.jpg`);
+          await fs.uploadString(lRef, listingDataUrl, 'data_url');
+          listingImageUrl = await fs.getDownloadURL(lRef);
+        } catch(_) {}
+      }
+      if (state.livePhotoData) {
+        try {
+          const rRef = fs.storageRef(storage, `${certPath}/live.jpg`);
+          await fs.uploadString(rRef, state.livePhotoData, 'data_url');
+          liveImageUrl = await fs.getDownloadURL(rRef);
+        } catch(_) {}
+      }
+
       await fs.addDoc(fs.collection(window._db, 'certifications'), {
         ...listing,
         uid: state.user.uid,
         email: state.user.email,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        listingImageUrl,
+        liveImageUrl,
+        gemName: state.currentGemName,
+        vertical: state.vertical || 'gemstone',
+        verifyUrl: `https://liveproof.ai/verify/${listing.id}`
       });
       // Decrementa freeTrials se piano free
       if (state.user.plan === 'free' && state.user.freeTrials > 0) {
@@ -2660,7 +2672,6 @@ document.addEventListener('DOMContentLoaded', function() {
   if(bl) { bl.onclick = function(e){ e.preventDefault(); show('s-login'); return false; }; }
   if(bv) { bv.onclick = function(e){ e.preventDefault(); show('s-verify'); return false; }; }
   if(bp) { bp.onclick = function(e){ e.preventDefault(); show('s-plans'); return false; }; }
-  console.log('Buttons attached:', !!bl, !!bv, !!bp);
 });
 
 async function resendVerificationEmail() {
@@ -2697,7 +2708,6 @@ window.show_cert_screen = typeof show_cert_screen !== 'undefined' ? show_cert_sc
 
 // Auth state listener
 onAuthStateChanged(auth, async (user) => {
-  console.log('🔥 AUTH:', user?.email || 'null', 'verified:', user?.emailVerified, 'active screen:', document.querySelector('.screen.active')?.id);
   if (user && user.emailVerified) {
     const userDoc = await getDoc(doc(db, 'users', user.uid));
     const userData = userDoc.exists() ? userDoc.data() : {};
@@ -2725,7 +2735,7 @@ onAuthStateChanged(auth, async (user) => {
       // Mantieni la schermata corrente, non fare nulla
       return;
     }
-    show('s-welcome');
+    show('s-login');
   }
 });
 

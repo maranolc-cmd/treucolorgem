@@ -872,7 +872,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="app-toast"></div>
 <div class="loading-overlay" id="loading" style="display:none!important"><div class="loading-spinner"></div><div class="loading-text">Processing...</div></div>
 
 <script type="module">
@@ -1123,7 +1123,7 @@ function goBack() { show(state.lastScreen); }
 
 // ── TOAST ──
 function toast(msg, dur=2800) {
-  const t = document.getElementById('toast');
+  const t = document.getElementById('app-toast');
   if (!t) { console.warn('toast element missing, msg was:', msg); return; }
   t.textContent = msg;
   t.classList.remove('show');

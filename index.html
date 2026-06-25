@@ -1124,9 +1124,19 @@ function goBack() { show(state.lastScreen); }
 // ── TOAST ──
 function toast(msg, dur=2500) {
   const t = document.getElementById('toast');
+  if (!t) { console.warn('toast element missing, msg was:', msg); return; }
   t.textContent = msg;
+  t.classList.remove('show');
+  void t.offsetWidth;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), dur);
+  t.style.opacity = '1';
+  t.style.transform = 'translateX(-50%) translateY(0)';
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(() => {
+    t.classList.remove('show');
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(16px)';
+  }, dur);
 }
 
 // ── LOADING ──

@@ -566,8 +566,8 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div class="level-row">
         <div class="level-icon">🥈</div>
         <div>
-          <div class="level-name" id="dash-level">Silver</div>
-          <div class="level-fee" id="dash-fee">€15 / month · Renews Jan 2027</div>
+          <div class="level-name" id="dash-level">Free</div>
+          <div class="level-fee" id="dash-fee">3 free certifications included</div>
         </div>
       </div>
       <div class="prog-labels"><span>Progress to Gold</span><span id="dash-prog-txt">0 / 50 listings</span></div>
@@ -1416,14 +1416,22 @@ function updateDashStats() {
   let thresholds = { silver: 70, gold: 85, diamond: 95 };
   let threshold = thresholds[plan] || 70;
 
-  // Show warning if average is below threshold
-  if (avg !== null && avg < threshold && count >= 3) {
-    const fee = document.getElementById('dash-fee');
-    if (fee) fee.textContent = `⚠ Avg score ${avg}% — minimum required: ${threshold}%`;
-    fee.style.color = 'var(--red)';
-  } else if (avg !== null) {
-    const fee = document.getElementById('dash-fee');
-    if (fee) {
+  // Update dash-fee
+  const fee = document.getElementById('dash-fee');
+  if (fee) {
+    if (avg === null) {
+      if (plan === 'free') {
+        const trials = state.user.freeTrials ?? 3;
+        fee.textContent = trials + ' free certification' + (trials===1?'':'s') + ' remaining';
+        fee.style.color = 'var(--grey)';
+      } else {
+        fee.textContent = planPrice + ' / month';
+        fee.style.color = 'var(--grey)';
+      }
+    } else if (avg < threshold && count >= 3) {
+      fee.textContent = `⚠ Avg score ${avg}% — minimum required: ${threshold}%`;
+      fee.style.color = 'var(--red)';
+    } else {
       fee.textContent = `${planPrice} / month · Avg score: ${avg}% ${avg >= threshold ? '✓' : ''}`;
       fee.style.color = avg >= threshold ? 'var(--green)' : 'var(--grey)';
     }

@@ -936,7 +936,7 @@ let deviceFingerprint = null;
   }
 })();
 
-const state = {
+const state = window.state = {
   user: null,
   vertical: 'gems',       // verticale selezionato — alimenta il prompt
   listings: JSON.parse(localStorage.getItem('tc_listings') || '[]'),

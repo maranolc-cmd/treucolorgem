@@ -155,9 +155,26 @@ Respond ONLY with valid JSON, no markdown:
 
     const text = response.content[0].text.trim();
     const cleaned = text.replace(/```json|```/g, "").trim();
-    const result = JSON.parse(cleaned);
+    const raw = JSON.parse(cleaned);
 
-    return res.status(200).json({ ...result, uid });
+    // Map Anthropic response fields to frontend-expected fields
+    const result = {
+      score: raw.score,
+      verdict: raw.certified ? 'CERTIFIED' : 'REJECTED',
+      color_match: raw.colorMatch === 'excellent' ? '✓ Excellent' :
+                   raw.colorMatch === 'good' ? '✓ Good' :
+                   raw.colorMatch === 'fair' ? '⚠ Fair' : '✗ Poor',
+      saturation: raw.artificialEnhancement ? '✗ Enhanced' : '✓ Natural',
+      filter_detected: raw.artificialEnhancement ? '✗ Detected' : '✓ None',
+      light_source: raw.lightingOk ? '✓ ' + (raw.estimatedColorTemp || 'Acceptable') : '✗ Manipulated',
+      assessment: raw.summary || '',
+      reason: raw.flags && raw.flags.length > 0 ? raw.flags.join('. ') : (raw.certified ? 'Listing accurately represents the item.' : 'Color or lighting discrepancy detected.'),
+      flags: raw.flags || [],
+      deltaE: raw.deltaE,
+      uid,
+    };
+
+    return res.status(200).json(result);
   } catch (e) {
     console.error("Analysis error:", e);
     return res.status(500).json({ error: "Analysis failed. Please try again.", detail: e.message });

@@ -781,7 +781,6 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
         <div class="cert-wm-qr" id="cert-qr"></div>
       </div>
     </div>
-    <div class="share-hint">Download this photo and upload it to your listing on eBay, Catawiki or Etsy. Buyers can scan the QR to verify authenticity.</div>
     <div class="cert-table" id="cert-table"></div>
     <button class="btn btn-gold" onclick="downloadCert()">⬇ Download Certified Photo</button>
     <button class="btn btn-outline" onclick="show('s-dashboard')" style="margin-top:10px">Back to Dashboard</button>
@@ -1734,7 +1733,6 @@ async function startCamera() {
     setTimeout(() => {
       if (!cameraInitialized) {
         stopCamera();
-        toast('Camera access failed — using file upload');
         document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
         const shutter = document.getElementById('shutter-btn');
         shutter.style.opacity = '1';
@@ -2617,12 +2615,12 @@ function downloadCert() {
 
     if (qrCanvas) {
       // qrcode.js ha generato un <canvas> — copialo direttamente (sincrono)
-      ctx.drawImage(qrCanvas, 938, 868, 106, 106);
+      ctx.drawImage(qrCanvas, 900, 840, 160, 160);
       finalize();
     } else if (qrImg && qrImg.src) {
       // qrcode.js ha generato un <img> — aspetta che sia loaded
       const drawQrImg = () => {
-        ctx.drawImage(qrImg, 938, 868, 106, 106);
+        ctx.drawImage(qrImg, 900, 840, 160, 160);
         finalize();
       };
       if (qrImg.complete) {

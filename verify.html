@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Verify Certificate — TrueColorGem by LiveProof</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--black:#080808;--dark:#111;--card:#181818;--gold:#c9a84c;--gold-light:#e8c96a;--gold-dim:#6a5020;--white:#f5f0e8;--grey:#777;--grey2:#444;--green:#4caf7d;--red:#e05555}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--black);color:var(--white);font-family:'Montserrat',sans-serif;font-size:14px;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:0 0 60px}
+
+/* HEADER */
+.header{width:100%;padding:24px 24px 20px;border-bottom:1px solid rgba(201,168,76,0.12);display:flex;align-items:center;justify-content:space-between;background:var(--black)}
+.header-logo{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold);letter-spacing:2px}
+.header-sub{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--grey);margin-top:2px}
+.header-badge{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);border:1px solid var(--gold-dim);padding:4px 10px;border-radius:10px}
+
+/* CONTENT */
+.content{width:100%;max-width:440px;padding:32px 24px 0}
+
+/* STATE CARDS */
+.state-card{border-radius:6px;padding:28px 24px;text-align:center;margin-bottom:24px}
+.state-valid{background:linear-gradient(135deg,#05130a,#0a1e0e);border:1px solid rgba(76,175,125,0.35)}
+.state-invalid{background:linear-gradient(135deg,#150505,#1e0a0a);border:1px solid rgba(224,85,85,0.35)}
+.state-loading{background:var(--card);border:1px solid rgba(255,255,255,0.06)}
+.state-icon{font-size:52px;margin-bottom:16px;line-height:1}
+.state-title{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;margin-bottom:8px}
+.state-title.valid{color:var(--green)}
+.state-title.invalid{color:var(--red)}
+.state-title.loading{color:var(--grey)}
+.state-id{font-size:12px;color:rgba(245,240,232,0.35);font-family:monospace;letter-spacing:2px}
+
+/* CERT DETAILS */
+.cert-details{background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:6px;overflow:hidden;margin-bottom:20px}
+.cert-photo{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#1a0a2a,#0a1a2a,#2a1500);position:relative;display:flex;align-items:center;justify-content:center;font-size:80px;overflow:hidden}
+.cert-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cert-photo-badge{position:absolute;top:12px;left:12px;background:rgba(76,175,125,0.9);padding:4px 12px;border-radius:2px;font-size:9px;letter-spacing:2px;text-transform:uppercase;color:white;font-weight:700}
+.cert-photo-score{position:absolute;top:12px;right:12px;background:rgba(0,0,0,0.78);border:1px solid var(--gold-dim);padding:4px 12px;border-radius:2px;font-size:14px;color:var(--gold);font-weight:700}
+.cert-table{padding:4px 0}
+.cert-row{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px}
+.cert-row:last-child{border:none}
+.cert-key{color:var(--grey)}
+.cert-val{font-weight:500;text-align:right}
+.cert-val.gold{color:var(--gold)}
+.cert-val.green{color:var(--green)}
+
+/* SCORE RING */
+.score-ring-wrap{display:flex;justify-content:center;padding:20px 0 8px}
+.score-ring{width:120px;height:120px;position:relative}
+.score-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:rgba(255,255,255,0.07);stroke-width:8}
+.ring-fill{fill:none;stroke:var(--gold);stroke-width:8;stroke-linecap:round;stroke-dasharray:339;stroke-dashoffset:339;transition:stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1)}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-num{font-family:'Cormorant Garamond',serif;font-size:38px;font-weight:600;color:var(--gold);line-height:1}
+.ring-pct{font-size:9px;color:var(--grey);letter-spacing:2px}
+
+/* FOOTER NOTE */
+.footer-note{text-align:center;font-size:11px;color:var(--grey);line-height:1.8;padding:0 8px}
+.footer-note a{color:var(--gold);text-decoration:none}
+
+/* LOADING SPINNER */
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.spinner{width:36px;height:36px;border:3px solid rgba(201,168,76,0.15);border-top-color:var(--gold);border-radius:50%;animation:spin 0.9s linear infinite;margin:0 auto 20px}
+
+/* NOT FOUND SEARCH */
+.manual-search{margin-bottom:24px}
+.manual-search label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--grey);display:block;margin-bottom:8px}
+.manual-search-row{display:flex;gap:10px}
+.manual-search input{flex:1;background:#1a1a1a;border:1px solid var(--grey2);color:var(--white);border-radius:3px;padding:12px 14px;font-size:13px;font-family:'Montserrat',sans-serif;outline:none;transition:border-color 0.2s}
+.manual-search input:focus{border-color:var(--gold)}
+.manual-search button{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--black);border:none;border-radius:3px;padding:12px 18px;font-family:'Montserrat',sans-serif;font-weight:600;font-size:11px;letter-spacing:2px;cursor:pointer;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-logo" id="header-logo">TrueColorGem</div>
+    <div class="header-sub">by LiveProof</div>
+  </div>
+  <div class="header-badge">Verification</div>
+</div>
+
+<div class="content">
+
+  <!-- LOADING STATE -->
+  <div id="state-loading" class="state-card state-loading">
+    <div class="spinner"></div>
+    <div class="state-title loading">Checking certificate…</div>
+    <div class="state-id" id="loading-id"></div>
+  </div>
+
+  <!-- VALID STATE -->
+  <div id="state-valid" style="display:none">
+    <div class="state-card state-valid">
+      <div class="state-icon">✅</div>
+      <div class="state-title valid">Certified & Authentic</div>
+      <div class="state-id" id="valid-id"></div>
+    </div>
+
+    <div class="cert-details">
+      <div class="cert-photo" id="cert-photo">
+        <span id="cert-emoji">💎</span>
+        <img id="cert-img" style="display:none" alt="Certified item photo">
+        <div class="cert-photo-badge">CERTIFIED</div>
+        <div class="cert-photo-score" id="cert-score-badge">—</div>
+      </div>
+
+      <div class="score-ring-wrap">
+        <div class="score-ring">
+          <svg viewBox="0 0 120 120"><circle class="ring-track" cx="60" cy="60" r="54"/><circle class="ring-fill" id="ring-fill" cx="60" cy="60" r="54"/></svg>
+          <div class="ring-center"><div class="ring-num" id="ring-num">—</div><div class="ring-pct">/ 100</div></div>
+        </div>
+      </div>
+
+      <div class="cert-table" id="cert-table"></div>
+    </div>
+
+    <div class="footer-note">
+      This certification was issued by <strong>LiveProof</strong> and confirms that the item photo was taken in natural daylight without digital filters or color manipulation.<br><br>
+      <a href="https://liveproof.ai">liveproof.ai</a>
+    </div>
+  </div>
+
+  <!-- INVALID STATE -->
+  <div id="state-invalid" style="display:none">
+    <div class="state-card state-invalid">
+      <div class="state-icon">❌</div>
+      <div class="state-title invalid">Certificate Not Found</div>
+      <div class="state-id" id="invalid-id"></div>
+    </div>
+
+    <div class="manual-search">
+      <label>Search by Certification ID</label>
+      <div class="manual-search-row">
+        <input type="text" id="search-input" placeholder="TC-00441" maxlength="10">
+        <button onclick="searchById()">Verify</button>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      This ID was not found in the LiveProof database. The listing may not be certified, or the ID may be incorrect.<br><br>
+      Sellers certified through LiveProof display a QR code that links directly to this page.<br><br>
+      <a href="https://liveproof.ai">liveproof.ai</a>
+    </div>
+  </div>
+
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+import { getFirestore, collection, query, where, limit, getDocs } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAZps1d9rbO5zOxVsbe1eE1uppJZ5K3SJU",
+  authDomain: "truecolorgem.firebaseapp.com",
+  projectId: "truecolorgem",
+  storageBucket: "truecolorgem.firebasestorage.app",
+  messagingSenderId: "353462308228",
+  appId: "1:353462308228:web:c33ff21aa9818f768421d1"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// Extract cert ID from URL path: /verify/TC-XXXXX
+function getCertIdFromUrl() {
+  const path = window.location.pathname;
+  const parts = path.split('/').filter(Boolean);
+  // Expect: /verify/TC-XXXXX
+  if (parts.length >= 2 && parts[0] === 'verify') {
+    return parts[1].toUpperCase();
+  }
+  // Fallback: ?id=TC-XXXXX
+  const params = new URLSearchParams(window.location.search);
+  return (params.get('id') || '').toUpperCase();
+}
+
+async function verifyCert(certId) {
+  if (!certId) {
+    showInvalid('—');
+    return;
+  }
+
+  // Show cert ID in loading state
+  document.getElementById('loading-id').textContent = certId;
+
+  try {
+    const q = query(
+      collection(db, 'certifications'),
+      where('id', '==', certId),
+      limit(1)
+    );
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      showInvalid(certId);
+      return;
+    }
+
+    const data = snap.docs[0].data();
+    showValid(certId, data);
+
+  } catch(e) {
+    console.error('Firestore error:', e);
+    showInvalid(certId);
+  }
+}
+
+function showValid(certId, data) {
+  document.getElementById('state-loading').style.display = 'none';
+  document.getElementById('state-valid').style.display = 'block';
+
+  document.getElementById('valid-id').textContent = certId;
+
+  // Logo per vertical
+  const isGem = ['gems','jewelry','gemstone'].includes(data.vertical);
+  document.getElementById('header-logo').textContent = isGem ? 'TrueColorGem' : 'LiveProof';
+  document.title = (isGem ? 'TrueColorGem' : 'LiveProof') + ' — ' + certId;
+
+  // Photo
+  if (data.listingImageUrl) {
+    const img = document.getElementById('cert-img');
+    img.src = data.listingImageUrl;
+    img.style.display = 'block';
+    document.getElementById('cert-emoji').style.display = 'none';
+  }
+
+  // Score
+  const score = data.score || 0;
+  document.getElementById('cert-score-badge').textContent = score + '%';
+  document.getElementById('ring-num').textContent = score;
+
+  // Ring animation
+  const circumference = 2 * Math.PI * 54;
+  const offset = circumference - (score / 100 * circumference);
+  const ring = document.getElementById('ring-fill');
+  ring.style.stroke = score >= 85 ? 'var(--gold)' : score >= 70 ? 'var(--yellow)' : 'var(--red)';
+  setTimeout(() => { ring.style.strokeDashoffset = offset; }, 100);
+
+  // Table
+  const rows = [
+    ['Certification ID', certId, 'gold'],
+    ['Item', data.gemName || data.name || '—', ''],
+    ['Score', score + ' / 100', 'gold'],
+    ['Certified', data.date || '—', ''],
+    ['Valid Until', data.validUntil || '—', ''],
+    ['Status', 'Active ✓', 'green'],
+    ['Issuer', 'LiveProof', ''],
+  ];
+  document.getElementById('cert-table').innerHTML = rows.map(([k,v,cls]) =>
+    `<div class="cert-row"><span class="cert-key">${k}</span><span class="cert-val ${cls}">${v}</span></div>`
+  ).join('');
+}
+
+function showInvalid(certId) {
+  document.getElementById('state-loading').style.display = 'none';
+  document.getElementById('state-invalid').style.display = 'block';
+  document.getElementById('invalid-id').textContent = certId;
+  document.getElementById('search-input').value = certId !== '—' ? certId : '';
+  document.title = 'Certificate Not Found — LiveProof';
+}
+
+// Manual search
+window.searchById = function() {
+  const val = document.getElementById('search-input').value.trim().toUpperCase();
+  if (!val) return;
+  // Reset UI to loading
+  document.getElementById('state-invalid').style.display = 'none';
+  document.getElementById('state-loading').style.display = 'block';
+  verifyCert(val);
+};
+
+// Enter key on search input
+document.getElementById('search-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') window.searchById();
+});
+
+// Init
+const certId = getCertIdFromUrl();
+verifyCert(certId);
+</script>
+
+</body>
+</html>

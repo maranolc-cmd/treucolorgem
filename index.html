@@ -570,7 +570,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
           <div class="level-fee" id="dash-fee">3 free certifications included</div>
         </div>
       </div>
-      <div class="prog-labels"><span>Progress to Gold</span><span id="dash-prog-txt">0 / 50 listings</span></div>
+      <div class="prog-labels"><span id="dash-prog-label">Progress to Gold</span><span id="dash-prog-txt">0 / 50 listings</span></div>
       <div class="prog-bar"><div class="prog-fill" id="dash-prog" style="width:0%"></div></div>
     </div>
     <div class="stats fu">
@@ -1368,6 +1368,14 @@ function initDashboard() {
   const levelIconEl = document.querySelector('.level-icon');
   if (levelEl) { levelEl.textContent = pc.name; levelEl.style.color = pc.color; }
   if (levelIconEl) levelIconEl.textContent = pc.icon;
+
+  // Progress label
+  const progLabel = document.getElementById('dash-prog-label');
+  if (progLabel) {
+    const nextPlan = { free: 'Silver', single: 'Silver', silver: 'Gold', gold: 'Diamond', diamond: '—' };
+    const next = nextPlan[plan] || 'Gold';
+    progLabel.textContent = next === '—' ? 'Top tier reached' : 'Progress to ' + next;
+  }
 
   // Mostra badge free trials se piano free
   const trialsBadge = document.getElementById('free-trials-badge');
@@ -2830,11 +2838,13 @@ onAuthStateChanged(auth, async (user) => {
   if (user && user.emailVerified) {
     const userDoc = await getDoc(doc(db, 'users', user.uid));
     const userData = userDoc.exists() ? userDoc.data() : {};
+    const fullName = userData.name || user.displayName || user.email.split('@')[0];
+    const initials = fullName.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
     state.user = {
-      name: user.displayName || userData.name || user.email.split('@')[0],
+      name: fullName,
       email: user.email,
       uid: user.uid,
-      initials: (user.displayName || user.email).substring(0,2).toUpperCase(),
+      initials: initials,
       plan: userData.plan || 'free',
       freeTrials: userData.freeTrials ?? 3
     };

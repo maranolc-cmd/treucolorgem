@@ -2835,9 +2835,21 @@ window.show_cert_screen = typeof show_cert_screen !== 'undefined' ? show_cert_sc
 
 // Auth state listener
 onAuthStateChanged(auth, async (user) => {
-  if (user && user.emailVerified) {
-    const userDoc = await getDoc(doc(db, 'users', user.uid));
-    const userData = userDoc.exists() ? userDoc.data() : {};
+  if (user) {
+    // Try by UID first, then fallback to email query
+    let userData = {};
+    const userDocByUid = await getDoc(doc(db, 'users', user.uid));
+    if (userDocByUid.exists()) {
+      userData = userDocByUid.data();
+    } else {
+      // UID mismatch — search by email
+      const emailSnap = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
+      if (!emailSnap.empty) {
+        userData = emailSnap.docs[0].data();
+        // Migrate: create doc under correct UID
+        await setDoc(doc(db, 'users', user.uid), { ...userData }, { merge: true });
+      }
+    }
     const fullName = userData.name || user.displayName || user.email.split('@')[0];
     const initials = fullName.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
     state.user = {

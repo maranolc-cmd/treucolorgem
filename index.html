@@ -2405,7 +2405,7 @@ async function show_cert_screen() {
 
   // QR via qrcode.js (Google Charts bloccato)
   const qrDiv = document.getElementById('cert-qr');
-  const verifyUrl = 'https://liveproof.ai/verify/' + id;
+  const verifyUrl = 'https://www.liveproof.ai/verify/' + id;
   qrDiv.innerHTML = '';
   try {
     new QRCode(qrDiv, { text: verifyUrl, width: 46, height: 46, correctLevel: QRCode.CorrectLevel.L });
@@ -2473,7 +2473,7 @@ async function show_cert_screen() {
         liveImageUrl,
         gemName: state.currentGemName,
         vertical: state.vertical || 'gemstone',
-        verifyUrl: `https://liveproof.ai/verify/${listing.id}`
+        verifyUrl: `https://www.liveproof.ai/verify/${listing.id}`
       });
       // Decrementa freeTrials se piano free
       if (state.user.plan === 'free' && state.user.freeTrials > 0) {

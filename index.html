@@ -222,7 +222,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
 .cert-wm-logo{font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--gold);letter-spacing:2px;margin-bottom:2px}
 .cert-wm-badge{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-light);margin-bottom:2px}
 .cert-wm-id{font-size:8px;color:rgba(245,240,232,0.4);font-family:monospace}
-.cert-wm-qr{width:46px;height:46px;background:white;border-radius:3px;overflow:hidden;flex-shrink:0}
+.cert-wm-qr{width:80px;height:80px;background:white;border-radius:3px;overflow:hidden;flex-shrink:0}
 .cert-status{position:absolute;top:12px;right:12px;background:rgba(76,175,125,0.9);padding:3px 10px;border-radius:2px;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:white;font-weight:700}
 .cert-score-badge{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.75);border:1px solid var(--gold-dim);padding:3px 10px;border-radius:2px;font-size:12px;color:var(--gold);font-weight:700}
 .cert-table{width:100%;max-width:340px;margin-bottom:20px}
@@ -641,7 +641,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     <div class="info-box" style="margin-top:4px"><strong>Step 2:</strong> Take one mandatory live photo right now in natural daylight. Cannot be uploaded from gallery.</div>
     <div class="live-zone" id="live-zone" onclick="state.camMode='live';show('s-camera')" style="position:relative;overflow:hidden;">
       <div class="live-badge">LIVE REQUIRED</div>
-      <img id="live-preview" style="display:none;width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid rgba(76,175,125,0.4);margin-bottom:8px">
+      <img id="live-preview" style="display:none;width:80px;height:80px;object-fit:cover;border-radius:6px;border:2px solid rgba(76,175,125,0.6);margin-bottom:10px;flex-shrink:0">
       <div class="lz-icon" id="lz-icon">📷</div>
       <div class="lz-title" id="lz-title">Take Live Photo Now</div>
       <div class="lz-sub" id="lz-sub">Open camera and shoot in natural daylight<br>This photo cannot be replaced with a gallery upload</div>
@@ -2408,7 +2408,7 @@ async function show_cert_screen() {
   const verifyUrl = 'https://www.liveproof.ai/verify/' + id;
   qrDiv.innerHTML = '';
   try {
-    new QRCode(qrDiv, { text: verifyUrl, width: 46, height: 46, correctLevel: QRCode.CorrectLevel.L });
+    new QRCode(qrDiv, { text: verifyUrl, width: 80, height: 80, correctLevel: QRCode.CorrectLevel.L });
   } catch(e) {
     qrDiv.innerHTML = '<div style="font-size:8px;text-align:center;padding:4px;color:#333">QR</div>';
   }
@@ -2427,7 +2427,7 @@ async function show_cert_screen() {
     ['Certification ID', id],
     ['Gemstone', state.currentGemName],
     ['Score', r.score + ' / 100'],
-    ['Level', '🥈 Silver'],
+    ['Level', (()=>{ const p=state.user?.plan||'free'; return {free:'🆓 Free',single:'1️⃣ Single',silver:'🥈 Silver',gold:'🥇 Gold',diamond:'💎 Diamond'}[p]||'🆓 Free'; })()],
     ['Certified', today],
     ['Valid Until', expiry]
   ].map(([k,v]) => `<div class="cert-row"><span class="cert-key">${k}</span><span class="cert-val">${v}</span></div>`).join('');
@@ -2443,7 +2443,7 @@ async function show_cert_screen() {
   (async () => {
     try {
       const fs = window._fs;
-      const listing = state.listings[state.listings.length - 1];
+      const listing = state.listings[0]; // unshift adds to front
 
       // Upload listing + live photos to Firebase Storage
       let listingImageUrl = null, liveImageUrl = null;

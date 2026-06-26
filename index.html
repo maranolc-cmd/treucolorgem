@@ -1419,6 +1419,7 @@ function updateDashStats() {
   document.getElementById('stat-verified').textContent = verified;
 
   // Determine current level based on average score and listing count
+  const plan = state.user?.plan || 'free';
   const planPrices = { free: '€0', single: '€5/cert', silver: '€19', gold: '€49', diamond: '€99' };
   const planPrice = planPrices[plan] || '€0';
   let thresholds = { silver: 70, gold: 85, diamond: 95 };

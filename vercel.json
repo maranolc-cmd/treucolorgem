@@ -9,5 +9,9 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    { "source": "/verify/:certId", "destination": "/verify.html" },
+    { "source": "/verify", "destination": "/verify.html" }
   ]
 }

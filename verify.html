@@ -117,6 +117,19 @@ body{background:var(--black);color:var(--white);font-family:'Montserrat',sans-se
       <div class="cert-table" id="cert-table"></div>
     </div>
 
+    <div id="buyer-verify-section" style="display:none;margin-bottom:20px">
+      <button id="buyer-verify-btn" onclick="confirmReceipt()" style="width:100%;background:linear-gradient(135deg,#1a3a2a,#0d2010);border:1px solid rgba(76,175,125,0.4);color:var(--green);padding:16px;border-radius:6px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;text-transform:uppercase">
+        ✓ I Received This Item — Confirm It Matches
+      </button>
+      <div style="font-size:10px;color:var(--grey);text-align:center;margin-top:8px">
+        As a buyer, your confirmation helps verify this seller's integrity
+      </div>
+    </div>
+    <div id="buyer-confirmed" style="display:none;background:linear-gradient(135deg,#05130a,#0a1e0e);border:1px solid rgba(76,175,125,0.35);border-radius:6px;padding:16px;text-align:center;margin-bottom:20px">
+      <div style="font-size:24px;margin-bottom:8px">✅</div>
+      <div style="color:var(--green);font-size:13px;font-weight:600">Receipt Confirmed</div>
+      <div style="color:var(--grey);font-size:11px;margin-top:4px">Thank you for verifying this purchase</div>
+    </div>
     <div class="footer-note">
       This certification was issued by <strong>LiveProof</strong> and confirms that the item photo was taken in natural daylight without digital filters or color manipulation.<br><br>
       <a href="https://liveproof.ai">liveproof.ai</a>
@@ -240,6 +253,15 @@ function showValid(certId, data) {
   ring.style.stroke = score >= 85 ? 'var(--gold)' : score >= 70 ? 'var(--yellow)' : 'var(--red)';
   setTimeout(() => { ring.style.strokeDashoffset = offset; }, 100);
 
+  // Show buyer verify section
+  const bvSection = document.getElementById('buyer-verify-section');
+  const bvConfirmed = document.getElementById('buyer-confirmed');
+  if (data.buyerVerified) {
+    if (bvConfirmed) bvConfirmed.style.display = 'block';
+  } else {
+    if (bvSection) bvSection.style.display = 'block';
+  }
+
   // Table
   const rows = [
     ['Certification ID', certId, 'gold'],
@@ -277,6 +299,38 @@ window.searchById = function() {
 document.getElementById('search-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') window.searchById();
 });
+
+// Buyer confirm receipt
+window.confirmReceipt = async function() {
+  const btn = document.getElementById('buyer-verify-btn');
+  btn.textContent = 'Confirming...';
+  btn.disabled = true;
+  
+  try {
+    // Get cert ID from URL
+    const certId = getCertIdFromUrl();
+    
+    // Find and update the certification in Firestore
+    const q = query(
+      collection(db, 'certifications'),
+      where('id', '==', certId),
+      limit(1)
+    );
+    const snap = await getDocs(q);
+    
+    if (!snap.empty) {
+      const { setDoc, doc: fsDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+      await setDoc(snap.docs[0].ref, { buyerVerified: true, buyerVerifiedAt: new Date().toISOString() }, { merge: true });
+    }
+    
+    document.getElementById('buyer-verify-section').style.display = 'none';
+    document.getElementById('buyer-confirmed').style.display = 'block';
+  } catch(e) {
+    btn.textContent = '✓ I Received This Item — Confirm It Matches';
+    btn.disabled = false;
+    console.error('Confirm error:', e);
+  }
+};
 
 // Init
 const certId = getCertIdFromUrl();

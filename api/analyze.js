@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import { getFirestore } from "firebase-admin/firestore";
 
 if (!getApps().length) {
   initializeApp({
@@ -13,6 +14,16 @@ if (!getApps().length) {
 }
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const db = getFirestore();
+
+// Plan limits
+const PLAN_LIMITS = {
+  free: 3,       // lifetime (handled separately via freeTrials)
+  single: 0,     // pay per cert via singleCredits
+  silver: 30,    // per month
+  gold: 100,     // per month
+  diamond: 200,  // per month
+};
 
 const ipRequests = new Map();
 const RATE_LIMIT = 10;
@@ -36,8 +47,6 @@ export default async function handler(req, res) {
   const authHeader = req.headers["authorization"];
   if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Authentication required." });
 
-  const deviceId = req.headers['x-device-id'];
-
   let uid = null;
   try {
     const token = authHeader.split("Bearer ")[1];
@@ -46,6 +55,58 @@ export default async function handler(req, res) {
     if (!decoded.email_verified) return res.status(403).json({ error: "Please verify your email before using this feature." });
   } catch (e) {
     return res.status(401).json({ error: "Invalid or expired session. Please log in again." });
+  }
+
+  // ── CHECK PLAN LIMITS ──
+  try {
+    const userRef = db.collection('users').doc(uid);
+    const userDoc = await userRef.get();
+    const userData = userDoc.exists ? userDoc.data() : {};
+    const plan = userData.plan || 'free';
+
+    if (plan === 'free') {
+      const freeTrials = userData.freeTrials ?? 3;
+      if (freeTrials <= 0) {
+        return res.status(403).json({ error: "You have used all your free certifications. Please upgrade to continue.", code: 'FREE_LIMIT' });
+      }
+    } else if (plan === 'single') {
+      const credits = userData.singleCredits || 0;
+      if (credits <= 0) {
+        return res.status(403).json({ error: "No single certifications remaining. Purchase more to continue.", code: 'SINGLE_LIMIT' });
+      }
+    } else {
+      // Monthly plan — count certifications this month
+      const monthStart = new Date();
+      monthStart.setDate(1);
+      monthStart.setHours(0, 0, 0, 0);
+
+      const snap = await db.collection('certifications')
+        .where('uid', '==', uid)
+        .where('createdAt', '>=', monthStart.toISOString())
+        .get();
+
+      const monthlyCount = snap.size;
+      const limit = PLAN_LIMITS[plan] || 30;
+
+      if (monthlyCount >= limit) {
+        // Check if they have extra credits (singleCredits used as extras)
+        const extraCredits = userData.singleCredits || 0;
+        if (extraCredits <= 0) {
+          return res.status(403).json({
+            error: `You have reached your ${limit} certifications/month limit for the ${plan} plan. Purchase extra certifications at €1 each to continue.`,
+            code: 'MONTHLY_LIMIT',
+            used: monthlyCount,
+            limit,
+            plan
+          });
+        }
+        // Deduct extra credit
+        await userRef.set({ singleCredits: extraCredits - 1 }, { merge: true });
+      }
+    }
+  } catch (e) {
+    console.error('Limit check error:', e);
+    // Don't block on limit check errors
   }
 
   const { listingImage, liveImage, gemName, vertical, listingSessionCode, liveSessionCode, listingCapturedInApp } = req.body;
@@ -138,7 +199,6 @@ Respond ONLY with valid JSON, no markdown, no explanation outside JSON:
     const cleaned = text.replace(/```json|```/g, "").trim();
     const raw = JSON.parse(cleaned);
 
-    // Enforce score boundaries
     const score = Math.max(0, Math.min(100, Math.round(raw.score)));
     const certified = score >= 70;
 

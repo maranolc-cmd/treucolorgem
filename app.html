@@ -1,0 +1,2973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@4/dist/fp.min.js"></script>
+  <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>LiveProof</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<style>
+:root{--black:#080808;--dark:#111;--card:#181818;--card2:#202020;--gold:#c9a84c;--gold-light:#e8c96a;--gold-dim:#6a5020;--gold-bg:rgba(201,168,76,0.07);--white:#f5f0e8;--grey:#777;--grey2:#444;--green:#4caf7d;--red:#e05555;--yellow:#f0c040;--blue:#5599dd}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:var(--black);color:var(--white);font-family:'Montserrat',sans-serif;font-size:14px;min-height:100vh;overflow-x:hidden}
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+input,textarea,select{font-family:'Montserrat',sans-serif;background:var(--card2);border:1px solid var(--grey2);color:var(--white);border-radius:3px;padding:12px 14px;font-size:13px;width:100%;outline:none;transition:border-color 0.2s}
+input:focus,textarea:focus{border-color:var(--gold)}
+label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--grey);display:block;margin-bottom:6px}
+.field{margin-bottom:16px}
+
+/* WELCOME */
+#s-welcome{background:radial-gradient(ellipse at 30% 20%,#1a1200 0%,#080808 65%);align-items:center;justify-content:center;text-align:center;padding:48px 28px;position:relative;overflow:hidden}
+#s-welcome::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 50px,rgba(201,168,76,0.025) 50px,rgba(201,168,76,0.025) 51px);pointer-events:none}
+.gem-logo{width:88px;height:88px;margin:0 auto 28px}
+.gem-logo svg{width:100%;height:100%}
+.brand{font-family:'Cormorant Garamond',serif;font-size:88px;font-weight:300;letter-spacing:4px;color:var(--gold);line-height:1;margin-bottom:12px}
+.brand-sub{font-size:16px;letter-spacing:5px;text-transform:uppercase;color:var(--grey);margin-bottom:36px}
+.tagline{font-family:'Cormorant Garamond',serif;font-size:32px;font-style:italic;color:rgba(245,240,232,0.9);margin-bottom:52px;line-height:1.4}
+.btn{border:none;border-radius:2px;cursor:pointer;font-family:'Montserrat',sans-serif;font-weight:600;letter-spacing:3px;text-transform:uppercase;transition:all 0.2s;display:block;width:100%;max-width:300px;margin:0 auto}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--black);padding:16px;font-size:11px}
+.btn-gold:active{opacity:0.85}
+.btn-outline{background:transparent;color:var(--gold);border:1px solid var(--gold-dim);padding:14px;font-size:11px;margin-top:12px}
+.btn-outline:active{background:rgba(201,168,76,0.08)}
+.btn-grey{background:var(--card2);color:var(--white);border:1px solid var(--grey2);padding:14px;font-size:11px;margin-top:10px}
+
+/* NAV */
+.nav{padding:18px 20px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(255,255,255,0.06);flex-shrink:0}
+.nav-back{background:none;border:none;color:var(--gold);cursor:pointer;font-size:22px;line-height:1;padding:0}
+.nav-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:300}
+.nav-right{margin-left:auto}
+
+/* TOP BAR */
+.topbar{padding:18px 20px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(201,168,76,0.12);flex-shrink:0;position:relative}
+.topbar-logo{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--gold);letter-spacing:2px}
+.avatar{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--gold-dim),var(--gold));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--black);cursor:pointer}
+
+/* AUTH */
+#s-login,#s-register{background:var(--black)}
+.auth-content{flex:1;padding:32px 24px;overflow-y:auto}
+.auth-title{font-family:'Cormorant Garamond',serif;font-size:34px;font-weight:300;margin-bottom:6px}
+.auth-sub{font-size:11px;color:var(--grey);margin-bottom:32px}
+.auth-switch{text-align:center;margin-top:24px;font-size:12px;color:var(--grey)}
+.auth-switch span{color:var(--gold);cursor:pointer;text-decoration:underline}
+.divider{display:flex;align-items:center;gap:12px;margin:20px 0}
+.divider-line{flex:1;height:1px;background:var(--grey2)}
+.divider-text{font-size:10px;color:var(--grey);letter-spacing:2px}
+
+/* REGISTER FORM — premium */
+.reg-section-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);margin:24px 0 12px;padding-bottom:8px;border-bottom:1px solid rgba(201,168,76,0.12)}
+.reg-field-float{position:relative;margin-bottom:18px}
+.reg-field-float input{padding:20px 14px 8px;height:56px;border-radius:4px;border:1px solid #3a3a3a;background:#1a1a1a;transition:border-color 0.2s,background 0.2s;color:var(--white)}
+.reg-field-float input:focus{border-color:var(--gold);background:#1e1a0e}
+.reg-field-float label{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:12px;letter-spacing:0.5px;text-transform:none;color:var(--grey);pointer-events:none;transition:all 0.18s;margin:0}
+.reg-field-float input:focus ~ label,
+.reg-field-float input:not(:placeholder-shown) ~ label{top:10px;transform:translateY(0);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold)}
+.reg-pw-wrap .reg-eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--grey);cursor:pointer;padding:4px;line-height:1}
+.reg-pw-wrap .reg-eye.visible{color:var(--gold)}
+.reg-pw-hint{font-size:10px;color:var(--grey);margin-top:-12px;margin-bottom:16px;min-height:14px;letter-spacing:0.3px}
+/* DOB row */
+.reg-dob-row{display:grid;grid-template-columns:2fr 1fr 1.5fr;gap:8px;margin-bottom:18px}
+/* Phone row */
+.reg-phone-row{display:flex;gap:8px;margin-bottom:18px;align-items:flex-end}
+/* Select wrapper */
+.reg-select-wrap{position:relative}
+.reg-select-wrap select{appearance:none;-webkit-appearance:none;padding:14px 36px 14px 14px;border-radius:4px;border:1px solid #3a3a3a;background:#1a1a1a;color:var(--white);transition:border-color 0.2s;height:52px;width:100%}
+.reg-select-wrap select option{background:#1a1a1a;color:var(--white)}
+.reg-select-wrap select:focus{border-color:var(--gold)}
+.reg-select-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--grey);pointer-events:none;font-size:11px}
+/* Country labeled select */
+.reg-select-labeled{margin-bottom:18px}
+.reg-select-label-text{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--grey);margin-bottom:6px}
+.reg-select-labeled .reg-select-wrap select{height:52px}
+/* Platform chips */
+.reg-platform-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.reg-platform-chip{padding:8px 14px;border:1px solid #3a3a3a;border-radius:20px;font-size:11px;letter-spacing:0.5px;color:#aaa;cursor:pointer;transition:all 0.18s;background:#1a1a1a}
+.reg-platform-chip.active{border-color:var(--gold);color:var(--gold);background:rgba(201,168,76,0.08)}
+
+/* DASHBOARD */
+#s-dashboard{background:var(--black)}
+.dash{flex:1;padding:20px;overflow-y:auto;padding-bottom:100px}
+.greeting{font-size:10px;color:var(--grey);letter-spacing:3px;text-transform:uppercase;margin-bottom:4px}
+.seller-name{font-family:'Cormorant Garamond',serif;font-size:30px;font-weight:300;margin-bottom:24px}
+.level-card{background:linear-gradient(135deg,#130e00,#1e1800);border:1px solid var(--gold-dim);border-radius:5px;padding:20px;margin-bottom:20px;position:relative;overflow:hidden}
+.level-card::after{content:'';position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,rgba(201,168,76,0.12),transparent 70%)}
+.lbl{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--gold-dim);margin-bottom:8px}
+.level-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.level-icon{font-size:30px}
+.level-name{font-family:'Cormorant Garamond',serif;font-size:34px;color:var(--gold);line-height:1}
+.level-fee{font-size:10px;color:var(--grey);letter-spacing:1px;margin-top:2px}
+.prog-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--grey);margin-bottom:6px}
+.prog-bar{height:3px;background:rgba(255,255,255,0.08);border-radius:2px}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--gold-dim),var(--gold));border-radius:2px;transition:width 1.2s ease}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:4px;padding:14px 10px;text-align:center}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--gold)}
+.stat-lbl{font-size:9px;color:var(--grey);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.sec-title{font-size:9px;letter-spacing:4px;text-transform:uppercase;color:var(--grey);margin-bottom:12px}
+.listing-row{background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:4px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:14px;cursor:pointer}
+.listing-thumb{width:50px;height:50px;border-radius:3px;background:linear-gradient(135deg,#1a0a2a,#0a1a2a);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px}
+.listing-info{flex:1;min-width:0}
+.listing-name{font-size:13px;font-weight:500;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.listing-meta{font-size:10px;color:var(--grey)}
+.score-pill{padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;flex-shrink:0}
+.pill-green{background:rgba(76,175,125,0.15);color:var(--green);border:1px solid rgba(76,175,125,0.25)}
+.pill-yellow{background:rgba(240,192,64,0.15);color:var(--yellow);border:1px solid rgba(240,192,64,0.25)}
+.pill-red{background:rgba(224,85,85,0.15);color:var(--red);border:1px solid rgba(224,85,85,0.25)}
+.fab{position:fixed;bottom:28px;right:24px;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold-light));border:none;cursor:pointer;box-shadow:0 4px 24px rgba(201,168,76,0.45);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--black);z-index:50;transition:transform 0.15s}
+.fab:active{transform:scale(0.9)}
+
+/* NEW LISTING */
+#s-new{background:var(--black)}
+.new-content{flex:1;padding:24px 20px;overflow-y:auto;padding-bottom:40px}
+.steps{display:flex;align-items:center;margin-bottom:28px}
+.step-dot{width:30px;height:30px;border-radius:50%;border:1px solid var(--grey2);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--grey);flex-shrink:0;transition:all 0.3s}
+.step-dot.active{background:var(--gold);color:var(--black);border-color:var(--gold);font-weight:700}
+.step-dot.done{background:var(--green);color:white;border-color:var(--green)}
+.step-line{flex:1;height:1px;background:var(--grey2);transition:background 0.3s}
+.step-line.done{background:var(--green)}
+.info-box{background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.18);border-radius:4px;padding:14px;margin-bottom:20px;font-size:11px;color:rgba(245,240,232,0.55);line-height:1.7}
+.info-box strong{color:var(--gold)}
+.upload-zone{border:2px dashed rgba(201,168,76,0.25);border-radius:6px;padding:30px 20px;text-align:center;margin-bottom:14px;cursor:pointer;transition:all 0.2s;position:relative}
+.upload-zone:active,.upload-zone.has-files{border-color:var(--gold);background:rgba(201,168,76,0.04)}
+.upload-zone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+.uz-icon{font-size:38px;margin-bottom:10px}
+.uz-title{font-size:14px;font-weight:500;margin-bottom:6px}
+.uz-sub{font-size:11px;color:var(--grey);line-height:1.6}
+.uz-count{font-size:12px;color:var(--gold);margin-top:8px;font-weight:600}
+.live-zone{background:linear-gradient(135deg,#080f08,#08080f);border:2px solid rgba(201,168,76,0.4);border-radius:6px;padding:26px 20px;text-align:center;margin-bottom:14px;cursor:pointer;position:relative;overflow:hidden}
+.live-badge{position:absolute;top:10px;right:12px;font-size:9px;letter-spacing:3px;color:var(--green);background:rgba(76,175,125,0.12);padding:3px 8px;border-radius:10px;border:1px solid rgba(76,175,125,0.25)}
+.lz-icon{font-size:50px;margin-bottom:8px}
+.lz-title{font-size:14px;font-weight:600;color:var(--gold);margin-bottom:5px}
+.lz-sub{font-size:11px;color:rgba(245,240,232,0.45);line-height:1.6}
+.lz-req{font-size:10px;color:var(--gold);margin-top:10px;letter-spacing:1px}
+.lz-done{background:rgba(76,175,125,0.1);border-color:var(--green)}
+
+/* CAMERA */
+#s-camera{background:#000}
+.cam-view{flex:1;background:#0a0a0a;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:55vh}
+.cam-placeholder{font-size:120px;opacity:0.15}
+.cam-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+.cam-frame{width:230px;height:230px;border-radius:4px;position:relative;box-shadow:0 0 0 9999px rgba(0,0,0,0.55)}
+.cam-frame::before,.cam-frame::after,.cam-frame span::before,.cam-frame span::after{content:'';position:absolute;width:22px;height:22px;border-color:var(--gold);border-style:solid}
+.cam-frame::before{top:-2px;left:-2px;border-width:3px 0 0 3px}
+.cam-frame::after{top:-2px;right:-2px;border-width:3px 3px 0 0}
+.cam-frame span::before{bottom:-2px;left:-2px;border-width:0 0 3px 3px}
+.cam-frame span::after{bottom:-2px;right:-2px;border-width:0 3px 3px 0}
+.light-ind{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.75);padding:8px 16px;border-radius:20px}
+.light-dot{width:10px;height:10px;border-radius:50%}
+.light-dot.green{background:var(--green);box-shadow:0 0 8px var(--green);animation:pulse 1.5s infinite}
+.light-dot.red{background:var(--red);box-shadow:0 0 8px var(--red);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.35}}
+.light-txt{font-size:11px;letter-spacing:1px}
+.cam-bottom{padding:22px 24px 40px;background:var(--black);display:flex;flex-direction:column;align-items:center;gap:14px}
+.shutter{width:74px;height:74px;border-radius:50%;background:white;border:5px solid rgba(255,255,255,0.25);cursor:pointer;transition:transform 0.1s;box-shadow:0 0 24px rgba(255,255,255,0.15)}
+.shutter:active{transform:scale(0.88)}
+.cam-hint{font-size:10px;color:var(--grey);text-align:center;letter-spacing:1px}
+.session-code-overlay{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);border:1.5px solid var(--gold);border-radius:6px;padding:7px 18px;display:flex;flex-direction:column;align-items:center;gap:2px;z-index:10;pointer-events:none;display:none}
+.sc-label{font-size:8px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim)}
+.sc-value{font-family:monospace;font-size:24px;font-weight:700;letter-spacing:6px;color:var(--gold);line-height:1}
+.preview-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.4s}
+.preview-img.show{opacity:1}
+
+/* ANALYZING */
+#s-analyzing{background:var(--black);align-items:center;justify-content:center;text-align:center;padding:40px 28px}
+.analyzing-icon{font-size:64px;margin-bottom:28px;animation:spin 3s linear infinite}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.analyzing-title{font-family:'Cormorant Garamond',serif;font-size:32px;font-weight:300;color:var(--gold);margin-bottom:10px}
+.analyzing-sub{font-size:12px;color:var(--grey);line-height:1.7;margin-bottom:32px}
+.progress-steps{text-align:left;max-width:280px;margin:0 auto}
+.prog-step{display:flex;align-items:center;gap:12px;padding:8px 0;font-size:12px;color:var(--grey);transition:color 0.3s}
+.prog-step.done{color:var(--green)}
+.prog-step.active{color:var(--white)}
+.prog-step-dot{width:8px;height:8px;border-radius:50%;background:var(--grey2);flex-shrink:0;transition:background 0.3s}
+.prog-step.done .prog-step-dot{background:var(--green)}
+.prog-step.active .prog-step-dot{background:var(--gold);animation:pulse 1s infinite}
+
+/* SCORE */
+#s-score{background:var(--black)}
+.score-content{flex:1;padding:28px 24px;display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding-bottom:40px}
+.score-ring{width:190px;height:190px;position:relative;margin-bottom:28px}
+.score-ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring-track{fill:none;stroke:rgba(255,255,255,0.07);stroke-width:10}
+.ring-fill{fill:none;stroke:var(--gold);stroke-width:10;stroke-linecap:round;stroke-dasharray:534;stroke-dashoffset:534;transition:stroke-dashoffset 1.8s cubic-bezier(0.4,0,0.2,1)}
+.ring-center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring-num{font-family:'Cormorant Garamond',serif;font-size:56px;font-weight:600;color:var(--gold);line-height:1}
+.ring-pct{font-size:11px;color:var(--grey);letter-spacing:2px}
+.verdict-box{text-align:center;margin-bottom:24px;width:100%}
+.verdict-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 20px;border-radius:20px;margin-bottom:12px;font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase}
+.chip-pass{background:rgba(76,175,125,0.12);border:1px solid rgba(76,175,125,0.3);color:var(--green)}
+.chip-fail{background:rgba(224,85,85,0.12);border:1px solid rgba(224,85,85,0.3);color:var(--red)}
+.verdict-reason{font-size:12px;color:rgba(245,240,232,0.45);line-height:1.7;max-width:300px;margin:0 auto}
+.analysis-grid{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px}
+.an-item{background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:4px;padding:12px}
+.an-lbl{font-size:9px;color:var(--grey);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px}
+.an-val{font-size:13px;font-weight:600}
+.an-pass{color:var(--green)}
+.an-warn{color:var(--yellow)}
+.an-fail{color:var(--red)}
+.ai-reasoning{background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:4px;padding:14px;margin-bottom:24px;width:100%;font-size:12px;color:rgba(245,240,232,0.6);line-height:1.8}
+.ai-reasoning strong{color:var(--gold);display:block;margin-bottom:6px;font-size:10px;letter-spacing:2px;text-transform:uppercase}
+
+/* CERTIFIED */
+#s-cert{background:var(--black)}
+.cert-content{flex:1;padding:24px 20px;display:flex;flex-direction:column;align-items:center;overflow-y:auto;padding-bottom:40px}
+.cert-photo{width:100%;max-width:340px;aspect-ratio:1;background:linear-gradient(135deg,#1a0a2a,#0a1a2a,#2a1500);border-radius:5px;position:relative;margin-bottom:20px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.cert-gem{font-size:90px;opacity:0.7}
+.cert-listing-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.cert-wm{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,0.9));padding:18px 14px 12px;display:flex;align-items:flex-end;justify-content:space-between}
+.cert-wm-l{flex:1;min-width:0}
+.cert-wm-logo{font-family:'Cormorant Garamond',serif;font-size:14px;color:var(--gold);letter-spacing:2px;margin-bottom:2px}
+.cert-wm-badge{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-light);margin-bottom:2px}
+.cert-wm-id{font-size:8px;color:rgba(245,240,232,0.4);font-family:monospace}
+.cert-wm-qr{width:80px;height:80px;background:white;border-radius:3px;overflow:hidden;flex-shrink:0}
+.cert-status{position:absolute;top:12px;right:12px;background:rgba(76,175,125,0.9);padding:3px 10px;border-radius:2px;font-size:8px;letter-spacing:2px;text-transform:uppercase;color:white;font-weight:700}
+.cert-score-badge{position:absolute;top:12px;left:12px;background:rgba(0,0,0,0.75);border:1px solid var(--gold-dim);padding:3px 10px;border-radius:2px;font-size:12px;color:var(--gold);font-weight:700}
+.cert-table{width:100%;max-width:340px;margin-bottom:20px}
+.cert-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px}
+.cert-row:last-child{border:none}
+.cert-key{color:var(--grey)}
+.cert-val{color:var(--gold);font-weight:500}
+.share-hint{font-size:10px;color:var(--grey);text-align:center;line-height:1.6;margin-bottom:16px;max-width:300px}
+
+/* SUBSCRIPTION */
+#s-plans{background:var(--black)}
+.plans-content{flex:1;padding:24px 20px;overflow-y:auto;padding-bottom:40px}
+.plan-card{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:5px;padding:20px;margin-bottom:14px;cursor:pointer;transition:all 0.2s;position:relative}
+.plan-card:active,.plan-card.selected{border-color:var(--gold);background:rgba(201,168,76,0.04)}
+.plan-card.popular::before{content:'MOST POPULAR';position:absolute;top:-1px;right:16px;background:var(--gold);color:var(--black);font-size:8px;letter-spacing:2px;padding:3px 10px;border-radius:0 0 3px 3px;font-weight:700}
+.plan-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.plan-icon{font-size:28px}
+.plan-name{font-family:'Cormorant Garamond',serif;font-size:26px;color:var(--gold)}
+.plan-price{margin-left:auto;text-align:right}
+.plan-amount{font-family:'Cormorant Garamond',serif;font-size:28px;color:var(--white)}
+.plan-period{font-size:10px;color:var(--grey)}
+.plan-features{list-style:none;display:flex;flex-direction:column;gap:7px}
+.plan-features li{font-size:11px;color:rgba(245,240,232,0.6);display:flex;align-items:center;gap:8px}
+.plan-features li::before{content:'✓';color:var(--gold);font-weight:700;flex-shrink:0}
+
+/* QR VERIFY */
+#s-verify{background:var(--black)}
+.verify-content{flex:1;padding:28px 24px;overflow-y:auto}
+.verify-result{background:var(--card);border-radius:5px;overflow:hidden;margin-top:20px}
+.verify-header{padding:20px;background:linear-gradient(135deg,rgba(76,175,125,0.15),rgba(76,175,125,0.05));border-bottom:1px solid rgba(76,175,125,0.2)}
+.verify-status{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.verify-icon{font-size:28px}
+.verify-title{font-family:'Cormorant Garamond',serif;font-size:24px;color:var(--green)}
+.verify-id{font-size:10px;color:var(--grey);font-family:monospace}
+.verify-body{padding:16px}
+.verify-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px}
+.verify-row:last-child{border:none}
+
+/* TOAST */
+.toast{position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-16px);background:#1a1a1a;border:1px solid var(--gold-dim);color:var(--white);padding:14px 24px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:all 0.3s;pointer-events:none;white-space:nowrap;z-index:99999;max-width:90vw;text-overflow:ellipsis;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.6)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* LOADING OVERLAY */
+.loading-overlay{position:fixed;inset:0;background:rgba(8,8,8,0.9);display:none;align-items:center;justify-content:center;flex-direction:column;gap:16px;z-index:900}
+.loading-overlay.show{display:flex}
+.loading-spinner{width:40px;height:40px;border:3px solid rgba(201,168,76,0.2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite}
+.loading-text{font-size:12px;color:var(--grey);letter-spacing:2px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:fadeUp 0.45s ease forwards}
+</style>
+
+</head>
+<body>
+
+<!-- LOADING SPLASH -->
+<div id="app-loading" style="position:fixed;inset:0;background:#080808;display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px">
+  <div style="width:40px;height:40px;border:3px solid rgba(201,168,76,0.2);border-top-color:#c9a84c;border-radius:50%;animation:spin 0.8s linear infinite"></div>
+  <div style="color:rgba(201,168,76,0.6);font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:3px">LIVEPROOF</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<!-- WELCOME -->
+<div id="s-welcome" class="screen">
+  <div class="gem-logo">
+    <svg viewBox="0 0 88 88" fill="none">
+      <circle cx="44" cy="44" r="36" fill="none" stroke="#c9a84c" stroke-width="1.2" opacity="0.35"/>
+      <circle cx="44" cy="44" r="26" fill="none" stroke="#c9a84c" stroke-width="1" opacity="0.55"/>
+      <path d="M30 44 L40 54 L60 32" fill="none" stroke="#c9a84c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="44" cy="44" r="3" fill="#c9a84c" opacity="0.7"/>
+    </svg>
+  </div>
+  <div class="brand">LiveProof</div>
+  <div class="brand-sub">AI-Powered Visual Verification</div>
+  <div class="tagline">Certify that what you're selling<br>looks exactly as shown</div>
+  <button class="btn btn-gold" id="btn-login" onclick="show('s-login')">Seller Login</button>
+  <button class="btn btn-outline" id="btn-verify" onclick="show('s-verify')">Verify a Purchase</button>
+  <button class="btn btn-grey" id="btn-plans" style="margin-top:10px" onclick="show('s-plans')">View Plans</button>
+</div>
+
+<!-- LOGIN -->
+<div id="s-login" class="screen active">
+  <div class="nav">
+    <div class="nav-title">Sign In</div>
+  </div>
+  <div class="auth-content">
+    <div class="auth-title fu">Welcome back</div>
+    <div class="auth-sub fu">Sign in to your LiveProof account</div>
+    <div class="field fu"><label>Email</label><input type="email" id="login-email" placeholder="your@email.com" oninput="const e=document.getElementById('login-error');if(e)e.style.display='none'"></div>
+    <div class="field fu"><label>Password</label><input type="password" id="login-pw" placeholder="••••••••" oninput="const e=document.getElementById('login-error');if(e)e.style.display='none'"></div>
+    <button class="btn btn-gold fu" onclick="doLogin()" style="margin-top:8px">Sign In</button>
+    <div id="login-error" style="display:none;color:#e07755;font-size:12px;text-align:center;margin-top:12px;padding:10px 16px;background:rgba(224,119,85,0.08);border:1px solid rgba(224,119,85,0.25);border-radius:6px"></div>
+    <div class="auth-switch fu">Don't have an account? <span onclick="show('s-register')">Register here</span></div>
+    <div class="divider fu"><div class="divider-line"></div><div class="divider-text">OR</div><div class="divider-line"></div></div>
+    <button class="btn btn-grey fu" onclick="demoLogin()">Demo Login (no account needed)</button>
+  </div>
+</div>
+
+<!-- REGISTER -->
+<div id="s-register" class="screen">
+  <div class="nav">
+    <button class="nav-back" onclick="show('s-login')">←</button>
+    <div class="nav-title">Create Account</div>
+  </div>
+  <div class="auth-content">
+    <div class="auth-title fu">Join LiveProof</div>
+    <div class="auth-sub fu">Start certifying your listings today</div>
+    <!-- Section: Identity -->
+    <div class="reg-section-label fu">Personal Information</div>
+    <div class="reg-field-float fu">
+      <input type="text" id="reg-name" placeholder=" " autocomplete="name">
+      <label>Full Name</label>
+    </div>
+    <div class="reg-field-float fu">
+      <input type="email" id="reg-email" placeholder=" " autocomplete="email">
+      <label>Email Address</label>
+    </div>
+
+    <!-- Section: Password -->
+    <div class="reg-section-label fu">Security</div>
+    <div class="reg-field-float fu reg-pw-wrap">
+      <input type="password" id="reg-pw" placeholder=" " autocomplete="new-password">
+      <label>Password</label>
+      <button type="button" class="reg-eye" onclick="togglePw('reg-pw',this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="reg-field-float fu reg-pw-wrap">
+      <input type="password" id="reg-pw2" placeholder=" " autocomplete="new-password">
+      <label>Confirm Password</label>
+      <button type="button" class="reg-eye" onclick="togglePw('reg-pw2',this)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="reg-pw-hint fu" id="reg-pw-hint"></div>
+
+    <!-- Section: Date of Birth -->
+    <div class="reg-section-label fu">Date of Birth <span style="color:var(--grey);font-weight:400;letter-spacing:0;text-transform:none;font-size:10px">(must be 18+)</span></div>
+    <div class="reg-dob-row fu">
+      <div class="reg-select-wrap">
+        <select id="reg-dob-month">
+          <option value="">Month</option>
+          <option value="01">January</option><option value="02">February</option>
+          <option value="03">March</option><option value="04">April</option>
+          <option value="05">May</option><option value="06">June</option>
+          <option value="07">July</option><option value="08">August</option>
+          <option value="09">September</option><option value="10">October</option>
+          <option value="11">November</option><option value="12">December</option>
+        </select>
+        <div class="reg-select-arrow">&#9662;</div>
+      </div>
+      <div class="reg-select-wrap">
+        <select id="reg-dob-day"><option value="">Day</option></select>
+        <div class="reg-select-arrow">&#9662;</div>
+      </div>
+      <div class="reg-select-wrap">
+        <select id="reg-dob-year"><option value="">Year</option></select>
+        <div class="reg-select-arrow">&#9662;</div>
+      </div>
+    </div>
+    <input type="hidden" id="reg-dob">
+    <!-- Section: Contact -->
+    <div class="reg-section-label fu">Contact &amp; Location</div>
+    <div class="reg-phone-row fu">
+      <div class="reg-select-wrap" style="flex:0 0 130px">
+        <select id="reg-phone-prefix">
+          <option value="+93">&#127462;&#127467; +93</option>
+          <option value="+355">&#127462;&#127473; +355</option>
+          <option value="+213">&#127465;&#127487; +213</option>
+          <option value="+54">&#127462;&#127479; +54</option>
+          <option value="+61">&#127462;&#127482; +61</option>
+          <option value="+43">&#127462;&#127481; +43</option>
+          <option value="+32">&#127463;&#127466; +32</option>
+          <option value="+55">&#127463;&#127479; +55</option>
+          <option value="+1">&#127464;&#127462; +1</option>
+          <option value="+56">&#127464;&#127473; +56</option>
+          <option value="+86">&#127464;&#127475; +86</option>
+          <option value="+57">&#127464;&#127476; +57</option>
+          <option value="+385">&#127469;&#127479; +385</option>
+          <option value="+420">&#127464;&#127487; +420</option>
+          <option value="+45">&#127465;&#127472; +45</option>
+          <option value="+20">&#127466;&#127468; +20</option>
+          <option value="+358">&#127467;&#127470; +358</option>
+          <option value="+33">&#127467;&#127479; +33</option>
+          <option value="+49">&#127465;&#127466; +49</option>
+          <option value="+30">&#127468;&#127479; +30</option>
+          <option value="+852">&#127469;&#127472; +852</option>
+          <option value="+36">&#127469;&#127482; +36</option>
+          <option value="+91">&#127470;&#127475; +91</option>
+          <option value="+62">&#127470;&#127465; +62</option>
+          <option value="+353">&#127470;&#127466; +353</option>
+          <option value="+972">&#127470;&#127473; +972</option>
+          <option value="+39" selected>&#127470;&#127481; +39</option>
+          <option value="+81">&#127471;&#127477; +81</option>
+          <option value="+82">&#127472;&#127479; +82</option>
+          <option value="+60">&#127474;&#127486; +60</option>
+          <option value="+52">&#127474;&#127485; +52</option>
+          <option value="+31">&#127475;&#127473; +31</option>
+          <option value="+64">&#127475;&#127487; +64</option>
+          <option value="+47">&#127475;&#127476; +47</option>
+          <option value="+92">&#127477;&#127472; +92</option>
+          <option value="+63">&#127477;&#127469; +63</option>
+          <option value="+48">&#127477;&#127473; +48</option>
+          <option value="+351">&#127477;&#127481; +351</option>
+          <option value="+40">&#127479;&#127476; +40</option>
+          <option value="+7">&#127479;&#127482; +7</option>
+          <option value="+966">&#127480;&#127462; +966</option>
+          <option value="+65">&#127480;&#127468; +65</option>
+          <option value="+27">&#127487;&#127462; +27</option>
+          <option value="+34">&#127466;&#127480; +34</option>
+          <option value="+46">&#127480;&#127466; +46</option>
+          <option value="+41">&#127464;&#127469; +41</option>
+          <option value="+886">&#127481;&#127484; +886</option>
+          <option value="+66">&#127481;&#127469; +66</option>
+          <option value="+90">&#127481;&#127479; +90</option>
+          <option value="+380">&#127482;&#127462; +380</option>
+          <option value="+971">&#127462;&#127466; +971</option>
+          <option value="+44">&#127468;&#127463; +44</option>
+          <option value="+1">&#127482;&#127480; +1</option>
+          <option value="+84">&#127483;&#127475; +84</option>
+        </select>
+        <div class="reg-select-arrow">&#9662;</div>
+      </div>
+      <div class="reg-field-float" style="flex:1;margin-bottom:0">
+        <input type="tel" id="reg-phone" placeholder=" " autocomplete="tel">
+        <label>Phone Number</label>
+      </div>
+    </div>
+
+    <div class="reg-select-labeled fu">
+      <div class="reg-select-label-text">Country of Residence</div>
+      <div class="reg-select-wrap">
+        <select id="reg-country">
+          <option value="">Select country...</option>
+          <option value="AF">Afghanistan</option><option value="AL">Albania</option>
+          <option value="DZ">Algeria</option><option value="AD">Andorra</option>
+          <option value="AO">Angola</option><option value="AR">Argentina</option>
+          <option value="AM">Armenia</option><option value="AU">Australia</option>
+          <option value="AT">Austria</option><option value="AZ">Azerbaijan</option>
+          <option value="BH">Bahrain</option><option value="BD">Bangladesh</option>
+          <option value="BE">Belgium</option><option value="BZ">Belize</option>
+          <option value="BO">Bolivia</option><option value="BA">Bosnia</option>
+          <option value="BR">Brazil</option><option value="BN">Brunei</option>
+          <option value="BG">Bulgaria</option><option value="KH">Cambodia</option>
+          <option value="CM">Cameroon</option><option value="CA">Canada</option>
+          <option value="CL">Chile</option><option value="CN">China</option>
+          <option value="CO">Colombia</option><option value="CR">Costa Rica</option>
+          <option value="HR">Croatia</option><option value="CU">Cuba</option>
+          <option value="CY">Cyprus</option><option value="CZ">Czech Republic</option>
+          <option value="DK">Denmark</option><option value="EC">Ecuador</option>
+          <option value="EG">Egypt</option><option value="EE">Estonia</option>
+          <option value="ET">Ethiopia</option><option value="FI">Finland</option>
+          <option value="FR">France</option><option value="GE">Georgia</option>
+          <option value="DE">Germany</option><option value="GH">Ghana</option>
+          <option value="GR">Greece</option><option value="GT">Guatemala</option>
+          <option value="HN">Honduras</option><option value="HK">Hong Kong</option>
+          <option value="HU">Hungary</option><option value="IS">Iceland</option>
+          <option value="IN">India</option><option value="ID">Indonesia</option>
+          <option value="IR">Iran</option><option value="IQ">Iraq</option>
+          <option value="IE">Ireland</option><option value="IL">Israel</option>
+          <option value="IT" selected>Italy</option><option value="JP">Japan</option>
+          <option value="JO">Jordan</option><option value="KZ">Kazakhstan</option>
+          <option value="KE">Kenya</option><option value="KR">Korea (South)</option>
+          <option value="KW">Kuwait</option><option value="LA">Laos</option>
+          <option value="LV">Latvia</option><option value="LB">Lebanon</option>
+          <option value="LY">Libya</option><option value="LI">Liechtenstein</option>
+          <option value="LT">Lithuania</option><option value="LU">Luxembourg</option>
+          <option value="MY">Malaysia</option><option value="MV">Maldives</option>
+          <option value="MT">Malta</option><option value="MU">Mauritius</option>
+          <option value="MX">Mexico</option><option value="MD">Moldova</option>
+          <option value="MC">Monaco</option><option value="MN">Mongolia</option>
+          <option value="MA">Morocco</option><option value="NP">Nepal</option>
+          <option value="NL">Netherlands</option><option value="NZ">New Zealand</option>
+          <option value="NG">Nigeria</option><option value="NO">Norway</option>
+          <option value="OM">Oman</option><option value="PK">Pakistan</option>
+          <option value="PA">Panama</option><option value="PE">Peru</option>
+          <option value="PH">Philippines</option><option value="PL">Poland</option>
+          <option value="PT">Portugal</option><option value="QA">Qatar</option>
+          <option value="RO">Romania</option><option value="RU">Russia</option>
+          <option value="SA">Saudi Arabia</option><option value="RS">Serbia</option>
+          <option value="SG">Singapore</option><option value="SK">Slovakia</option>
+          <option value="SI">Slovenia</option><option value="ZA">South Africa</option>
+          <option value="ES">Spain</option><option value="LK">Sri Lanka</option>
+          <option value="SE">Sweden</option><option value="CH">Switzerland</option>
+          <option value="TW">Taiwan</option><option value="TH">Thailand</option>
+          <option value="TN">Tunisia</option><option value="TR">Turkey</option>
+          <option value="UA">Ukraine</option><option value="AE">UAE</option>
+          <option value="GB">United Kingdom</option><option value="US">United States</option>
+          <option value="UY">Uruguay</option><option value="UZ">Uzbekistan</option>
+          <option value="VE">Venezuela</option><option value="VN">Vietnam</option>
+          <option value="YE">Yemen</option><option value="ZM">Zambia</option>
+          <option value="ZW">Zimbabwe</option><option value="OTHER">Other</option>
+        </select>
+        <div class="reg-select-arrow">&#9662;</div>
+      </div>
+    </div>
+
+    <!-- Section: Platform -->
+    <div class="reg-section-label fu">Seller Platform</div>
+    <div class="reg-platform-grid fu" id="reg-platform-grid">
+      <div class="reg-platform-chip active" onclick="selectPlatform(this,'eBay')">eBay</div>
+      <div class="reg-platform-chip" onclick="selectPlatform(this,'Catawiki')">Catawiki</div>
+      <div class="reg-platform-chip" onclick="selectPlatform(this,'Etsy')">Etsy</div>
+      <div class="reg-platform-chip" onclick="selectPlatform(this,'GemRockAuctions')">GemRockAuctions</div>
+      <div class="reg-platform-chip" onclick="selectPlatform(this,'PriceScope')">PriceScope</div>
+      <div class="reg-platform-chip" onclick="selectPlatform(this,'Multiple')">Multiple</div>
+      <div class="reg-platform-chip" onclick="selectPlatform(this,'Other')">Other</div>
+    </div>
+    <select id="reg-platform" style="display:none">
+      <option value="eBay" selected>eBay</option>
+      <option value="Catawiki">Catawiki</option>
+      <option value="Etsy">Etsy</option>
+      <option value="GemRockAuctions">GemRockAuctions</option>
+      <option value="PriceScope">PriceScope</option>
+      <option value="Multiple platforms">Multiple platforms</option>
+      <option value="Other">Other</option>
+    </select>
+
+    <button class="btn btn-gold fu" onclick="doRegister()" style="margin-top:24px">Create Account</button>
+    <div class="auth-switch fu">Already have an account? <span onclick="show('s-login')">Sign in</span></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="s-dashboard" class="screen">
+  <div class="topbar">
+    <div class="topbar-logo">LiveProof</div>
+    <div class="avatar" id="user-avatar" onclick="toggleAvatarMenu()">LM</div>
+    <div id="avatar-menu" style="display:none;position:absolute;top:60px;right:16px;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:8px;overflow:hidden;z-index:999;min-width:160px;box-shadow:0 8px 24px rgba(0,0,0,0.5)">
+      <div style="padding:12px 16px;border-bottom:1px solid #2a2a2a;font-size:11px;color:var(--grey)" id="avatar-email"></div>
+      <div onclick="toggleAvatarMenu();show('s-plans')" style="padding:12px 16px;font-size:12px;cursor:pointer;color:var(--gold)" onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">⭐ View Plans</div>
+      <div onclick="toggleAvatarMenu();doLogout()" style="padding:12px 16px;font-size:12px;cursor:pointer;color:#e07755" onmouseover="this.style.background='#222'" onmouseout="this.style.background='transparent'">← Sign Out</div>
+    </div>
+  </div>
+  <div class="dash">
+    <div class="greeting fu">Good evening,</div>
+    <div class="seller-name fu" id="user-display-name">Seller</div>
+    <div id="free-trials-badge" style="display:none;font-size:11px;color:#c9a84c;background:rgba(201,168,76,0.12);border:1px solid rgba(201,168,76,0.3);border-radius:8px;padding:4px 10px;margin:6px auto 0;width:fit-content"></div>
+    <div class="level-card fu">
+      <div class="lbl">Current Certification</div>
+      <div class="level-row">
+        <div class="level-icon">🥈</div>
+        <div>
+          <div class="level-name" id="dash-level">Free</div>
+          <div class="level-fee" id="dash-fee">3 free certifications included</div>
+        </div>
+      </div>
+      <div class="prog-labels"><span id="dash-prog-label">Progress to Gold</span><span id="dash-prog-txt">0 / 50 listings</span></div>
+      <div class="prog-bar"><div class="prog-fill" id="dash-prog" style="width:0%"></div></div>
+    </div>
+    <div class="stats fu">
+      <div class="stat"><div class="stat-val" id="stat-certified">0</div><div class="stat-lbl">Certified</div></div>
+      <div class="stat"><div class="stat-val" id="stat-score">—</div><div class="stat-lbl">Avg Score</div></div>
+      <div class="stat"><div class="stat-val" id="stat-verified">0</div><div class="stat-lbl">Buyer Verified</div></div>
+    </div>
+    <div class="sec-title fu">Certified Listings</div>
+    <div style="padding:0 0 12px">
+      <input id="listings-search" type="text" placeholder="🔍 Search by name or ID..." 
+        oninput="filterListings(this.value)"
+        style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:10px 14px;color:var(--white);font-size:13px;font-family:'Montserrat',sans-serif;outline:none;box-sizing:border-box">
+    </div>
+    <div id="listings-container">
+      <div style="text-align:center;padding:40px;color:var(--grey);font-size:12px">No listings yet.<br>Tap + to certify your first listing.</div>
+    </div>
+  </div>
+  <button class="fab" onclick="show('s-category')">+</button>
+</div>
+
+<!-- CATEGORY SELECTION -->
+<div id="s-category" class="screen">
+  <div class="nav">
+    <button class="nav-back" onclick="show('s-dashboard')">←</button>
+    <div class="nav-title">Choose Category</div>
+  </div>
+  <div style="flex:1;padding:24px 20px;overflow-y:auto;padding-bottom:40px">
+    <div style="font-size:12px;color:var(--grey);line-height:1.7;margin-bottom:24px">What are you certifying? Each category uses a specialized analysis tuned for that type of item.</div>
+    <div id="category-grid" style="display:flex;flex-direction:column;gap:12px"></div>
+  </div>
+</div>
+
+<!-- NEW LISTING -->
+<div id="s-new" class="screen">
+  <div class="nav">
+    <button class="nav-back" onclick="show('s-dashboard')">←</button>
+    <div class="nav-title">Certify Listing</div>
+  </div>
+  <div class="new-content">
+    <div class="steps">
+      <div class="step-dot active" id="sd1">1</div>
+      <div class="step-line" id="sl1"></div>
+      <div class="step-dot" id="sd2">2</div>
+      <div class="step-line" id="sl2"></div>
+      <div class="step-dot" id="sd3">3</div>
+      <div class="step-line" id="sl3"></div>
+      <div class="step-dot" id="sd4">4</div>
+    </div>
+    <div class="field">
+      <label>Gemstone Name / Listing Title</label>
+      <input type="text" id="gem-name" placeholder="e.g. Burma Ruby 1.17ct GIA Vivid Red" style="transition:border-color 0.3s">
+    </div>
+    <div class="info-box" style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <span><strong>Step 1:</strong> Shoot your listing photo in natural daylight using the in-app camera. <strong style="color:var(--gold)">This is the reference photo for AI comparison.</strong></span>
+      <span id="photo-rules-btn" onclick="togglePhotoRules()" style="cursor:pointer;font-size:18px;flex-shrink:0" title="Photo guidelines">ℹ️</span>
+    </div>
+    <!-- Disciplinare foto -->
+    <div id="photo-rules" style="display:none;background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:6px;padding:14px 16px;margin-bottom:4px;font-size:11px;line-height:1.8;color:var(--grey)">
+      <div style="font-size:11px;font-weight:600;color:var(--gold);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">Photo Guidelines</div>
+      <div>· Natural diffused daylight — no direct sun, no artificial accent light</div>
+      <div>· Gemstone clearly visible, in focus, neutral background</div>
+      <div>· No filters or post-processing</div>
+      <div>· Hold steady — the session code must be readable in the photo</div>
+    </div>
+    <!-- Bottone scatta listing in-app -->
+    <div onclick="state.camMode='listing';show('s-camera')" style="background:linear-gradient(135deg,#0a1208,#080f08);border:2px solid rgba(201,168,76,0.5);border-radius:6px;padding:18px 20px;text-align:center;margin-bottom:10px;cursor:pointer;position:relative">
+      <div style="position:absolute;top:8px;right:12px;font-size:9px;letter-spacing:2px;color:var(--gold);background:rgba(201,168,76,0.12);padding:2px 8px;border-radius:10px;border:1px solid rgba(201,168,76,0.25)">REQUIRED</div>
+      <div id="listing-cam-icon" style="font-size:40px;margin-bottom:6px">📸</div>
+      <div id="listing-cam-title" style="font-size:14px;font-weight:600;color:var(--gold);margin-bottom:4px">Shoot Listing Photo In-App</div>
+      <div id="listing-cam-sub" style="font-size:11px;color:rgba(245,240,232,0.45);line-height:1.6">Natural daylight · Session code verified<br>This is the photo the AI will compare against your live reference</div>
+      <div id="listing-cam-status" style="font-size:10px;color:var(--gold);margin-top:8px;letter-spacing:1px">⚠ Required for certification</div>
+    </div>
+    <div class="info-box" style="margin-top:4px"><strong>Step 2:</strong> Take one mandatory live photo right now in natural daylight. Cannot be uploaded from gallery.</div>
+    <div class="live-zone" id="live-zone" onclick="state.camMode='live';show('s-camera')" style="position:relative;overflow:hidden;">
+      <div class="live-badge">LIVE REQUIRED</div>
+      <img id="live-preview" style="display:none;width:80px;height:80px;object-fit:cover;border-radius:6px;border:2px solid rgba(76,175,125,0.6);margin-bottom:10px;flex-shrink:0">
+      <div class="lz-icon" id="lz-icon">📷</div>
+      <div class="lz-title" id="lz-title">Take Live Photo Now</div>
+      <div class="lz-sub" id="lz-sub">Open camera and shoot in natural daylight<br>This photo cannot be replaced with a gallery upload</div>
+      <div class="lz-req" id="lz-req">⚠ Required for certification</div>
+    </div>
+    <!-- Certificato gemologico opzionale (solo verticale gemme) -->
+    <div id="cert-upload-section" style="margin-top:14px">
+      <div class="info-box" style="margin-bottom:8px"><strong>Optional:</strong> Upload the lab certificate (GIA, IGI, GRS…) if available. It helps the AI identify species, origin and treatments — and is preserved as part of the certification record.</div>
+      <div onclick="document.getElementById('cert-file').click()" id="cert-zone" style="border:1.5px dashed rgba(201,168,76,0.3);border-radius:6px;padding:16px;text-align:center;cursor:pointer;position:relative">
+        <input type="file" id="cert-file" accept="application/pdf,image/*" onchange="handleCertFile(this)" style="display:none">
+        <div id="cert-icon" style="font-size:28px;margin-bottom:6px">📄</div>
+        <div id="cert-title" style="font-size:13px;font-weight:500;color:var(--white);margin-bottom:3px">Add Lab Certificate</div>
+        <div id="cert-sub" style="font-size:10px;color:var(--grey);line-height:1.5">PDF or image · optional</div>
+      </div>
+    </div>
+    <button class="btn btn-gold" id="analyze-btn" onclick="startAnalysis()" style="opacity:0.4;pointer-events:none;margin-top:8px">Analyse with AI →</button>
+  </div>
+</div>
+
+<!-- CAMERA -->
+<div id="s-camera" class="screen">
+  <div class="nav" style="background:#000;border-color:rgba(255,255,255,0.05)">
+    <button class="nav-back" onclick="stopCamera();show('s-new')">←</button>
+    <div class="nav-title" id="cam-nav-title">Live Photo</div>
+  </div>
+  <div class="cam-view" style="position:relative;background:#000;min-height:60vh;display:flex;align-items:center;justify-content:center;">
+    <video id="cam-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none"></video>
+    <canvas id="cam-canvas" style="display:none"></canvas>
+    <canvas id="cam-analyze" width="50" height="50" style="display:none"></canvas>
+    <img id="preview-img" class="preview-img" src="" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity 0.4s">
+    <div id="cam-placeholder" style="font-size:80px;opacity:0.2;z-index:1">💎</div>
+    <div class="cam-overlay" id="cam-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;z-index:2">
+      <div class="cam-frame"><span></span></div>
+      <div class="light-ind" id="light-ind">
+        <div class="light-dot" id="light-dot" style="background:var(--grey);box-shadow:none"></div>
+        <div class="light-txt" id="light-txt" style="color:var(--grey)">Starting camera...</div>
+      </div>
+      <div id="light-detail" style="font-size:10px;color:rgba(255,255,255,0.5);text-align:center;background:rgba(0,0,0,0.6);padding:6px 14px;border-radius:10px;display:none"></div>
+    </div>
+    <!-- Session code anti-swap: deve essere visibile nella foto -->
+    <div class="session-code-overlay" id="session-code-overlay">
+      <div class="sc-label">TCG SESSION</div>
+      <div class="sc-value" id="sc-display">——————</div>
+    </div>
+  </div>
+  <div class="cam-bottom">
+    <div class="cam-hint" id="cam-hint-main">Point camera at gemstone in natural daylight</div>
+    <!-- Zoom slider -->
+    <div id="zoom-bar" style="display:none;width:100%;padding:0 16px;align-items:center;gap:10px">
+      <span style="font-size:13px;color:var(--grey)">🔍</span>
+      <input type="range" id="zoom-slider" min="1" max="5" step="0.1" value="1"
+        style="flex:1;height:3px;accent-color:var(--gold);cursor:pointer"
+        oninput="applyZoom(this.value)">
+      <span id="zoom-label" style="font-size:11px;color:var(--gold);min-width:32px;text-align:right">1×</span>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;width:100%;gap:16px">
+      <button id="cam-switch-btn" onclick="switchCamera()" style="display:none;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);color:rgba(255,255,255,0.6);border-radius:20px;padding:6px 14px;font-size:11px;letter-spacing:1px;cursor:pointer">🔭 Wide</button>
+      <div class="shutter" id="shutter-btn" onclick="capturePhoto()" style="opacity:0.4;pointer-events:none"></div>
+      <div style="width:70px"></div>
+    </div>
+    <div class="cam-hint" style="font-size:9px" id="cam-hint-sub">Tap image to focus · Shutter activates when light is optimal</div>
+    <input type="file" id="cam-file" accept="image/*" capture="environment" onchange="handleCamFile(this)" style="display:none">
+  </div>
+</div>
+
+<!-- ANALYZING -->
+<div id="s-analyzing" class="screen" style="background:var(--black)">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;text-align:center">
+    <div style="font-size:60px;margin-bottom:24px;animation:spin 4s linear infinite">🔬</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:30px;color:var(--gold);margin-bottom:10px">AI Analysis</div>
+    <div style="font-size:11px;color:var(--grey);line-height:1.8;margin-bottom:36px">Comparing listing photo with live photo<br>using LiveProof AI engine</div>
+    <div class="progress-steps" id="analysis-steps">
+      <div class="prog-step" id="ps1"><div class="prog-step-dot"></div>Uploading photos</div>
+      <div class="prog-step" id="ps2"><div class="prog-step-dot"></div>Detecting color properties</div>
+      <div class="prog-step" id="ps3"><div class="prog-step-dot"></div>Measuring Delta-E color distance</div>
+      <div class="prog-step" id="ps4"><div class="prog-step-dot"></div>Detecting filters & enhancements</div>
+      <div class="prog-step" id="ps5"><div class="prog-step-dot"></div>Verifying light source</div>
+      <div class="prog-step" id="ps6"><div class="prog-step-dot"></div>Generating honesty score</div>
+    </div>
+  </div>
+</div>
+
+<!-- SCORE -->
+<div id="s-score" class="screen">
+  <div class="nav">
+    <button class="nav-back" onclick="show('s-new')">←</button>
+    <div class="nav-title">Analysis Result</div>
+  </div>
+  <div class="score-content">
+    <div style="font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--grey);margin-bottom:28px">LiveProof Accuracy Score</div>
+    <div class="score-ring">
+      <svg viewBox="0 0 190 190">
+        <circle class="ring-track" cx="95" cy="95" r="85"/>
+        <circle class="ring-fill" id="ring-fill" cx="95" cy="95" r="85"/>
+      </svg>
+      <div class="ring-center">
+        <div class="ring-num" id="score-num">—</div>
+        <div class="ring-pct">/ 100</div>
+      </div>
+    </div>
+    <div class="verdict-box">
+      <div class="verdict-chip" id="verdict-chip"></div>
+      <div class="verdict-reason" id="verdict-reason"></div>
+    </div>
+    <div class="analysis-grid">
+      <div class="an-item"><div class="an-lbl">Color Match</div><div class="an-val" id="an-color">—</div></div>
+      <div class="an-item"><div class="an-lbl">Saturation</div><div class="an-val" id="an-sat">—</div></div>
+      <div class="an-item"><div class="an-lbl">Filter Detection</div><div class="an-val" id="an-filter">—</div></div>
+      <div class="an-item"><div class="an-lbl">Light Source</div><div class="an-val" id="an-light">—</div></div>
+    </div>
+    <div class="ai-reasoning" id="ai-reasoning">
+      <strong>AI Assessment</strong>
+      <span id="ai-text">Loading...</span>
+    </div>
+    <button class="btn btn-gold" id="cert-btn" onclick="show_cert_screen()">Generate Certified Photo →</button>
+  </div>
+</div>
+
+<!-- CERTIFIED PHOTO -->
+<div id="s-cert" class="screen">
+  <div class="nav">
+    <button class="nav-back" onclick="show('s-score')">←</button>
+    <div class="nav-title">Certified Photo</div>
+  </div>
+  <div class="cert-content">
+    <div class="cert-photo" id="cert-photo">
+      <div class="cert-gem" id="cert-gem-emoji">💎</div>
+      <img id="cert-listing-img" class="cert-listing-img" src="" alt="" style="display:none">
+      <div class="cert-status">CERTIFIED</div>
+      <div class="cert-score-badge" id="cert-score-badge">—</div>
+      <div class="cert-wm">
+        <div class="cert-wm-l">
+          <div class="cert-wm-logo" id="cert-wm-logo">LiveProof</div>
+          <div class="cert-wm-badge" id="cert-wm-level">🥈 Silver Certified</div>
+          <div class="cert-wm-id" id="cert-wm-id">ID: TC-00001 · Valid to 31/12/2026</div>
+        </div>
+        <div class="cert-wm-qr" id="cert-qr"></div>
+      </div>
+    </div>
+    <div class="cert-table" id="cert-table"></div>
+    <button class="btn btn-gold" onclick="downloadCert()">⬇ Download Certified Photo</button>
+    <button class="btn btn-outline" onclick="show('s-dashboard')" style="margin-top:10px">Back to Dashboard</button>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- PLANS -->
+<div id="s-plans" class="screen">
+  <div class="nav">
+    <button class="nav-back" onclick="goBack()">←</button>
+    <div class="nav-title">Certification Plans</div>
+  </div>
+  <div class="plans-content">
+    <div style="font-size:11px;color:var(--grey);line-height:1.7;margin-bottom:24px">Choose your certification level. Higher levels unlock more certified listings and premium placement in the LiveProof directory.</div>
+    <div class="plan-card" onclick="selectPlan('silver',this)">
+      <div class="plan-header">
+        <div class="plan-icon">🥈</div>
+        <div><div class="plan-name">Silver</div><div style="font-size:10px;color:var(--grey)">Entry level</div></div>
+        <div class="plan-price"><div class="plan-amount">€15</div><div class="plan-period">/ month &nbsp;·&nbsp; €150 / year</div></div>
+      </div>
+      <ul class="plan-features">
+        <li>50 certified listings per year</li>
+        <li>Silver badge on certified photos</li>
+        <li>Directory listing</li>
+        <li>QR verification page for buyers</li>
+      </ul>
+      
+    </div>
+    <div class="plan-card popular" onclick="selectPlan('gold',this)">
+      <div class="plan-header">
+        <div class="plan-icon">🥇</div>
+        <div><div class="plan-name">Gold</div><div style="font-size:10px;color:var(--grey)">Professional</div></div>
+        <div class="plan-price"><div class="plan-amount">€40</div><div class="plan-period">/ month &nbsp;·&nbsp; €400 / year</div></div>
+      </div>
+      <ul class="plan-features">
+        <li>200 certified listings per year</li>
+        <li>Gold badge on certified photos</li>
+        <li>Priority directory placement</li>
+        <li>Newsletter feature</li>
+        <li>Buyer verification layer</li>
+      </ul>
+      
+    </div>
+    <div class="plan-card" onclick="selectPlan('diamond',this)">
+      <div class="plan-header">
+        <div class="plan-icon">💎</div>
+        <div><div class="plan-name">Diamond</div><div style="font-size:10px;color:var(--grey)">Elite</div></div>
+        <div class="plan-price"><div class="plan-amount">€100</div><div class="plan-period">/ month &nbsp;·&nbsp; €1,000 / year</div></div>
+      </div>
+      <ul class="plan-features">
+        <li>Unlimited certified listings</li>
+        <li>Unlimited certified listings</li>
+        <li>Diamond badge on certified photos</li>
+        <li>Top directory placement</li>
+        <li>Advanced analytics dashboard</li>
+        <li>Priority support</li>
+        <li>AI model training contribution</li>
+      </ul>
+      
+    </div>
+    <button class="btn btn-gold" id="subscribe-btn" onclick="subscribePlan()" style="margin-top:8px;opacity:0.4;pointer-events:none">Select a Plan to Continue</button>
+  </div>
+</div>
+
+<!-- VERIFY (BUYER) -->
+<div id="s-verify" class="screen">
+  <div class="nav">
+    <button class="nav-back" onclick="show('s-login')">←</button>
+    <div class="nav-title">Verify Purchase</div>
+  </div>
+  <div class="verify-content">
+    <div style="font-size:11px;color:var(--grey);line-height:1.7;margin-bottom:20px">Enter the certification ID found on the seller's listing photo to verify authenticity.</div>
+    <div class="field"><label>Certification ID</label><input type="text" id="verify-id" placeholder="e.g. TC-00441" oninput="this.value=this.value.toUpperCase()"></div>
+    <button class="btn btn-gold" onclick="doVerify()">Verify Now</button>
+    <div id="verify-result"></div>
+  </div>
+</div>
+
+<div id="s-email-confirm" class="screen">
+  <div class="nav">
+    <div class="nav-title">Verify Your Email</div>
+  </div>
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:48px 28px;text-align:center;gap:20px">
+    <div style="font-size:48px">✉️</div>
+    <div style="font-size:20px;font-weight:700;color:var(--gold)">Check your inbox</div>
+    <div id="confirm-email-text" style="font-size:14px;color:var(--grey);line-height:1.7">We sent a verification link to your email address.</div>
+    <div style="font-size:13px;color:var(--grey);line-height:1.6">Click the link in the email to activate your account, then come back here to sign in.</div>
+    <button class="btn btn-gold" style="margin-top:16px" onclick="justRegistered=false;show('s-login')">Go to Login</button>
+    <button class="btn btn-outline" style="margin-top:4px" onclick="resendVerificationEmail()">Resend Email</button>
+  </div>
+</div>
+
+<div class="toast" id="app-toast"></div>
+<div class="loading-overlay" id="loading" style="display:none!important"><div class="loading-spinner"></div><div class="loading-text">Processing...</div></div>
+
+<script type="module">
+// ── FIREBASE SDK ──
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js';
+import { getStorage, ref as storageRef, uploadString, getDownloadURL } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js';
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updateProfile, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAZps1d9rbO5zOxVsbe1eE1uppJZ5K3SJU",
+  authDomain: "truecolorgem.firebaseapp.com",
+  projectId: "truecolorgem",
+  storageBucket: "truecolorgem.firebasestorage.app",
+  messagingSenderId: "353462308228",
+  appId: "1:353462308228:web:c33ff21aa9818f768421d1"
+};
+
+const _app = initializeApp(firebaseConfig);
+const db = getFirestore(_app);
+const storage = getStorage(_app);
+const auth = getAuth(_app);
+
+// Expose Firestore helpers globally
+window._db = db;
+window._storage = storage;
+window._auth = auth;
+window._fs = { doc, getDoc, setDoc, updateDoc, collection, addDoc, getDocs, query, where, orderBy, storageRef, uploadString, getDownloadURL, signOut };
+
+// Global logout callable from non-module context
+window.doLogout = async function() {
+  try { await signOut(auth); } catch(e) {}
+  state.user = null;
+  state.listings = [];
+  show('s-login');
+  toast('Logged out.');
+};
+
+
+// ── STATE ──
+// Flag per evitare che onAuthStateChanged sovrascriva la schermata di conferma email
+let justRegistered = false;
+// Esponi globalmente per accesso da onclick inline
+Object.defineProperty(window, 'justRegistered', {
+  get() { return justRegistered; },
+  set(v) { justRegistered = v; }
+});
+
+// ── DEVICE FINGERPRINT ──
+let deviceFingerprint = null;
+(async () => {
+  try {
+    const fp = await FingerprintJS.load();
+    const result = await fp.get();
+    deviceFingerprint = result.visitorId;
+  } catch(e) {
+    deviceFingerprint = Math.random().toString(36).slice(2);
+  }
+})();
+
+const state = window.state = {
+  user: null,
+  vertical: 'gems',       // verticale selezionato — alimenta il prompt
+  listings: JSON.parse(localStorage.getItem('tc_listings') || '[]'),
+  listingFiles: [],
+  listingImageData: null,
+  livePhotoData: null,
+  currentScore: null,
+  currentGemName: '',
+  lastScreen: 's-login',
+  selectedPlan: null,
+  // Doppio session code
+  camMode: null,           // 'listing' | 'live' — quale foto si sta scattando
+  listingSessionCode: null,
+  liveSessionCode: null,
+  listingCapturedInApp: false,
+  // Sensor fingerprinting
+  listingSensorSnap: null,
+  liveSensorSnap: null,
+  // Certificato gemologico opzionale
+  certData: null,
+};
+
+// Nascondi splash screen
+(function() {
+  const splash = document.getElementById('app-loading');
+  if (splash) splash.style.display = 'none';
+})();
+
+// ── VERTICALS ──
+const VERTICALS = [
+  { id: 'gems',        icon: '💎', name: 'Gemstones',       sub: 'TrueColorGem — color honesty for loose gemstones', active: true, beta: false },
+  { id: 'jewelry',     icon: '💍', name: 'Jewelry',         sub: 'Rings, necklaces & mounted stones', active: true, beta: false },
+  { id: 'watches',     icon: '⌚', name: 'Wrist Watches',    sub: 'Dial, case & movement verification', active: true, beta: true },
+  { id: 'coins',       icon: '🪙', name: 'Coins & Stamps',   sub: 'Patina, condition & color accuracy', active: true, beta: true },
+  { id: 'wine',        icon: '🍷', name: 'Wine & Whisky',    sub: 'Label, fill level & bottle condition', active: true, beta: true },
+  { id: 'art',         icon: '🖼️', name: 'Art',             sub: 'Color fidelity for paintings & prints', active: true, beta: true },
+  { id: 'fashion',     icon: '👜', name: 'Fashion',          sub: 'Bags, shoes & designer items condition', active: true, beta: true },
+  { id: 'cars',        icon: '🚗', name: 'Cars & Motorcycles', sub: 'Bodywork, paint condition & interior', active: true, beta: true },
+  { id: 'tribal',      icon: '🗿', name: 'Asian & Tribal Art', sub: 'Patina, material color & condition', active: true, beta: true },
+  { id: 'cards',       icon: '🃏', name: 'Trading Cards',    sub: 'Print color, foil & surface condition', active: true, beta: true },
+  { id: 'toys',        icon: '🚂', name: 'Toys & Models',    sub: 'Paint condition & completeness', active: true, beta: true },
+  { id: 'archaeology', icon: '🏺', name: 'Archaeology',      sub: 'Surface patina, restoration & condition', active: true, beta: true },
+  { id: 'sports',      icon: '⚽', name: 'Sports Memorabilia', sub: 'Signature, color fidelity & condition', active: true, beta: true },
+  { id: 'media',       icon: '📷', name: 'Music, Film & Cameras', sub: 'Cosmetic & functional condition', active: true, beta: true },
+  { id: 'books',       icon: '📜', name: 'Books & Historical Items', sub: 'Paper condition, color & binding', active: true, beta: true },
+  { id: 'interiors',   icon: '🛋️', name: 'Interior & Design', sub: 'Material color, finish & condition', active: true, beta: true },
+  { id: 'electronics', icon: '📱', name: 'Electronics',     sub: 'Device condition, screen & cosmetic state', active: true, beta: true },
+  { id: 'other',       icon: '📦', name: 'Proof of Existence', sub: 'Any item — verifies you physically have it, as shown', active: true, beta: true },
+];
+
+function renderCategories() {
+  const grid = document.getElementById('category-grid');
+  if (!grid) return;
+  grid.innerHTML = VERTICALS.map(v => {
+    const betaBadge = v.beta
+      ? `<div style="position:absolute;top:8px;right:10px;font-size:8px;letter-spacing:2px;color:var(--yellow);border:1px solid rgba(240,192,64,0.35);background:rgba(240,192,64,0.1);padding:2px 7px;border-radius:10px;text-transform:uppercase">Beta</div>`
+      : '';
+    return `<div onclick="selectVertical('${v.id}')" style="position:relative;background:var(--card);border:1px solid ${v.beta ? 'rgba(255,255,255,0.08)' : 'var(--gold-dim)'};border-radius:6px;padding:18px;cursor:pointer;display:flex;align-items:center;gap:16px;transition:border-color 0.2s" onmouseover="this.style.borderColor='${v.beta ? 'rgba(240,192,64,0.4)' : 'var(--gold)'}'" onmouseout="this.style.borderColor='${v.beta ? 'rgba(255,255,255,0.08)' : 'var(--gold-dim)'}'">
+        ${betaBadge}
+        <div style="font-size:34px">${v.icon}</div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:600;color:${v.beta ? 'var(--white)' : 'var(--gold)'};margin-bottom:3px">${v.name}</div>
+          <div style="font-size:11px;color:var(--grey);line-height:1.5">${v.sub}</div>
+          ${v.beta ? `<div style="font-size:9px;color:rgba(240,192,64,0.7);margin-top:4px;line-height:1.4">Analysis quality still improving — feedback welcome</div>` : ''}
+        </div>
+        <div style="font-size:20px;color:${v.beta ? 'var(--grey)' : 'var(--gold)'}">→</div>
+      </div>`;
+  }).join('');
+}
+
+function selectVertical(id) {
+  state.vertical = id;
+  show('s-new');
+}
+
+// ── NAVIGATION ──
+function show(id) {
+  try {
+    const prev = document.querySelector('.screen.active')?.id;
+    if (prev === id) { return; } // già sulla schermata giusta, non fare nulla
+    if (prev === 's-camera' && id !== 's-camera') stopCamera();
+    state.lastScreen = prev || 's-welcome';
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(id);
+    if (target) { target.classList.add('active'); }
+    window.scrollTo(0, 0);
+    setLoading(false);
+    if (id === 's-category') renderCategories();
+    if (id === 's-camera') {
+      // Aggiorna titolo e hint in base al modo (listing vs live)
+      const isListing = state.camMode === 'listing';
+      const navTitle = document.getElementById('cam-nav-title');
+      if (navTitle) navTitle.textContent = isListing ? 'Listing Photo' : 'Live Reference Photo';
+      const hintMain = document.getElementById('cam-hint-main');
+      if (hintMain) hintMain.textContent = isListing
+        ? 'Shoot listing photo in natural daylight — same conditions as live'
+        : 'Point camera at gemstone in natural daylight';
+      // Reset shutter e semaforo ad ogni accesso
+      const shutter = document.getElementById('shutter-btn');
+      if (shutter) { shutter.style.opacity = '0.35'; shutter.style.pointerEvents = 'none'; }
+      const lightDot = document.getElementById('light-dot');
+      if (lightDot) { lightDot.className = 'light-dot'; lightDot.style.background = 'var(--yellow)'; }
+      const lightTxt = document.getElementById('light-txt');
+      if (lightTxt) lightTxt.textContent = 'Checking light...';
+      // Ripristina visibilità overlay
+      const overlay = document.getElementById('cam-overlay');
+      if (overlay) overlay.style.opacity = '1';
+      lightOK = false;
+      setTimeout(startCamera, 100);
+    }
+    if (id === 's-dashboard') {
+      // Reset stato certificazione quando si torna alla dashboard
+      state.listingFiles = [];
+      state.listingImageData = null;
+      state.livePhotoData = null;
+      state.currentScore = null;
+      state.currentGemName = '';
+      state.certData = null;
+      state.listingCapturedInApp = false;
+      state.listingSessionCode = null;
+      state.liveSessionCode = null;
+      state.listingSensorSnap = null;
+      state.liveSensorSnap = null;
+      // Reset UI cert zone
+      const ci = document.getElementById('cert-icon'); if (ci) ci.textContent = '📄';
+      const ct = document.getElementById('cert-title'); if (ct) ct.textContent = 'Add Lab Certificate';
+      const cs = document.getElementById('cert-sub'); if (cs) cs.textContent = 'PDF or image · optional';
+      const cz = document.getElementById('cert-zone'); if (cz) cz.style.borderColor = 'rgba(201,168,76,0.3)';
+      try { sessionStorage.removeItem('tcg_listing'); } catch(_) {}
+      // Reset UI live zone
+      const liveZone = document.getElementById('live-zone');
+      if (liveZone) liveZone.classList.remove('lz-done');
+      const lzIcon = document.getElementById('lz-icon');
+      if (lzIcon) lzIcon.textContent = '📷';
+      const lzTitle = document.getElementById('lz-title');
+      if (lzTitle) lzTitle.textContent = 'Take Live Photo Now';
+      const lzSub = document.getElementById('lz-sub');
+      if (lzSub) lzSub.textContent = 'Open camera and shoot in natural daylight\nThis photo cannot be replaced with a gallery upload';
+      const lzReq = document.getElementById('lz-req');
+      if (lzReq) lzReq.textContent = '⚠ Required for certification';
+      // Reset upload zone
+      const uploadZone = document.getElementById('upload-zone');
+      if (uploadZone) { uploadZone.style.borderColor = ''; uploadZone.classList.remove('has-files'); }
+      const uploadCount = document.getElementById('upload-count');
+      if (uploadCount) uploadCount.textContent = '';
+      const listingInput = document.getElementById('listing-files');
+      if (listingInput) listingInput.value = '';
+      // Reset analyse button
+      const analyzeBtn = document.getElementById('analyze-btn');
+      if (analyzeBtn) { analyzeBtn.style.opacity = '0.4'; analyzeBtn.style.pointerEvents = 'none'; }
+    }
+    if (id === 's-new') {
+      // Certificato gemologico solo per il verticale gemme
+      const certSec = document.getElementById('cert-upload-section');
+      if (certSec) certSec.style.display = (['gems','jewelry'].includes(state.vertical)) ? 'block' : 'none';
+      // Banner Beta per verticali non-gemme
+      const vConf = VERTICALS.find(v => v.id === state.vertical);
+      let betaBanner = document.getElementById('vertical-beta-banner');
+      if (vConf && vConf.beta) {
+        if (!betaBanner) {
+          betaBanner = document.createElement('div');
+          betaBanner.id = 'vertical-beta-banner';
+          betaBanner.style = 'background:rgba(240,192,64,0.08);border:1px solid rgba(240,192,64,0.25);border-radius:6px;padding:12px 14px;margin-bottom:14px;font-size:11px;color:rgba(245,240,232,0.7);line-height:1.6';
+          const newContent = document.querySelector('#s-new .new-content');
+          if (newContent) newContent.insertBefore(betaBanner, newContent.firstChild);
+        }
+        betaBanner.innerHTML = '<strong style="color:var(--yellow)">⚠ Beta category:</strong> Analysis for ' + vConf.name + ' is still being refined. Results may be less precise than the Gems & Jewelry category.';
+        betaBanner.style.display = 'block';
+      } else if (betaBanner) {
+        betaBanner.style.display = 'none';
+      }
+      // Reset step dots if starting fresh
+      if (state.listingFiles.length === 0 && !state.livePhotoData) {
+        ['sd1','sd2','sd3','sd4'].forEach((id,i) => {
+          const d = document.getElementById(id);
+          if (d) { d.textContent = i+1; d.className = 'step-dot' + (i===0?' active':''); }
+        });
+        ['sl1','sl2','sl3'].forEach(id => {
+          const l = document.getElementById(id);
+          if (l) l.className = 'step-line';
+        });
+      }
+    }
+  } catch(e) { }
+}
+function goBack() { show(state.lastScreen); }
+
+// ── TOAST ──
+function toast(msg, dur=4000) {
+  const t = document.getElementById('app-toast');
+  if (!t) { console.warn('toast element missing, msg was:', msg); return; }
+  clearTimeout(t._hideTimer);
+  t.textContent = msg;
+  t.style.cssText = 'opacity:0;transform:translateX(-50%) translateY(-16px)';
+  // Use double rAF to ensure paint before animating
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    t.style.cssText = 'opacity:1;transform:translateX(-50%) translateY(0);transition:opacity 0.3s,transform 0.3s';
+    t._hideTimer = setTimeout(() => {
+      t.style.cssText = 'opacity:0;transform:translateX(-50%) translateY(-16px);transition:opacity 0.3s,transform 0.3s';
+    }, dur);
+  }));
+}
+
+// ── LOADING ──
+function setLoading(v) { 
+  const el = document.getElementById('loading'); 
+  if (el) el.style.display = v ? 'flex' : 'none'; 
+}
+
+// ── REGISTER FORM HELPERS ──
+function togglePw(id, btn) {
+  const el = document.getElementById(id);
+  if (el.type === 'password') { el.type = 'text'; btn.classList.add('visible'); }
+  else { el.type = 'password'; btn.classList.remove('visible'); }
+}
+
+function selectPlatform(chip, value) {
+  document.querySelectorAll('.reg-platform-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  const sel = document.getElementById('reg-platform');
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === value || sel.options[i].value === value + ' platforms') {
+      sel.selectedIndex = i; break;
+    }
+  }
+  sel.value = value === 'Multiple' ? 'Multiple platforms' : value;
+}
+
+// DOB dropdowns — populate day & year, sync hidden field
+(function initDobDropdowns() {
+  const mSel = document.getElementById('reg-dob-month');
+  const dSel = document.getElementById('reg-dob-day');
+  const ySel = document.getElementById('reg-dob-year');
+  const hidden = document.getElementById('reg-dob');
+  if (!mSel) return;
+
+  const currentYear = new Date().getFullYear();
+  const maxYear = currentYear - 18;
+  for (let y = maxYear; y >= 1920; y--) {
+    const o = document.createElement('option');
+    o.value = String(y); o.textContent = String(y);
+    ySel.appendChild(o);
+  }
+
+  function populateDays() {
+    const m = parseInt(mSel.value) || 0;
+    const y = parseInt(ySel.value) || 2000;
+    const max = m ? new Date(y, m, 0).getDate() : 31;
+    const prev = dSel.value;
+    dSel.innerHTML = '<option value="">Day</option>';
+    for (let d = 1; d <= max; d++) {
+      const o = document.createElement('option');
+      o.value = String(d).padStart(2,'0');
+      o.textContent = String(d);
+      dSel.appendChild(o);
+    }
+    if (prev && parseInt(prev) <= max) dSel.value = prev;
+  }
+
+  function syncHidden() {
+    const m = mSel.value, d = dSel.value, y = ySel.value;
+    hidden.value = (y && m && d) ? y + '-' + m + '-' + d : '';
+  }
+
+  mSel.addEventListener('change', () => { populateDays(); syncHidden(); });
+  dSel.addEventListener('change', syncHidden);
+  ySel.addEventListener('change', () => { populateDays(); syncHidden(); });
+  populateDays();
+})();
+
+// Password strength hint
+document.getElementById('reg-pw')?.addEventListener('input', function() {
+  const v = this.value;
+  const hint = document.getElementById('reg-pw-hint');
+  if (!hint) return;
+  if (!v) { hint.textContent = ''; hint.style.color = 'var(--grey)'; return; }
+  if (v.length < 8) { hint.textContent = 'Too short — minimum 8 characters'; hint.style.color = 'var(--red)'; }
+  else if (v.length < 10 || !/[0-9!@#$%^&*]/.test(v)) { hint.textContent = 'Fair — add numbers or symbols for a stronger password'; hint.style.color = 'var(--yellow)'; }
+  else { hint.textContent = 'Strong password ✓'; hint.style.color = 'var(--green)'; }
+});
+
+// ── AUTH ──
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  if (!email || !pw) { toast('Please fill in all fields'); return; }
+  setLoading(true);
+  try {
+    const cred = await signInWithEmailAndPassword(window._auth, email, pw);
+    if (!cred.user.emailVerified) {
+      await window._fs.signOut(window._auth);
+      toast('Please verify your email first. Check your inbox for the verification link.');
+      return;
+    }
+    // onAuthStateChanged gestisce il resto
+    show('s-dashboard');
+    toast('Welcome back!');
+  } catch(e) {
+    console.error('Login error:', e.code, e.message);
+    let msg;
+    switch (e.code) {
+      case 'auth/invalid-email':
+        msg = 'Please enter a valid email address.'; break;
+      case 'auth/missing-password':
+        msg = 'Please enter your password.'; break;
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+      case 'auth/user-not-found':
+        msg = 'Incorrect email or password.'; break;
+      case 'auth/user-disabled':
+        msg = 'This account has been disabled.'; break;
+      case 'auth/too-many-requests':
+        msg = 'Too many attempts. Please wait a moment and try again.'; break;
+      case 'auth/network-request-failed':
+        msg = 'Network error. Check your connection.'; break;
+      default:
+        msg = 'Login failed. Please try again.';
+    }
+    const errEl = document.getElementById('login-error');
+    if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
+  } finally {
+    setLoading(false);
+  }
+}
+
+function demoLogin() {
+  const guestId = Math.random().toString(36).slice(2, 6).toUpperCase();
+  state.user = { name: 'Guest Seller', email: 'guest-' + guestId + '@demo.local', initials: 'GS', isDemo: true, plan: 'free', freeTrials: 3 };
+  state.listings = [];
+  initDashboard();
+  show('s-dashboard');
+  toast('Demo mode active — analysis will show a sample result');
+}
+
+async function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pw = document.getElementById('reg-pw').value;
+  const pw2 = document.getElementById('reg-pw2').value;
+  const dob = document.getElementById('reg-dob').value;
+  const phonePrefix = document.getElementById('reg-phone-prefix').value;
+  const phone = document.getElementById('reg-phone').value.trim();
+  const country = document.getElementById('reg-country').value;
+  const platform = document.getElementById('reg-platform').value;
+
+  if (!name || !email || !pw || !pw2) { toast('Please fill in all required fields'); return; }
+  if (pw.length < 8) { toast('Password must be at least 8 characters'); return; }
+  if (pw !== pw2) { toast('Passwords do not match'); return; }
+  if (!dob) { toast('Please enter your date of birth'); return; }
+  if (!country) { toast('Please select your country'); return; }
+
+  setLoading(true);
+  try {
+    // Check device fingerprint
+    if (deviceFingerprint) {
+      const fs = window._fs;
+      const fpQuery = fs.query(
+        fs.collection(window._db, 'users'),
+        fs.where('deviceFingerprint', '==', deviceFingerprint),
+        fs.where('freeTrials', '==', 0)
+      );
+      const fpSnap = await fs.getDocs(fpQuery);
+      if (!fpSnap.empty) {
+        setLoading(false);
+        toast('This device has already used its free certifications. Please choose a plan to continue.');
+        show('s-plans');
+        return;
+      }
+    }
+    const cred = await createUserWithEmailAndPassword(window._auth, email, pw);
+    await updateProfile(cred.user, { displayName: name });
+    const initials = name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    await window._fs.setDoc(window._fs.doc(window._db, 'users', cred.user.uid), {
+      name, email, initials,
+      dob,
+      phone: phone ? (phonePrefix + phone) : '',
+      country,
+      platform,
+      plan: 'free', freeTrials: 3,
+      createdAt: new Date().toISOString(),
+      deviceFingerprint: deviceFingerprint || 'unknown'
+    });
+    await sendEmailVerification(cred.user);
+    justRegistered = true;
+    const confirmText = document.getElementById('confirm-email-text');
+    if (confirmText) confirmText.textContent = 'We sent a verification link to ' + email;
+    show('s-email-confirm');
+    await window._fs.signOut(window._auth);
+  } catch(e) {
+    toast(e.code === 'auth/email-already-in-use' ? 'Email already registered.' : 'Registration failed. Try again.');
+  } finally {
+    setLoading(false);
+  }
+}
+
+// ── DASHBOARD ──
+function toggleAvatarMenu() {
+  const menu = document.getElementById('avatar-menu');
+  if (menu) menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+// Close menu when clicking outside
+document.addEventListener('click', function(e) {
+  const avatar = document.getElementById('user-avatar');
+  const menu = document.getElementById('avatar-menu');
+  if (menu && avatar && !avatar.contains(e.target) && !menu.contains(e.target)) {
+    menu.style.display = 'none';
+  }
+});
+window.toggleAvatarMenu = toggleAvatarMenu;
+
+function initDashboard() {
+  if (!state.user) return;
+  document.getElementById('user-display-name').textContent = state.user.name;
+  document.getElementById('user-avatar').textContent = state.user.initials;
+  const emailEl = document.getElementById('avatar-email');
+  if (emailEl) emailEl.textContent = state.user.email;
+
+  // Update plan display
+  const plan = state.user.plan || 'free';
+  const planConfig = {
+    free:    { name: 'Free',    icon: '🆓', price: '€0',  color: 'var(--grey)' },
+    single:  { name: 'Single',  icon: '1️⃣', price: '€5/cert', color: 'var(--gold)' },
+    silver:  { name: 'Silver',  icon: '🥈', price: '€19/month', color: '#aaa' },
+    gold:    { name: 'Gold',    icon: '🥇', price: '€49/month', color: 'var(--gold)' },
+    diamond: { name: 'Diamond', icon: '💎', price: '€99/month', color: '#b9f2ff' },
+  };
+  const pc = planConfig[plan] || planConfig.free;
+  const levelEl = document.getElementById('dash-level');
+  const levelIconEl = document.querySelector('.level-icon');
+  if (levelEl) { levelEl.textContent = pc.name; levelEl.style.color = pc.color; }
+  if (levelIconEl) levelIconEl.textContent = pc.icon;
+
+  // Progress label
+  const progLabel = document.getElementById('dash-prog-label');
+  if (progLabel) {
+    const nextPlan = { free: 'Silver', single: 'Silver', silver: 'Gold', gold: 'Diamond', diamond: '—' };
+    const next = nextPlan[plan] || 'Gold';
+    progLabel.textContent = next === '—' ? 'Top tier reached' : 'Progress to ' + next;
+  }
+
+  // Mostra badge free trials se piano free
+  const trialsBadge = document.getElementById('free-trials-badge');
+  if (trialsBadge) {
+    if (plan === 'free') {
+      trialsBadge.textContent = state.user.freeTrials + ' free certification' + (state.user.freeTrials===1?'':'s') + ' remaining';
+      trialsBadge.style.display = 'block';
+    } else {
+      trialsBadge.style.display = 'none';
+    }
+  }
+  updateDashStats();
+}
+
+async function loadListingsFromFirebase() {
+  if (!state.user) return;
+  try {
+    const fs = window._fs;
+    const q = fs.query(
+      fs.collection(window._db, 'certifications'),
+      fs.where('uid', '==', state.user.uid),
+      fs.orderBy('createdAt', 'desc')
+    );
+    const snap = await fs.getDocs(q);
+    state.listings = snap.docs.map(d => ({ ...d.data(), _docId: d.id })); // preserve TC-XXXXX id field
+    updateDashStats();
+  } catch(e) {
+    console.error('loadListings error:', e);
+    state.listings = [];
+    updateDashStats();
+  }
+}
+
+function updateDashStats() {
+  const listings = state.listings;
+  const count = listings.length;
+  const avg = count > 0 ? Math.round(listings.reduce((s,l)=>s+l.score,0)/count) : null;
+  const verified = listings.filter(l=>l.buyerVerified).length;
+  document.getElementById('stat-certified').textContent = count;
+  document.getElementById('stat-score').textContent = avg !== null ? avg+'%' : '—';
+  document.getElementById('stat-verified').textContent = verified;
+
+  // Determine current level based on average score and listing count
+  const plan = state.user?.plan || 'free';
+  const planPrices = { free: '€0', single: '€5/cert', silver: '€19', gold: '€49', diamond: '€99' };
+  const planPrice = planPrices[plan] || '€0';
+  let thresholds = { silver: 70, gold: 85, diamond: 95 };
+  let threshold = thresholds[plan] || 70;
+
+  // Update dash-fee
+  const fee = document.getElementById('dash-fee');
+  if (fee) {
+    if (avg === null) {
+      if (plan === 'free') {
+        const trials = state.user.freeTrials ?? 3;
+        fee.textContent = trials + ' free certification' + (trials===1?'':'s') + ' remaining';
+        fee.style.color = 'var(--grey)';
+      } else {
+        fee.textContent = planPrice + ' / month';
+        fee.style.color = 'var(--grey)';
+      }
+    } else if (avg < threshold && count >= 3) {
+      fee.textContent = `⚠ Avg score ${avg}% — minimum required: ${threshold}%`;
+      fee.style.color = 'var(--red)';
+    } else {
+      fee.textContent = `${planPrice} / month · Avg score: ${avg}% ${avg >= threshold ? '✓' : ''}`;
+      fee.style.color = avg >= threshold ? 'var(--green)' : 'var(--grey)';
+    }
+  }
+
+  const prog = Math.min(count, 50);
+  document.getElementById('dash-prog').style.width = (prog/50*100)+'%';
+  document.getElementById('dash-prog-txt').textContent = count+' / 50 listings';
+  renderListings();
+}
+
+function showListingDetail(id, name, score, date, imageUrl, verifyUrl, buyerVerified) {
+  const verdict = score >= 70 ? 'CERTIFIED' : 'REJECTED';
+  const verdictColor = score >= 70 ? 'var(--green)' : 'var(--red)';
+  const expiry = '31/12/' + (new Date().getFullYear() + 1);
+  const circumference = 2 * Math.PI * 54;
+  const offset = circumference - (score / 100 * circumference);
+  const verUrl = verifyUrl || `https://www.liveproof.ai/verify/${id}`;
+
+  document.getElementById('detail-content').innerHTML = `
+    <div style="text-align:center;padding:24px 0 16px">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;margin-bottom:4px">${name}</div>
+      <div style="font-size:11px;color:var(--grey);letter-spacing:2px">${id}</div>
+    </div>
+
+    ${imageUrl ? `<div style="width:100%;aspect-ratio:1;border-radius:8px;overflow:hidden;margin-bottom:20px;position:relative">
+      <img src="${imageUrl}" style="width:100%;height:100%;object-fit:cover">
+      <div style="position:absolute;top:10px;left:10px;background:${verdictColor};color:white;font-size:9px;letter-spacing:2px;padding:4px 10px;border-radius:2px;font-weight:700">${verdict}</div>
+      <div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.7);color:var(--gold);font-size:13px;font-weight:700;padding:4px 10px;border-radius:2px">${score}%</div>
+    </div>` : ''}
+
+    <div style="display:flex;justify-content:center;padding:8px 0 16px">
+      <div style="position:relative;width:120px;height:120px">
+        <svg viewBox="0 0 120 120" style="width:100%;height:100%;transform:rotate(-90deg)">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="8"/>
+          <circle id="detail-ring" cx="60" cy="60" r="54" fill="none" stroke="var(--gold)" stroke-width="8" stroke-linecap="round"
+            stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}"
+            style="transition:stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1)"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:38px;color:var(--gold);line-height:1">${score}</div>
+          <div style="font-size:9px;color:var(--grey);letter-spacing:2px">/ 100</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:6px;overflow:hidden;margin-bottom:16px">
+      ${[
+        ['Certification ID', id, 'var(--gold)'],
+        ['Score', score + ' / 100', 'var(--gold)'],
+        ['Certified', date, ''],
+        ['Valid Until', expiry, ''],
+        ['Status', verdict, verdictColor],
+        ['Buyer Verified', buyerVerified ? '✓ Confirmed' : 'Pending', buyerVerified ? 'var(--green)' : 'var(--grey)'],
+      ].map(([k,v,c]) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px">
+        <span style="color:var(--grey)">${k}</span>
+        <span style="color:${c||'var(--white)'};font-weight:500">${v}</span>
+      </div>`).join('')}
+    </div>
+
+    <button onclick="window.open('${verUrl}','_blank')" style="width:100%;background:transparent;border:1px solid var(--gold-dim);color:var(--gold);padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;margin-bottom:10px">🔗 VIEW PUBLIC CERTIFICATE</button>
+    <button onclick="show('s-dashboard')" style="width:100%;background:transparent;border:1px solid #2a2a2a;color:var(--grey);padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer">← BACK TO DASHBOARD</button>
+  `;
+
+  show('s-detail');
+  // Animate ring
+  setTimeout(() => {
+    const ring = document.getElementById('detail-ring');
+    if (ring) ring.style.strokeDashoffset = offset;
+  }, 100);
+}
+
+function renderListings(filter) {
+  const c = document.getElementById('listings-container');
+  let list = state.listings.slice().reverse();
+  if (filter) {
+    const f = filter.toLowerCase();
+    list = list.filter(l => 
+      (l.name||'').toLowerCase().includes(f) || 
+      (l.id||'').toLowerCase().includes(f) ||
+      (l.date||'').includes(f)
+    );
+  }
+  if (state.listings.length === 0) {
+    c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--grey);font-size:12px">No listings yet.<br>Tap + to certify your first listing.</div>';
+    return;
+  }
+  if (list.length === 0) {
+    c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--grey);font-size:12px">No results found.</div>';
+    return;
+  }
+  c.innerHTML = list.map(l => {
+    const pillClass = l.score >= 85 ? 'pill-green' : l.score >= 70 ? 'pill-yellow' : 'pill-red';
+    const thumb = l.listingImageUrl 
+      ? `<img src="${l.listingImageUrl}" style="width:44px;height:44px;object-fit:cover;border-radius:6px">` 
+      : `<div class="listing-thumb">${getGemEmoji(l.name)}</div>`;
+    return `<div class="listing-row" onclick="showListingDetail('${l.id}','${l.name||''}',${l.score||0},'${l.date||''}','${l.listingImageUrl||''}','${l.verifyUrl||''}',${l.buyerVerified||false})">
+      ${thumb}
+      <div class="listing-info">
+        <div class="listing-name">${l.name}</div>
+        <div class="listing-meta">Certified ${l.date} · ID #${l.id}</div>
+      </div>
+      <div class="score-pill ${pillClass}">${l.score}%</div>
+    </div>`;
+  }).join('');
+}
+
+function filterListings(val) {
+  renderListings(val);
+}
+
+function getGemEmoji(name) {
+  const n = name.toLowerCase();
+  if (n.includes('ruby')) return '❤️';
+  if (n.includes('sapphire')) return '💙';
+  if (n.includes('emerald')) return '💚';
+  if (n.includes('diamond')) return '💎';
+  if (n.includes('spinel')) return '🩷';
+  if (n.includes('tanzanite')) return '💜';
+  if (n.includes('aqua')) return '🩵';
+  return '💎';
+}
+
+function togglePhotoRules() {
+  const rules = document.getElementById('photo-rules');
+  if (rules) rules.style.display = rules.style.display === 'none' ? 'block' : 'none';
+}
+
+// ── NEW LISTING ──
+function handleListingFiles(input) {
+  if (!input.files.length) return;
+  state.listingFiles = Array.from(input.files);
+  const zone = document.getElementById('upload-zone');
+  zone.classList.add('has-files');
+  document.getElementById('upload-count').textContent = state.listingFiles.length + ' photo(s) selected ✓';
+
+  // Nascondi icon e titolo, mostra anteprime
+  const icon = document.getElementById('uz-icon');
+  const title = document.getElementById('uz-title');
+  const sub = document.getElementById('uz-sub');
+  if (icon) icon.style.display = 'none';
+  if (title) title.style.display = 'none';
+  if (sub) sub.style.display = 'none';
+
+  // Genera anteprime
+  const previews = document.getElementById('listing-previews');
+  if (previews) {
+    previews.innerHTML = '';
+    previews.style.display = 'flex';
+    Array.from(input.files).slice(0, 5).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = document.createElement('img');
+        img.src = e.target.result;
+        img.style.cssText = 'width:70px;height:70px;object-fit:cover;border-radius:6px;border:1px solid rgba(201,168,76,0.3)';
+        previews.appendChild(img);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  stepDone(1);
+  toast(state.listingFiles.length + ' listing photos loaded ✓');
+
+  // Leggi prima foto come base64
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.listingImageData = e.target.result;
+    try { sessionStorage.setItem('tcg_listing', e.target.result); } catch(_) {}
+    checkAnalyzeBtn();
+  };
+  reader.onerror = () => {
+    state.listingImageData = null;
+    checkAnalyzeBtn();
+  };
+  reader.readAsDataURL(state.listingFiles[0]);
+}
+
+function stepDone(n) {
+  const dot = document.getElementById('sd'+n);
+  dot.textContent = '✓';
+  dot.classList.remove('active');
+  dot.classList.add('done');
+  const line = document.getElementById('sl'+n);
+  if (line) line.classList.add('done');
+  const next = document.getElementById('sd'+(n+1));
+  if (next) next.classList.add('active');
+}
+
+function checkAnalyzeBtn() {
+  // La foto listing in-app è ora obbligatoria per la certificazione completa
+  const hasListingInApp = state.listingCapturedInApp && !!state.listingImageData;
+  const hasLive = !!state.livePhotoData;
+  const ready = hasListingInApp && hasLive;
+  const btn = document.getElementById('analyze-btn');
+  if (btn) {
+    btn.style.opacity = ready ? '1' : '0.4';
+    btn.style.pointerEvents = ready ? 'auto' : 'none';
+  }
+}
+
+// ── CAMERA ──
+let cameraStream = null;
+let lightAnalysisInterval = null;
+let lightOK = false;
+let cameraInitialized = false;
+
+// ── SENSOR FINGERPRINTING (anti-spoof) ──
+// Lettura passiva di sensori ambientali al momento dello scatto.
+// Invisibile all'utente — crea evidenza forense legata al session code.
+let _sensorSnapshot = null;
+
+function startSensorCapture() {
+  _sensorSnapshot = { ts: Date.now(), alpha: null, beta: null, gamma: null, ax: null, ay: null, az: null, battery: null };
+  // Orientamento dispositivo
+  const onOrient = (e) => {
+    if (_sensorSnapshot) { _sensorSnapshot.alpha = Math.round(e.alpha||0); _sensorSnapshot.beta = Math.round(e.beta||0); _sensorSnapshot.gamma = Math.round(e.gamma||0); }
+  };
+  // Accelerometro
+  const onMotion = (e) => {
+    const a = e.accelerationIncludingGravity;
+    if (_sensorSnapshot && a) { _sensorSnapshot.ax = +(a.x||0).toFixed(2); _sensorSnapshot.ay = +(a.y||0).toFixed(2); _sensorSnapshot.az = +(a.z||0).toFixed(2); }
+  };
+  window.addEventListener('deviceorientation', onOrient, {once:false});
+  window.addEventListener('devicemotion', onMotion, {once:false});
+  // Batteria (dove disponibile)
+  if (navigator.getBattery) {
+    navigator.getBattery().then(b => { if (_sensorSnapshot) _sensorSnapshot.battery = Math.round(b.level * 100); }).catch(()=>{});
+  }
+  // Salva i listener per rimozione
+  window._sensorListeners = { onOrient, onMotion };
+}
+
+function stopSensorCapture() {
+  if (window._sensorListeners) {
+    window.removeEventListener('deviceorientation', window._sensorListeners.onOrient);
+    window.removeEventListener('devicemotion', window._sensorListeners.onMotion);
+    window._sensorListeners = null;
+  }
+}
+
+function takeSensorSnapshot() {
+  // Restituisce la snapshot corrente e stoppa la cattura
+  const snap = _sensorSnapshot ? { ..._sensorSnapshot, ts: Date.now() } : null;
+  stopSensorCapture();
+  _sensorSnapshot = null;
+  return snap;
+}
+function generateSessionCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const arr = new Uint8Array(6);
+  crypto.getRandomValues(arr);
+  return Array.from(arr).map(b => chars[b % chars.length]).join('');
+}
+function showSessionCode(code) {
+  const el = document.getElementById('session-code-overlay');
+  if (el) { el.style.display = 'flex'; document.getElementById('sc-display').textContent = code; }
+}
+function hideSessionCode() {
+  const el = document.getElementById('session-code-overlay');
+  if (el) el.style.display = 'none';
+}
+
+async function startCamera() {
+  // Avvia sensor fingerprinting passivo
+  startSensorCapture();
+  // Genera session code per questa sessione di scatto
+  const code = generateSessionCode();
+  if (state.camMode === 'listing') {
+    state.listingSessionCode = code;
+  } else {
+    state.liveSessionCode = code;
+  }
+  showSessionCode(code);
+  try {
+    const video = document.getElementById('cam-video');
+
+    // Step 1: Ferma stream precedente
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(track => track.stop());
+      video.srcObject = null;
+    }
+
+    // Step 2: Reset completo video element (Android Chrome fix)
+    video.pause();
+    video.removeAttribute('src');
+    video.load();
+
+    // Step 3: Force reflow — rilascia frame congelato su Android Chrome
+    video.style.display = 'none';
+    void video.offsetHeight;
+
+    // Step 4: Cerca camera ultrawide se disponibile (migliore per macro)
+    let videoConstraints = {
+      facingMode: 'environment',
+      width: { ideal: 3840, min: 1280 },
+      height: { ideal: 2160, min: 720 },
+      focusMode: 'continuous'
+    };
+
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const rearCameras = devices.filter(d => d.kind === 'videoinput' && d.label);
+      const ultrawide = rearCameras.find(d =>
+        d.label.toLowerCase().includes('ultrawide') ||
+        d.label.toLowerCase().includes('ultra-wide') ||
+        d.label.toLowerCase().includes('wide angle')
+      );
+      // Mostra pulsante switch solo se ultrawide disponibile
+      const switchBtn = document.getElementById('cam-switch-btn');
+      if (ultrawide && switchBtn) switchBtn.style.display = 'block';
+
+      if (ultrawide && usingWideCamera) {
+        videoConstraints = {
+          deviceId: { exact: ultrawide.deviceId },
+          width: { ideal: 3840, min: 1280 },
+          height: { ideal: 2160, min: 720 }
+        };
+      }
+    } catch(_) {}
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: videoConstraints,
+      audio: false
+    });
+
+    cameraStream = stream;
+
+    // Step 5: Assegna stream
+    video.srcObject = stream;
+    video.setAttribute('autoplay', '');
+    video.setAttribute('playsinline', '');
+    video.muted = true;
+
+    // Step 6: Mostra video
+    video.style.display = 'block';
+    document.getElementById('cam-placeholder').style.display = 'none';
+
+    // Nascondi preview foto precedente
+    const previewImg = document.getElementById('preview-img');
+    if (previewImg) previewImg.style.opacity = '0';
+
+    cameraInitialized = false;
+
+    // Step 7: Play esplicito su metadata
+    video.onloadedmetadata = async () => {
+      try {
+        await video.play();
+        cameraInitialized = true;
+        startLightAnalysis();
+        setupTapToFocus(video, cameraStream);
+        initZoomSlider();
+      } catch(playError) {
+      }
+    };
+
+    // Step 8: Fallback canplay per Android
+    video.oncanplay = async () => {
+      if (video.paused) {
+        try { await video.play(); } catch(e) {}
+      }
+    };
+
+    // Safety timeout
+    setTimeout(() => {
+      if (!cameraInitialized) {
+        stopCamera();
+        document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
+        const shutter = document.getElementById('shutter-btn');
+        shutter.style.opacity = '1';
+        shutter.style.pointerEvents = 'auto';
+        lightOK = true;
+      }
+    }, 4000);
+
+  } catch(err) {
+    document.getElementById('light-txt').textContent = 'Camera not available — use upload';
+    document.getElementById('light-dot').style.background = 'var(--yellow)';
+    document.getElementById('cam-hint-main').textContent = 'Tap shutter to select photo from gallery';
+    document.getElementById('shutter-btn').style.opacity = '1';
+    document.getElementById('shutter-btn').style.pointerEvents = 'auto';
+    lightOK = true;
+  }
+}
+
+function stopCamera() {
+  if (lightAnalysisInterval) { clearInterval(lightAnalysisInterval); lightAnalysisInterval = null; }
+  hideSessionCode();
+
+  const video = document.getElementById('cam-video');
+  if (video) {
+    video.onloadedmetadata = null;
+    video.oncanplay = null;
+    video.pause();
+    if (video.srcObject) {
+      video.srcObject.getTracks().forEach(track => {
+        track.stop();
+        try { video.srcObject.removeTrack(track); } catch(_) {}
+      });
+    }
+    video.srcObject = null;
+    video.removeAttribute('src');
+    video.load();
+    video.style.display = 'none';
+  }
+
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+
+  const placeholder = document.getElementById('cam-placeholder');
+  if (placeholder) placeholder.style.display = 'block';
+
+  const zoomBar = document.getElementById('zoom-bar');
+  if (zoomBar) zoomBar.style.display = 'none';
+  const zoomSlider = document.getElementById('zoom-slider');
+  if (zoomSlider) zoomSlider.value = 1;
+  lightOK = false;
+  cameraInitialized = false;
+}
+
+async function applyZoom(value) {
+  if (!cameraStream) return;
+  const track = cameraStream.getVideoTracks()[0];
+  if (!track) return;
+  const label = document.getElementById('zoom-label');
+  if (label) label.textContent = parseFloat(value).toFixed(1) + '×';
+  try {
+    await track.applyConstraints({ advanced: [{ zoom: parseFloat(value) }] });
+  } catch(_) {}
+}
+
+function initZoomSlider() {
+  if (!cameraStream) return;
+  const track = cameraStream.getVideoTracks()[0];
+  if (!track) return;
+  const capabilities = track.getCapabilities();
+  const bar = document.getElementById('zoom-bar');
+  const slider = document.getElementById('zoom-slider');
+  if (capabilities.zoom && bar && slider) {
+    const min = capabilities.zoom.min || 1;
+    const max = Math.min(capabilities.zoom.max || 5, 10);
+    slider.min = min;
+    slider.max = max;
+    slider.step = (max - min) / 50;
+    slider.value = min;
+    document.getElementById('zoom-label').textContent = min.toFixed(1) + '×';
+    bar.style.display = 'flex';
+  }
+}
+
+let usingWideCamera = false;
+
+async function switchCamera() {
+  usingWideCamera = !usingWideCamera;
+  const btn = document.getElementById('cam-switch-btn');
+  if (btn) {
+    btn.textContent = usingWideCamera ? '📷 Normal' : '🔭 Wide';
+    btn.style.color = usingWideCamera ? 'var(--gold)' : 'rgba(255,255,255,0.6)';
+    btn.style.borderColor = usingWideCamera ? 'var(--gold-dim)' : 'rgba(255,255,255,0.15)';
+  }
+  toast(usingWideCamera ? '🔭 Wide angle — better for small gems' : '📷 Standard camera');
+  await startCamera();
+}
+
+function setupTapToFocus(video, stream) {
+  // Rimuovi listener precedente se esiste
+  if (video._tapFocusListener) video.removeEventListener('click', video._tapFocusListener);
+
+  video._tapFocusListener = async (e) => {
+    if (!stream) return;
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+    const rect = video.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+
+    showFocusIndicator(e.clientX, e.clientY);
+
+    try {
+      const capabilities = track.getCapabilities();
+      if (capabilities.pointOfInterest) {
+        await track.applyConstraints({ advanced: [{ pointOfInterest: { x, y } }] });
+      }
+      if (capabilities.focusMode?.includes('manual')) {
+        await track.applyConstraints({ advanced: [{ focusMode: 'manual' }] });
+        setTimeout(() => {
+          track.applyConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+        }, 3000);
+      }
+      // Future-proof: focusDistance (Chrome 123+ su alcuni device)
+      if (capabilities.focusDistance) {
+        const { min } = capabilities.focusDistance;
+        await track.applyConstraints({ advanced: [{ focusDistance: min }] }).catch(() => {});
+      }
+    } catch(_) { /* non supportato su questo dispositivo */ }
+  };
+
+  video.addEventListener('click', video._tapFocusListener);
+}
+
+function showFocusIndicator(x, y) {
+  let indicator = document.getElementById('focus-indicator');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.id = 'focus-indicator';
+    indicator.style.cssText = 'position:fixed;width:60px;height:60px;border:2px solid #c9a84c;border-radius:50%;pointer-events:none;z-index:999;transition:opacity 0.3s;box-shadow:0 0 10px rgba(201,168,76,0.5)';
+    document.body.appendChild(indicator);
+  }
+  indicator.style.left = (x - 30) + 'px';
+  indicator.style.top = (y - 30) + 'px';
+  indicator.style.opacity = '1';
+  clearTimeout(indicator._timeout);
+  indicator._timeout = setTimeout(() => { indicator.style.opacity = '0'; }, 1500);
+}
+
+function startLightAnalysis() {
+  lightAnalysisInterval = setInterval(() => {
+    analyzeLightConditions();
+  }, 600);
+}
+
+function analyzeLightConditions() {
+  const video = document.getElementById('cam-video');
+  const canvas = document.getElementById('cam-analyze');
+  const ctx = canvas.getContext('2d');
+  
+  if (video.readyState < 2) return;
+  
+  ctx.drawImage(video, 0, 0, 50, 50);
+  const pixels = ctx.getImageData(0, 0, 50, 50).data;
+  
+  // Color averages
+  let r=0, g=0, b=0, count=0;
+  const grays = [];
+  for (let i=0; i<pixels.length; i+=4) {
+    r += pixels[i]; g += pixels[i+1]; b += pixels[i+2]; count++;
+    grays.push(pixels[i]*0.299 + pixels[i+1]*0.587 + pixels[i+2]*0.114);
+  }
+  r /= count; g /= count; b /= count;
+  const brightness = (r*0.299 + g*0.587 + b*0.114);
+  const rbRatio = r / (b + 1);
+
+  // Sharpness: Laplacian variance solo sul centro (dove si trova la gemma)
+  const W = 50;
+  const margin = 15; // analizza solo il 40% centrale del frame
+  let lapSum = 0, lapCount = 0;
+  for (let y = margin; y < W - margin; y++) {
+    for (let x = margin; x < W - margin; x++) {
+      const lap = Math.abs(
+        -grays[(y-1)*W+x] - grays[(y+1)*W+x] - grays[y*W+(x-1)] - grays[y*W+(x+1)]
+        + 4 * grays[y*W+x]
+      );
+      lapSum += lap; lapCount++;
+    }
+  }
+  const sharpness = lapCount > 0 ? lapSum / lapCount : 0;
+
+  const brightOK = brightness > 40 && brightness < 240;
+  const tempOK = rbRatio > 0.85 && rbRatio < 1.7;
+  const sharpOK = sharpness > 2.0; // soglia abbassata per gemme piccole
+
+  const dot = document.getElementById('light-dot');
+  const txt = document.getElementById('light-txt');
+  const detail = document.getElementById('light-detail');
+  const shutter = document.getElementById('shutter-btn');
+  const hint = document.getElementById('cam-hint-main');
+  
+  detail.style.display = 'block';
+  detail.textContent = `Light: ${rbRatio < 1.0 ? 'Cool' : rbRatio > 1.6 ? 'Warm' : 'Natural'} · Brightness: ${Math.round(brightness)} · Focus: ${sharpness > 3.5 ? '✓' : '✗'}`;
+
+  // Priority: check problems in order
+  if (!brightOK && brightness <= 40) {
+    lightOK = false;
+    dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)';
+    txt.style.color = 'var(--red)'; txt.textContent = 'Too dark — move closer to window ✗';
+    hint.textContent = 'Need more light — face a window';
+  } else if (!brightOK && brightness >= 240) {
+    lightOK = false;
+    dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)';
+    txt.style.color = 'var(--red)'; txt.textContent = 'Too bright — avoid direct sunlight ✗';
+    hint.textContent = 'Step back or use indirect window light';
+  } else if (rbRatio > 1.7) {
+    lightOK = false;
+    dot.style.background = 'var(--yellow)'; dot.style.boxShadow = '0 0 8px var(--yellow)';
+    txt.style.color = 'var(--yellow)'; txt.textContent = 'Warm artificial light ⚠ — move to window';
+    hint.textContent = 'Turn off lamps and move near a window';
+  } else if (rbRatio < 0.85) {
+    lightOK = false;
+    dot.style.background = 'var(--yellow)'; dot.style.boxShadow = '0 0 8px var(--yellow)';
+    txt.style.color = 'var(--yellow)'; txt.textContent = 'Cool artificial light ⚠ — use window light';
+    hint.textContent = 'Avoid LED/fluorescent lights — use daylight';
+  } else if (!sharpOK) {
+    lightOK = false;
+    dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)';
+    txt.style.color = 'var(--red)'; txt.textContent = 'Out of focus — hold steady ✗';
+    hint.textContent = 'Move closer and hold the phone still';
+  } else {
+    lightOK = true;
+    dot.style.background = 'var(--green)'; dot.style.boxShadow = '0 0 8px var(--green)';
+    txt.style.color = 'var(--green)'; txt.textContent = 'Natural light · In focus ✓';
+    hint.textContent = 'Perfect — tap shutter to capture';
+  }
+  
+  shutter.style.opacity = lightOK ? '1' : '0.35';
+  shutter.style.pointerEvents = lightOK ? 'auto' : 'none';
+}
+
+function capturePhoto() {
+  if (cameraStream && lightOK) {
+    const video = document.getElementById('cam-video');
+    const canvas = document.getElementById('cam-canvas');
+    canvas.width = video.videoWidth || 1280;
+    canvas.height = video.videoHeight || 720;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    // Cattura sensor snapshot prima di stopCamera
+    const snap = takeSensorSnapshot();
+    stopCamera();
+    if (state.camMode === 'listing') {
+      state.listingSensorSnap = snap;
+      processListingPhoto(dataUrl);
+    } else {
+      state.liveSensorSnap = snap;
+      processLivePhoto(dataUrl);
+    }
+  } else {
+    document.getElementById('cam-file').click();
+  }
+}
+
+function processListingPhoto(dataUrl) {
+  state.listingImageData = dataUrl;
+  state.listingCapturedInApp = true;
+  try { sessionStorage.setItem('tcg_listing', dataUrl); } catch(_) {}
+  show('s-new');
+  // Aggiorna bottone listing in-app
+  document.getElementById('listing-cam-icon').textContent = '✅';
+  document.getElementById('listing-cam-icon').style.fontSize = '32px';
+  document.getElementById('listing-cam-title').textContent = 'Listing Photo Captured';
+  document.getElementById('listing-cam-sub').textContent = 'Natural light verified · Session code recorded';
+  document.getElementById('listing-cam-status').textContent = '✓ Ready';
+  document.getElementById('listing-cam-status').style.color = 'var(--green)';
+  stepDone(1);
+  checkAnalyzeBtn();
+  toast('Listing photo captured ✓');
+}
+
+function processLivePhoto(dataUrl) {
+  state.livePhotoData = dataUrl;
+  const img = document.getElementById('preview-img');
+  img.src = dataUrl;
+  img.style.opacity = '1';
+  document.getElementById('cam-overlay').style.opacity = '0';
+  setTimeout(() => {
+    show('s-new');
+    const lz = document.getElementById('live-zone');
+    lz.classList.add('lz-done');
+    // Mostra anteprima live
+    const livePreview = document.getElementById('live-preview');
+    if (livePreview) { livePreview.src = dataUrl; livePreview.style.display = 'block'; }
+    document.getElementById('lz-icon').style.display = 'none';
+    document.getElementById('lz-title').textContent = 'Live Photo Captured';
+    document.getElementById('lz-sub').textContent = 'Natural light verified · Timestamped';
+    document.getElementById('lz-req').textContent = '✓ Ready for analysis';
+    stepDone(2);
+    checkAnalyzeBtn();
+    toast('Live photo captured ✓');
+  }, 600);
+}
+
+function handleCamFile(input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    if (state.camMode === 'listing') {
+      processListingPhoto(e.target.result);
+    } else {
+      processLivePhoto(e.target.result);
+    }
+  };
+  reader.onerror = () => toast('❌ Failed to read photo — try again');
+  reader.readAsDataURL(input.files[0]);
+}
+
+// ── AI ANALYSIS ──
+// ── CERTIFICATO GEMOLOGICO ──
+function handleCertFile(input) {
+  if (!input.files[0]) return;
+  const file = input.files[0];
+  // Limite 10MB
+  if (file.size > 10 * 1024 * 1024) { toast('⚠ Certificate too large (max 10MB)'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.certData = e.target.result;
+    document.getElementById('cert-icon').textContent = '✅';
+    document.getElementById('cert-title').textContent = file.name.length > 28 ? file.name.slice(0,25)+'…' : file.name;
+    document.getElementById('cert-sub').textContent = 'Certificate attached · tap to replace';
+    document.getElementById('cert-zone').style.borderColor = 'var(--green)';
+    toast('Certificate attached ✓');
+  };
+  reader.onerror = () => toast('❌ Failed to read certificate');
+  reader.readAsDataURL(file);
+}
+
+// ── RATE LIMIT (protezione credito API su link aperto gratis) ──
+const DAILY_LIMIT = 5;
+function checkRateLimit() {
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
+  let data;
+  try { data = JSON.parse(localStorage.getItem('tcg_ratelimit') || '{}'); } catch(_) { data = {}; }
+  if (data.date !== today) { data = { date: today, count: 0 }; }
+  return { allowed: data.count < DAILY_LIMIT, remaining: Math.max(0, DAILY_LIMIT - data.count), data };
+}
+function incrementRateLimit() {
+  const { data } = checkRateLimit();
+  data.count = (data.count || 0) + 1;
+  try { localStorage.setItem('tcg_ratelimit', JSON.stringify(data)); } catch(_) {}
+}
+
+async function startAnalysis() {
+  // Controllo free trials per utenti free
+  if (state.user && state.user.plan === 'free' && state.user.freeTrials <= 0) {
+    // Offri acquisto singolo o upgrade piano
+    const doSingle = confirm('No free certifications remaining.\n\nBuy a single certificate for €5, or upgrade to a plan?\n\nOK = Buy single (€5)\nCancel = View plans');
+    if (doSingle) {
+      state.selectedPlan = 'single';
+      await subscribePlan();
+    } else {
+      show('s-plans');
+    }
+    return;
+  }
+  const gemName = document.getElementById('gem-name').value.trim();
+  if (!gemName) { 
+    toast('⚠ Please enter the gemstone name first');
+    document.getElementById('gem-name').focus();
+    document.getElementById('gem-name').style.borderColor = 'var(--red)';
+    setTimeout(() => { document.getElementById('gem-name').style.borderColor = ''; }, 2000);
+    return; 
+  }
+  // Rate limit check
+  const rl = checkRateLimit();
+  if (!rl.allowed) {
+    toast('⚠ Daily limit reached (' + DAILY_LIMIT + ' analyses). Try again tomorrow.', 4500);
+    return;
+  }
+  state.currentGemName = gemName;
+  try {
+    show('s-analyzing');
+    runAnalysisSteps();
+    await callAI();
+  } catch(e) {
+    console.error('startAnalysis error:', e);
+    show('s-new');
+    if (e && e.isTrusted !== undefined) {
+      toast('❌ DOM error — please retry');
+    } else {
+      toast('❌ ' + (e?.message || String(e) || 'Unknown error').substring(0, 80));
+    }
+  }
+}
+
+async function runAnalysisSteps() {
+  const steps = ['ps1','ps2','ps3','ps4','ps5','ps6'];
+  const delays = [400, 700, 900, 700, 600, 500];
+  for (let i = 0; i < steps.length; i++) {
+    await sleep(delays[i]);
+    document.getElementById(steps[i]).classList.add('active');
+    if (i > 0) document.getElementById(steps[i-1]).classList.add('done');
+  }
+  await sleep(500);
+  document.getElementById(steps[steps.length-1]).classList.add('done');
+}
+
+async function callAI() {
+  try {
+    // Compress image to max 800px and 75% quality before sending
+    const compressImage = (src) => new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const maxSize = 800;
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', 0.75));
+      };
+      img.onerror = (_e) => resolve(src); // fallback: usa src originale
+      img.src = src;
+    });
+
+    // Convert listing photo to base64
+    let listingImage = null;
+    // Recupera da sessionStorage se state è stato pulito da Android (batteria bassa)
+    if (!state.listingImageData) {
+      try { state.listingImageData = sessionStorage.getItem('tcg_listing'); } catch(_) {}
+    }
+    if (state.listingImageData) {
+      listingImage = await compressImage(state.listingImageData);
+    } else if (state.listingFiles.length > 0) {
+      // Fallback: rileggi il file
+      const raw = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = (e) => reject(new Error('Failed to read listing photo: ' + (e.target?.error?.message || 'unknown')));
+        reader.readAsDataURL(state.listingFiles[0]);
+      });
+      listingImage = await compressImage(raw);
+    }
+
+    // Compress live photo too
+    const liveImage = state.livePhotoData ? await compressImage(state.livePhotoData) : null;
+
+
+    // Ottieni token Firebase per autenticazione lato server
+    let idToken = null;
+
+    // ── DEMO MODE — mock result, no API call ──
+    if (state.user?.isDemo) {
+      await sleep(2500); // simula elaborazione
+      const mockResult = {
+        score: 82,
+        certified: true,
+        colorMatch: 'good',
+        deltaE: 4.2,
+        lightingOk: true,
+        estimatedColorTemp: 'neutral_acceptable',
+        artificialEnhancement: false,
+        consistencyOk: true,
+        summary: 'DEMO RESULT — The listing photo shows good color consistency with the live reference. Lighting conditions appear natural with no significant studio manipulation detected. This is a sample result to demonstrate LiveProof certification.',
+        flags: [],
+        isDemo: true
+      };
+      state.currentScore = mockResult;
+      showScore(mockResult);
+      return;
+    }
+
+    try {
+      if (window._auth.currentUser) {
+        idToken = await window._auth.currentUser.getIdToken();
+      }
+    } catch(e) { }
+
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(idToken ? { 'Authorization': 'Bearer ' + idToken } : {}),
+        ...(deviceFingerprint ? { 'X-Device-Id': deviceFingerprint } : {})
+      },
+      body: JSON.stringify({
+        listingImage,
+        liveImage,
+        gemName: state.currentGemName,
+        vertical: state.vertical,
+        isBeta: VERTICALS.find(v => v.id === state.vertical)?.beta || false,
+        certPdfData: state.certData,
+        listingSessionCode: state.listingSessionCode,
+        liveSessionCode: state.liveSessionCode,
+        listingCapturedInApp: state.listingCapturedInApp,
+        listingSensorSnap: state.listingSensorSnap,
+        liveSensorSnap: state.liveSensorSnap
+      })
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      throw new Error('API ' + response.status + ': ' + errText.substring(0, 200));
+    }
+
+    const result = await response.json();
+    if (result.error) throw new Error(result.error);
+
+    // Conta solo le analisi completate (non i RETAKE per foto scadente)
+    if (result.verdict !== 'RETAKE') incrementRateLimit();
+
+    state.currentScore = result;
+    showScore(result);
+
+  } catch(e) {
+    show('s-new');
+    const msg = e?.message || e?.name || JSON.stringify(e) || 'unknown';
+    toast('❌ ' + msg.substring(0, 80));
+  }
+}
+
+function showScore(r) {
+  if (!r || typeof r.score !== 'number') {
+    toast('❌ Invalid analysis result — please retry');
+    show('s-new');
+    return;
+  }
+  show('s-score');
+  setTimeout(() => {
+    document.getElementById('score-num').textContent = r.score;
+    const circumference = 2 * Math.PI * 85;
+    const offset = circumference - (r.score / 100 * circumference);
+    const ring = document.getElementById('ring-fill');
+    ring.style.stroke = r.score >= 85 ? 'var(--gold)' : r.score >= 70 ? 'var(--yellow)' : 'var(--red)';
+    ring.style.strokeDashoffset = offset;
+
+    const chip = document.getElementById('verdict-chip');
+    if (r.verdict === 'CERTIFIED') {
+      chip.className = 'verdict-chip chip-pass';
+      chip.innerHTML = '✓ CERTIFIED';
+    } else {
+      chip.className = 'verdict-chip chip-fail';
+      chip.innerHTML = '✗ REJECTED';
+    }
+    document.getElementById('verdict-reason').textContent = r.reason;
+
+    // Indicatore beta se il verticale è in fase di test
+    let scoreBetaTag = document.getElementById('score-beta-tag');
+    const scoreContent = document.querySelector('#s-score .score-content');
+    if (r.is_beta) {
+      if (!scoreBetaTag) {
+        scoreBetaTag = document.createElement('div');
+        scoreBetaTag.id = 'score-beta-tag';
+        scoreBetaTag.style = 'font-size:9px;letter-spacing:2px;color:var(--yellow);text-transform:uppercase;margin-bottom:10px;border:1px solid rgba(240,192,64,0.3);padding:4px 12px;border-radius:10px';
+        scoreBetaTag.textContent = '⚠ Beta Category Result';
+        if (scoreContent) scoreContent.insertBefore(scoreBetaTag, scoreContent.firstChild);
+      }
+      scoreBetaTag.style.display = 'block';
+    } else if (scoreBetaTag) {
+      scoreBetaTag.style.display = 'none';
+    }
+
+    const passFail = (v) => v.includes('✓') ? 'an-pass' : 'an-fail';
+    document.getElementById('an-color').className = 'an-val ' + passFail(r.color_match);
+    document.getElementById('an-color').textContent = r.color_match;
+    document.getElementById('an-sat').className = 'an-val ' + passFail(r.saturation);
+    document.getElementById('an-sat').textContent = r.saturation;
+    document.getElementById('an-filter').className = 'an-val ' + passFail(r.filter_detected);
+    document.getElementById('an-filter').textContent = r.filter_detected;
+    document.getElementById('an-light').className = 'an-val ' + passFail(r.light_source);
+    document.getElementById('an-light').textContent = r.light_source;
+    document.getElementById('ai-text').textContent = r.assessment;
+
+    const certBtn = document.getElementById('cert-btn');
+    if (r.verdict === 'CERTIFIED') {
+      certBtn.textContent = 'Generate Certified Photo →';
+      certBtn.onclick = show_cert_screen;
+    } else {
+      certBtn.textContent = 'Listing Not Certified — Start Over';
+      certBtn.onclick = () => {
+        // Reset completo — ricomincia da Step 1
+        state.listingFiles = [];
+        state.listingImageData = null;
+        state.livePhotoData = null;
+        state.currentScore = null;
+        state.currentGemName = '';
+        // Reset camera globals
+        cameraInitialized = false;
+        lightOK = false;
+        if (cameraStream) stopCamera();
+        // Reset UI step indicators
+        ['sd1','sd2','sd3','sd4'].forEach((id,i) => {
+          const el = document.getElementById(id);
+          if (el) { el.textContent = id.replace('sd',''); el.className = 'step-dot' + (i===0 ? ' active' : ''); }
+        });
+        ['sl1','sl2','sl3'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.className = 'step-line';
+        });
+        // Reset upload zone
+        const uploadZone = document.getElementById('upload-zone');
+        if (uploadZone) { uploadZone.style.borderColor = ''; uploadZone.classList.remove('has-files'); }
+        const uploadCount = document.getElementById('upload-count');
+        if (uploadCount) uploadCount.textContent = '';
+        // Reset input file — Android non triggera onchange se stesso file senza questo
+        const listingInput = document.getElementById('listing-files');
+        if (listingInput) listingInput.value = '';
+        // Reset anteprime
+        const previews = document.getElementById('listing-previews');
+        if (previews) { previews.innerHTML = ''; previews.style.display = 'none'; }
+        const uzIcon = document.getElementById('uz-icon');
+        const uzTitle = document.getElementById('uz-title');
+        const uzSub = document.getElementById('uz-sub');
+        if (uzIcon) uzIcon.style.display = '';
+        if (uzTitle) uzTitle.style.display = '';
+        if (uzSub) uzSub.style.display = '';
+        // Pulisci sessionStorage
+        try { sessionStorage.removeItem('tcg_listing'); } catch(_) {}
+        // Reset live zone
+        const liveZone = document.getElementById('live-zone');
+        if (liveZone) liveZone.classList.remove('lz-done');
+        const lzIcon = document.getElementById('lz-icon');
+        if (lzIcon) { lzIcon.textContent = '📷'; lzIcon.style.display = ''; }
+        const livePreview = document.getElementById('live-preview');
+        if (livePreview) { livePreview.src = ''; livePreview.style.display = 'none'; }
+        const lzTitle = document.getElementById('lz-title');
+        if (lzTitle) lzTitle.textContent = 'Take Live Photo Now';
+        const lzSub = document.getElementById('lz-sub');
+        if (lzSub) lzSub.textContent = 'Open camera and shoot in natural daylight\nThis photo cannot be replaced with a gallery upload';
+        const lzReq = document.getElementById('lz-req');
+        if (lzReq) lzReq.textContent = '⚠ Required for certification';
+        const previewImg = document.getElementById('preview-img');
+        if (previewImg) { previewImg.src = ''; previewImg.style.opacity = '0'; }
+        // Reset gem name
+        const gemName = document.getElementById('gem-name');
+        if (gemName) gemName.value = '';
+        // Reset Analyse button
+        const analyzeBtn = document.getElementById('analyze-btn');
+        if (analyzeBtn) {
+          analyzeBtn.style.opacity = '0.4';
+          analyzeBtn.style.pointerEvents = 'none';
+        }
+        // Reset analysis steps UI
+        ['ps1','ps2','ps3','ps4','ps5','ps6'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('active', 'done');
+        });
+        show('s-new');
+        toast('Ready for new certification');
+      };
+    }
+  }, 300);
+}
+
+// ── CERTIFIED PHOTO ──
+async function show_cert_screen() {
+  if (!state.currentScore || state.currentScore.verdict !== 'CERTIFIED') return;
+  const r = state.currentScore;
+  const id = 'TC-' + String(Date.now()).slice(-5);
+  const today = new Date().toLocaleDateString('en-GB');
+  const expiry = '31/12/' + (new Date().getFullYear() + 1);
+
+  document.getElementById('cert-score-badge').textContent = r.score + '%';
+  document.getElementById('cert-wm-id').textContent = 'ID: ' + id + ' · Valid to ' + expiry;
+  // Logo: TrueColorGem per il verticale gemme, LiveProof per gli altri
+  const wmLogo = document.getElementById('cert-wm-logo');
+  if (wmLogo) wmLogo.textContent = (['gems','jewelry'].includes(state.vertical)) ? 'TrueColorGem' : 'LiveProof';
+
+  // QR via qrcode.js (Google Charts bloccato)
+  const qrDiv = document.getElementById('cert-qr');
+  const verifyUrl = 'https://www.liveproof.ai/verify/' + id;
+  qrDiv.innerHTML = '';
+  try {
+    new QRCode(qrDiv, { text: verifyUrl, width: 80, height: 80, correctLevel: QRCode.CorrectLevel.L });
+  } catch(e) {
+    qrDiv.innerHTML = '<div style="font-size:8px;text-align:center;padding:4px;color:#333">QR</div>';
+  }
+
+  // Show listing photo if available
+  const listingDataUrl = state.listingImageData || (() => { try { return sessionStorage.getItem('tcg_listing'); } catch(_) { return null; } })();
+  if (listingDataUrl) {
+    const img = document.getElementById('cert-listing-img');
+    img.src = listingDataUrl;
+    img.style.display = 'block';
+    document.getElementById('cert-gem-emoji').style.display = 'none';
+  }
+
+  // Table
+  document.getElementById('cert-table').innerHTML = [
+    ['Certification ID', id],
+    ['Gemstone', state.currentGemName],
+    ['Score', r.score + ' / 100'],
+    ['Level', (()=>{ const p=state.user?.plan||'free'; return {free:'🆓 Free',single:'1️⃣ Single',silver:'🥈 Silver',gold:'🥇 Gold',diamond:'💎 Diamond'}[p]||'🆓 Free'; })()],
+    ['Certified', today],
+    ['Valid Until', expiry]
+  ].map(([k,v]) => `<div class="cert-row"><span class="cert-key">${k}</span><span class="cert-val">${v}</span></div>`).join('');
+
+  // Save listing to localStorage
+  const listingData = {
+    id, name: state.currentGemName, score: r.score,
+    date: today, buyerVerified: false, certId: id
+  };
+  state.listings.unshift(listingData);
+  if (state.user) {
+    // Salva su Firestore
+  (async () => {
+    try {
+      const fs = window._fs;
+      const listing = state.listings[0]; // unshift adds to front
+
+      // Upload listing + live photos to Firebase Storage
+      let listingImageUrl = null, liveImageUrl = null;
+      const certPath = `certifications/${state.user.uid}/${listing.id}`;
+      const listingDataUrl = state.listingImageData || (() => { try { return sessionStorage.getItem('tcg_listing'); } catch(_) { return null; } })();
+      if (listingDataUrl) {
+        try {
+          const lRef = fs.storageRef(storage, `${certPath}/listing.jpg`);
+          await fs.uploadString(lRef, listingDataUrl, 'data_url');
+          listingImageUrl = await fs.getDownloadURL(lRef);
+        } catch(_) {}
+      }
+      if (state.livePhotoData) {
+        try {
+          const rRef = fs.storageRef(storage, `${certPath}/live.jpg`);
+          await fs.uploadString(rRef, state.livePhotoData, 'data_url');
+          liveImageUrl = await fs.getDownloadURL(rRef);
+        } catch(_) {}
+      }
+
+      await fs.addDoc(fs.collection(window._db, 'certifications'), {
+        ...listing,
+        uid: state.user.uid,
+        email: state.user.email,
+        createdAt: new Date().toISOString(),
+        listingImageUrl,
+        liveImageUrl,
+        gemName: state.currentGemName,
+        vertical: state.vertical || 'gemstone',
+        verifyUrl: `https://www.liveproof.ai/verify/${listing.id}`
+      });
+      // Decrementa freeTrials se piano free
+      if (state.user.plan === 'free' && state.user.freeTrials > 0) {
+        state.user.freeTrials--;
+        await fs.updateDoc(fs.doc(window._db, 'users', state.user.uid), { freeTrials: state.user.freeTrials });
+        if (state.user.freeTrials === 0) toast('You have used all your free certifications. Upgrade to continue.');
+        else toast(state.user.freeTrials + ' free certification' + (state.user.freeTrials===1?'':'s') + ' remaining.');
+      }
+    } catch(e) { console.error('Save certification error:', e); }
+  })();
+  }
+  stepDone(3);
+  updateDashStats();
+  // Navigate to cert screen
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('s-cert').classList.add('active');
+  window.scrollTo(0, 0);
+  // NON resettare listingFiles qui — servono per downloadCert()
+  // Il reset avviene in show('s-dashboard') o show('s-new')
+}
+
+// Make show global
+window.show = show;
+
+function downloadCert() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080;
+  canvas.height = 1080;
+  const ctx = canvas.getContext('2d');
+
+  const drawWatermark = () => {
+    // Gradient bottom
+    const grad = ctx.createLinearGradient(0, 580, 0, 1080);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.9)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1080, 1080);
+
+    // CERTIFIED badge top right
+    ctx.fillStyle = 'rgba(76,175,125,0.92)';
+    ctx.fillRect(780, 36, 264, 58);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 21px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('CERTIFIED', 912, 72);
+
+    // Score badge top left
+    ctx.fillStyle = 'rgba(0,0,0,0.78)';
+    ctx.fillRect(36, 36, 128, 58);
+    ctx.strokeStyle = '#c9a84c';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(36, 36, 128, 58);
+    ctx.fillStyle = '#c9a84c';
+    ctx.font = 'bold 30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText((state.currentScore?.score || 88) + '%', 100, 76);
+
+    // Bottom watermark
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#c9a84c';
+    ctx.font = '34px Georgia, serif';
+    ctx.fillText(['gems','jewelry'].includes(state.vertical) ? 'TrueColorGem' : 'LiveProof', 44, 896);
+    ctx.font = '16px Arial';
+    ctx.fillText('🥈 SILVER CERTIFIED', 44, 930);
+    ctx.fillStyle = 'rgba(245,240,232,0.45)';
+    ctx.font = '14px monospace';
+    const certId = document.getElementById('cert-wm-id')?.textContent || '';
+    ctx.fillText(certId, 44, 958);
+
+    // QR reale: legge il canvas generato da qrcode.js nel DOM
+    const qrContainer = document.getElementById('cert-qr');
+    const qrCanvas = qrContainer?.querySelector('canvas');
+    const qrImg = qrContainer?.querySelector('img');
+
+    const finalize = () => {
+      const brandPrefix = ['gems','jewelry'].includes(state.vertical) ? 'TrueColorGem' : 'LiveProof';
+      const filename = brandPrefix + '-' + (state.currentGemName||'item').replace(/\s+/g,'-') + '.jpg';
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+
+      if (isIOS) {
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+        const win = window.open();
+        win.document.write('<img src="' + dataUrl + '" style="max-width:100%"><br><p style="font-family:sans-serif;font-size:13px">Tieni premuto → Salva foto</p>');
+        win.document.title = filename;
+        toast('Photo ready ✓');
+      } else if (isAndroid) {
+        // ANDROID: canvas.toBlob() mantiene il contesto gesto utente
+        canvas.toBlob((blob) => {
+          if (!blob) { androidFallback(); return; }
+          // Web Share API — salva direttamente in galleria
+          if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/jpeg' })] })) {
+            navigator.share({
+              files: [new File([blob], filename, { type: 'image/jpeg' })],
+              title: brandPrefix + ' Certificate'
+            }).then(() => {
+              toast('Photo shared ✓');
+            }).catch((err) => {
+              if (err.name !== 'AbortError') downloadBlob(blob, filename);
+            });
+          } else {
+            downloadBlob(blob, filename);
+          }
+        }, 'image/jpeg', 1.0);
+      } else {
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+        const a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        toast('Photo downloaded ✓');
+      }
+
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 150);
+        toast('Photo downloaded ✓');
+      }
+
+      function androidFallback() {
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+        const win = window.open();
+        if (win) {
+          win.document.write('<html><body style="margin:0;background:#111;display:flex;flex-direction:column;align-items:center;padding:20px"><img src="' + dataUrl + '" style="max-width:100%;max-height:80vh"><p style="color:#fff;font-family:sans-serif;font-size:15px;margin-top:20px;text-align:center">📱 Tieni premuto → <b>Scarica immagine</b></p></body></html>');
+          toast('Long-press image to save');
+        }
+      }
+    };
+
+    // Sfondo bianco QR
+    ctx.fillStyle = 'white';
+    ctx.fillRect(938, 868, 106, 106);
+
+    if (qrCanvas) {
+      // qrcode.js ha generato un <canvas> — copialo direttamente (sincrono)
+      ctx.drawImage(qrCanvas, 900, 840, 160, 160);
+      finalize();
+    } else if (qrImg && qrImg.src) {
+      // qrcode.js ha generato un <img> — aspetta che sia loaded
+      const drawQrImg = () => {
+        ctx.drawImage(qrImg, 900, 840, 160, 160);
+        finalize();
+      };
+      if (qrImg.complete) {
+        drawQrImg();
+      } else {
+        qrImg.onload = drawQrImg;
+        qrImg.onerror = () => {
+          ctx.fillStyle = '#333';
+          ctx.font = 'bold 11px Arial';
+          ctx.textAlign = 'center';
+          ctx.fillText('SCAN', 991, 926);
+          finalize();
+        };
+      }
+    } else {
+      // Nessun QR disponibile — fallback
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 11px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillText('SCAN', 991, 926);
+      finalize();
+    }
+  };
+
+  const drawImage = (src) => {
+    const img = new Image();
+    img.onload = () => {
+      // Cover: mantieni proporzioni
+      const scale = Math.max(1080/img.naturalWidth, 1080/img.naturalHeight);
+      const w = img.naturalWidth*scale, h = img.naturalHeight*scale;
+      ctx.drawImage(img, (1080-w)/2, (1080-h)/2, w, h);
+      drawWatermark();
+    };
+    img.onerror = () => {
+      ctx.fillStyle = '#0a0a1a';
+      ctx.fillRect(0,0,1080,1080);
+      drawWatermark();
+    };
+    img.src = src;
+  };
+
+  // Usa listingImageData (già in memoria) — il File object potrebbe essere scaduto su mobile
+  const listingSrc = state.listingImageData || (() => { try { return sessionStorage.getItem('tcg_listing'); } catch(_) { return null; } })();
+  if (listingSrc) {
+    drawImage(listingSrc);
+  } else if (state.listingFiles?.length > 0) {
+    const reader = new FileReader();
+    reader.onload = e => drawImage(e.target.result);
+    reader.onerror = () => {
+      ctx.fillStyle = '#0a0a1a';
+      ctx.fillRect(0,0,1080,1080);
+      drawWatermark();
+    };
+    reader.readAsDataURL(state.listingFiles[0]);
+  } else if (state.livePhotoData) {
+    drawImage(state.livePhotoData);
+  } else {
+    ctx.fillStyle = '#0a0a1a';
+    ctx.fillRect(0,0,1080,1080);
+    drawWatermark();
+  }
+}
+
+
+
+function selectPlan(plan, el) {
+  document.querySelectorAll('.plan-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  state.selectedPlan = plan;
+  const btn = document.getElementById('subscribe-btn');
+  const labels = { silver: 'Subscribe — €15/mo or €150/yr', gold: 'Subscribe — €40/mo or €400/yr', diamond: 'Subscribe — €100/mo or €1,000/yr' };
+  btn.textContent = labels[plan];
+  btn.style.opacity = '1';
+  btn.style.pointerEvents = 'auto';
+}
+
+async function subscribePlan() {
+  if (!state.selectedPlan) { toast('Please select a plan first.'); return; }
+  if (!state.user) { show('s-register'); return; }
+
+  const btn = document.getElementById('subscribe-btn');
+  const originalText = btn.textContent;
+  btn.textContent = 'Redirecting...';
+  btn.style.opacity = '0.7';
+  btn.style.pointerEvents = 'none';
+
+  try {
+    const token = await window._auth.currentUser.getIdToken();
+    const res = await fetch('/api/create-checkout', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ plan: state.selectedPlan })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Checkout failed');
+    window.location.href = data.url;
+  } catch (e) {
+    console.error('Checkout error:', e);
+    toast(e.message || 'Could not start checkout. Please try again.');
+    btn.textContent = originalText;
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  }
+}
+
+// Handle Stripe return
+(function handleStripeReturn() {
+  const params = new URLSearchParams(window.location.search);
+  const payment = params.get('payment');
+  const plan = params.get('plan');
+  if (payment === 'success' && plan) {
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => {
+      toast(`🎉 Payment successful! Your ${plan} plan is now active.`);
+      if (state.user) {
+        state.user.plan = plan;
+        initDashboard();
+        show('s-dashboard');
+      }
+    }, 1000);
+  } else if (payment === 'cancelled') {
+    window.history.replaceState({}, '', window.location.pathname);
+    setTimeout(() => toast('Payment cancelled. You can try again anytime.'), 500);
+  }
+})();
+
+// ── VERIFY ──
+function doVerify() {
+  const id = document.getElementById('verify-id').value.trim().toUpperCase();
+  if (!id || !id.startsWith('TC-')) { toast('Please enter a valid certification ID (e.g. TC-00441)'); return; }
+  setLoading(true);
+  setTimeout(() => {
+    setLoading(false);
+    const saved = state.listings.find(l => l.id === id);
+    const result = document.getElementById('verify-result');
+    if (saved) {
+      result.innerHTML = `<div class="verify-result">
+        <div class="verify-header">
+          <div class="verify-status"><div class="verify-icon">✅</div><div class="verify-title">Certification Valid</div></div>
+          <div class="verify-id">${id}</div>
+        </div>
+        <div class="verify-body">
+          <div class="verify-row"><span style="color:var(--grey)">Gemstone</span><span>${saved.name}</span></div>
+          <div class="verify-row"><span style="color:var(--grey)">Score</span><span style="color:var(--gold)">${saved.score}/100</span></div>
+          <div class="verify-row"><span style="color:var(--grey)">Certified</span><span>${saved.date}</span></div>
+          <div class="verify-row"><span style="color:var(--grey)">Status</span><span style="color:var(--green)">Active ✓</span></div>
+        </div>
+      </div>`;
+    } else {
+      result.innerHTML = `<div class="verify-result">
+        <div class="verify-header" style="background:rgba(224,85,85,0.1);border-color:rgba(224,85,85,0.2)">
+          <div class="verify-status"><div class="verify-icon">❌</div><div class="verify-title" style="color:var(--red)">Not Found</div></div>
+          <div class="verify-id">${id}</div>
+        </div>
+        <div class="verify-body"><div style="font-size:12px;color:var(--grey);line-height:1.7">This certification ID was not found in the LiveProof database. The listing may not be certified or the ID may be incorrect.</div></div>
+      </div>`;
+    }
+  }, 1200);
+}
+
+// ── UTILS ──
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Init — Firebase handles data loading after auth
+// Attach welcome button events after DOM ready
+// Attach buttons directly with onclick as fallback
+document.addEventListener('DOMContentLoaded', function() {
+  var bl = document.getElementById('btn-login');
+  var bv = document.getElementById('btn-verify');  
+  var bp = document.getElementById('btn-plans');
+  if(bl) { bl.onclick = function(e){ e.preventDefault(); show('s-login'); return false; }; }
+  if(bv) { bv.onclick = function(e){ e.preventDefault(); show('s-verify'); return false; }; }
+  if(bp) { bp.onclick = function(e){ e.preventDefault(); show('s-plans'); return false; }; }
+});
+
+async function resendVerificationEmail() {
+  try {
+    if (window._auth.currentUser) {
+      await sendEmailVerification(window._auth.currentUser);
+      toast('Verification email resent — check your inbox.');
+    }
+  } catch(e) {
+    toast('Could not resend email. Please try registering again.');
+  }
+}
+
+// ── EXPOSE GLOBAL FUNCTIONS (required for HTML onclick in module context) ──
+window.doLogin = doLogin;
+window.doRegister = doRegister;
+window.demoLogin = demoLogin;
+window.show = show;
+window.goBack = goBack;
+window.selectPlatform = selectPlatform;
+window.togglePw = togglePw;
+window.selectVertical = selectVertical;
+window.togglePhotoRules = togglePhotoRules;
+window.startAnalysis = startAnalysis;
+window.capturePhoto = capturePhoto;
+window.stopCamera = stopCamera;
+window.switchCamera = switchCamera;
+window.showListingDetail = showListingDetail;
+window.filterListings = filterListings;
+window.downloadCert = downloadCert;
+window.selectPlan = typeof selectPlan !== 'undefined' ? selectPlan : null;
+window.subscribePlan = typeof subscribePlan !== 'undefined' ? subscribePlan : null;
+window.doVerify = typeof doVerify !== 'undefined' ? doVerify : null;
+window.show_cert_screen = typeof show_cert_screen !== 'undefined' ? show_cert_screen : null;
+
+// Auth state listener
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    // Try by UID first, then fallback to email query
+    let userData = {};
+    const userDocByUid = await getDoc(doc(db, 'users', user.uid));
+    if (userDocByUid.exists()) {
+      userData = userDocByUid.data();
+    } else {
+      // UID mismatch — search by email
+      const emailSnap = await getDocs(query(collection(db, 'users'), where('email', '==', user.email)));
+      if (!emailSnap.empty) {
+        userData = emailSnap.docs[0].data();
+        // Migrate: create doc under correct UID
+        await setDoc(doc(db, 'users', user.uid), { ...userData }, { merge: true });
+      }
+    }
+    const fullName = userData.name || user.displayName || user.email.split('@')[0];
+    const initials = fullName.trim().split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    state.user = {
+      name: fullName,
+      email: user.email,
+      uid: user.uid,
+      initials: initials,
+      plan: userData.plan || 'free',
+      freeTrials: userData.freeTrials ?? 3
+    };
+    await loadListingsFromFirebase();
+    initDashboard();
+    const splash = document.getElementById('app-loading');
+    if (splash) splash.style.display = 'none';
+    show('s-dashboard');
+  } else {
+    state.user = null;
+    const splash = document.getElementById('app-loading');
+    if (splash) splash.style.display = 'none';
+    // Non sovrascrivere la schermata di conferma email o registrazione
+    const currentScreen = document.querySelector('.screen.active')?.id;
+    const protectedScreens = ['s-email-confirm', 's-register'];
+    if (justRegistered || protectedScreens.includes(currentScreen)) {
+      // Mantieni la schermata corrente, non fare nulla
+      return;
+    }
+    show('s-login');
+  }
+});
+
+</script>
+
+<!-- CERTIFICATE DETAIL -->
+<div id="s-detail" class="screen">
+  <div class="topbar">
+    <button class="nav-back" onclick="show('s-dashboard')">←</button>
+    <div class="topbar-title">Certificate Detail</div>
+  </div>
+  <div class="dash" id="detail-content" style="padding-bottom:40px"></div>
+</div>
+</body>
+</html>

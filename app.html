@@ -1386,22 +1386,24 @@ function initDashboard() {
   if (monthlyLimits[plan]) {
     const monthStart = new Date();
     monthStart.setDate(1); monthStart.setHours(0,0,0,0);
-    try {
-      const { getDocs, query, collection, where } = window._fs;
-      const snap = await getDocs(query(
-        collection(window._db, 'certifications'),
-        where('uid', '==', state.user.uid),
-        where('createdAt', '>=', monthStart.toISOString())
-      ));
-      const used = snap.size;
-      const limit = monthlyLimits[plan];
-      const remaining = Math.max(0, limit - used);
-      const feeEl = document.getElementById('dash-fee');
-      if (feeEl) {
-        feeEl.textContent = `${remaining} of ${limit} certifications remaining this month`;
-        feeEl.style.color = remaining <= 5 ? 'var(--red)' : 'var(--grey)';
-      }
-    } catch(e) { console.error('Monthly count error:', e); }
+    (async () => {
+      try {
+        const { getDocs, query, collection, where } = window._fs;
+        const snap = await getDocs(query(
+          collection(window._db, 'certifications'),
+          where('uid', '==', state.user.uid),
+          where('createdAt', '>=', monthStart.toISOString())
+        ));
+        const used = snap.size;
+        const limit = monthlyLimits[plan];
+        const remaining = Math.max(0, limit - used);
+        const feeEl = document.getElementById('dash-fee');
+        if (feeEl) {
+          feeEl.textContent = `${remaining} of ${limit} certifications remaining this month`;
+          feeEl.style.color = remaining <= 5 ? 'var(--red)' : 'var(--grey)';
+        }
+      } catch(e) { console.error('Monthly count error:', e); }
+    })();
   }
 
   // Mostra badge free trials se piano free

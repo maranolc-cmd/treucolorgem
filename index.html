@@ -579,6 +579,11 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
       <div class="stat"><div class="stat-val" id="stat-verified">0</div><div class="stat-lbl">Buyer Verified</div></div>
     </div>
     <div class="sec-title fu">Certified Listings</div>
+    <div style="padding:0 0 12px">
+      <input id="listings-search" type="text" placeholder="🔍 Search by name or ID..." 
+        oninput="filterListings(this.value)"
+        style="width:100%;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:6px;padding:10px 14px;color:var(--white);font-size:13px;font-family:'Montserrat',sans-serif;outline:none;box-sizing:border-box">
+    </div>
     <div id="listings-container">
       <div style="text-align:center;padding:40px;color:var(--grey);font-size:12px">No listings yet.<br>Tap + to certify your first listing.</div>
     </div>
@@ -1399,7 +1404,7 @@ async function loadListingsFromFirebase() {
       fs.orderBy('createdAt', 'desc')
     );
     const snap = await fs.getDocs(q);
-    state.listings = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    state.listings = snap.docs.map(d => ({ ...d.data(), _docId: d.id })); // preserve TC-XXXXX id field
     updateDashStats();
   } catch(e) {
     console.error('loadListings error:', e);
@@ -1451,23 +1456,93 @@ function updateDashStats() {
   renderListings();
 }
 
-function showListingDetail(id, name, score, date) {
+function showListingDetail(id, name, score, date, imageUrl, verifyUrl, buyerVerified) {
   const verdict = score >= 70 ? 'CERTIFIED' : 'REJECTED';
+  const verdictColor = score >= 70 ? 'var(--green)' : 'var(--red)';
   const expiry = '31/12/' + (new Date().getFullYear() + 1);
-  toast(`📋 ${name} · Score ${score}% · ${verdict} · ID #${id}`);
+  const circumference = 2 * Math.PI * 54;
+  const offset = circumference - (score / 100 * circumference);
+  const verUrl = verifyUrl || `https://www.liveproof.ai/verify/${id}`;
+
+  document.getElementById('detail-content').innerHTML = `
+    <div style="text-align:center;padding:24px 0 16px">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;margin-bottom:4px">${name}</div>
+      <div style="font-size:11px;color:var(--grey);letter-spacing:2px">${id}</div>
+    </div>
+
+    ${imageUrl ? `<div style="width:100%;aspect-ratio:1;border-radius:8px;overflow:hidden;margin-bottom:20px;position:relative">
+      <img src="${imageUrl}" style="width:100%;height:100%;object-fit:cover">
+      <div style="position:absolute;top:10px;left:10px;background:${verdictColor};color:white;font-size:9px;letter-spacing:2px;padding:4px 10px;border-radius:2px;font-weight:700">${verdict}</div>
+      <div style="position:absolute;top:10px;right:10px;background:rgba(0,0,0,0.7);color:var(--gold);font-size:13px;font-weight:700;padding:4px 10px;border-radius:2px">${score}%</div>
+    </div>` : ''}
+
+    <div style="display:flex;justify-content:center;padding:8px 0 16px">
+      <div style="position:relative;width:120px;height:120px">
+        <svg viewBox="0 0 120 120" style="width:100%;height:100%;transform:rotate(-90deg)">
+          <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="8"/>
+          <circle id="detail-ring" cx="60" cy="60" r="54" fill="none" stroke="var(--gold)" stroke-width="8" stroke-linecap="round"
+            stroke-dasharray="${circumference}" stroke-dashoffset="${circumference}"
+            style="transition:stroke-dashoffset 1.6s cubic-bezier(0.4,0,0.2,1)"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:38px;color:var(--gold);line-height:1">${score}</div>
+          <div style="font-size:9px;color:var(--grey);letter-spacing:2px">/ 100</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:var(--card);border:1px solid rgba(255,255,255,0.05);border-radius:6px;overflow:hidden;margin-bottom:16px">
+      ${[
+        ['Certification ID', id, 'var(--gold)'],
+        ['Score', score + ' / 100', 'var(--gold)'],
+        ['Certified', date, ''],
+        ['Valid Until', expiry, ''],
+        ['Status', verdict, verdictColor],
+        ['Buyer Verified', buyerVerified ? '✓ Confirmed' : 'Pending', buyerVerified ? 'var(--green)' : 'var(--grey)'],
+      ].map(([k,v,c]) => `<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.05);font-size:12px">
+        <span style="color:var(--grey)">${k}</span>
+        <span style="color:${c||'var(--white)'};font-weight:500">${v}</span>
+      </div>`).join('')}
+    </div>
+
+    <button onclick="window.open('${verUrl}','_blank')" style="width:100%;background:transparent;border:1px solid var(--gold-dim);color:var(--gold);padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;margin-bottom:10px">🔗 VIEW PUBLIC CERTIFICATE</button>
+    <button onclick="show('s-dashboard')" style="width:100%;background:transparent;border:1px solid #2a2a2a;color:var(--grey);padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer">← BACK TO DASHBOARD</button>
+  `;
+
+  show('s-detail');
+  // Animate ring
+  setTimeout(() => {
+    const ring = document.getElementById('detail-ring');
+    if (ring) ring.style.strokeDashoffset = offset;
+  }, 100);
 }
 
-function renderListings() {
+function renderListings(filter) {
   const c = document.getElementById('listings-container');
+  let list = state.listings.slice().reverse();
+  if (filter) {
+    const f = filter.toLowerCase();
+    list = list.filter(l => 
+      (l.name||'').toLowerCase().includes(f) || 
+      (l.id||'').toLowerCase().includes(f) ||
+      (l.date||'').includes(f)
+    );
+  }
   if (state.listings.length === 0) {
     c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--grey);font-size:12px">No listings yet.<br>Tap + to certify your first listing.</div>';
     return;
   }
-  c.innerHTML = state.listings.slice().reverse().map(l => {
+  if (list.length === 0) {
+    c.innerHTML = '<div style="text-align:center;padding:40px;color:var(--grey);font-size:12px">No results found.</div>';
+    return;
+  }
+  c.innerHTML = list.map(l => {
     const pillClass = l.score >= 85 ? 'pill-green' : l.score >= 70 ? 'pill-yellow' : 'pill-red';
-    const emoji = getGemEmoji(l.name);
-    return `<div class="listing-row" onclick="showListingDetail('${l.id}','${l.name}',${l.score},'${l.date}')">
-      <div class="listing-thumb">${emoji}</div>
+    const thumb = l.listingImageUrl 
+      ? `<img src="${l.listingImageUrl}" style="width:44px;height:44px;object-fit:cover;border-radius:6px">` 
+      : `<div class="listing-thumb">${getGemEmoji(l.name)}</div>`;
+    return `<div class="listing-row" onclick="showListingDetail('${l.id}','${l.name||''}',${l.score||0},'${l.date||''}','${l.listingImageUrl||''}','${l.verifyUrl||''}',${l.buyerVerified||false})">
+      ${thumb}
       <div class="listing-info">
         <div class="listing-name">${l.name}</div>
         <div class="listing-meta">Certified ${l.date} · ID #${l.id}</div>
@@ -1475,6 +1550,10 @@ function renderListings() {
       <div class="score-pill ${pillClass}">${l.score}%</div>
     </div>`;
   }).join('');
+}
+
+function filterListings(val) {
+  renderListings(val);
 }
 
 function getGemEmoji(name) {
@@ -2880,5 +2959,14 @@ onAuthStateChanged(auth, async (user) => {
 });
 
 </script>
+
+<!-- CERTIFICATE DETAIL -->
+<div id="s-detail" class="screen">
+  <div class="topbar">
+    <button class="nav-back" onclick="show('s-dashboard')">←</button>
+    <div class="topbar-title">Certificate Detail</div>
+  </div>
+  <div class="dash" id="detail-content" style="padding-bottom:40px"></div>
+</div>
 </body>
 </html>

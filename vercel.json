@@ -11,7 +11,17 @@
     }
   ],
   "rewrites": [
-    { "source": "/verify/:certId", "destination": "/verify.html" },
-    { "source": "/verify", "destination": "/verify.html" }
+    {
+      "source": "/app",
+      "destination": "/app.html"
+    },
+    {
+      "source": "/verify/:certId",
+      "destination": "/verify.html"
+    },
+    {
+      "source": "/verify",
+      "destination": "/verify.html"
+    }
   ]
 }

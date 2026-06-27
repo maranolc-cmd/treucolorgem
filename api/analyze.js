@@ -2,7 +2,6 @@ import Anthropic from "@anthropic-ai/sdk";
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 
-// ── FIREBASE ADMIN INIT ──
 if (!getApps().length) {
   initializeApp({
     credential: cert({
@@ -15,41 +14,28 @@ if (!getApps().length) {
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-// ── RATE LIMIT (in-memory per serverless instance) ──
 const ipRequests = new Map();
-const RATE_LIMIT = 10; // max richieste per ora per IP
-const RATE_WINDOW = 60 * 60 * 1000; // 1 ora
+const RATE_LIMIT = 10;
+const RATE_WINDOW = 60 * 60 * 1000;
 
 function checkRateLimit(ip) {
   const now = Date.now();
   const entry = ipRequests.get(ip) || { count: 0, resetAt: now + RATE_WINDOW };
-  if (now > entry.resetAt) {
-    entry.count = 0;
-    entry.resetAt = now + RATE_WINDOW;
-  }
+  if (now > entry.resetAt) { entry.count = 0; entry.resetAt = now + RATE_WINDOW; }
   entry.count++;
   ipRequests.set(ip, entry);
   return entry.count <= RATE_LIMIT;
 }
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  // ── IP RATE LIMIT ──
   const ip = req.headers["x-forwarded-for"]?.split(",")[0] || req.socket?.remoteAddress || "unknown";
-  if (!checkRateLimit(ip)) {
-    return res.status(429).json({ error: "Too many requests. Please wait before trying again." });
-  }
+  if (!checkRateLimit(ip)) return res.status(429).json({ error: "Too many requests. Please wait before trying again." });
 
-  // ── FIREBASE TOKEN VALIDATION ──
   const authHeader = req.headers["authorization"];
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Authentication required. Please log in." });
-  }
+  if (!authHeader?.startsWith("Bearer ")) return res.status(401).json({ error: "Authentication required." });
 
-  // ── DEVICE FINGERPRINT CHECK ──
   const deviceId = req.headers['x-device-id'];
 
   let uid = null;
@@ -57,99 +43,94 @@ export default async function handler(req, res) {
     const token = authHeader.split("Bearer ")[1];
     const decoded = await getAuth().verifyIdToken(token);
     uid = decoded.uid;
-    if (!decoded.email_verified) {
-      return res.status(403).json({ error: "Please verify your email before using this feature." });
-    }
+    if (!decoded.email_verified) return res.status(403).json({ error: "Please verify your email before using this feature." });
   } catch (e) {
     return res.status(401).json({ error: "Invalid or expired session. Please log in again." });
   }
 
-  // ── ANALISI ANTHROPIC ──
-  const {
-    listingImage,
-    liveImage,
-    gemName,
-    vertical,
-    isBeta,
-    certPdfData,
-    listingSessionCode,
-    liveSessionCode,
-    listingCapturedInApp,
-    listingSensorSnap,
-    liveSensorSnap,
-  } = req.body;
+  const { listingImage, liveImage, gemName, vertical, listingSessionCode, liveSessionCode, listingCapturedInApp } = req.body;
 
-  if (!listingImage) {
-    return res.status(400).json({ error: "Listing image required." });
-  }
+  if (!listingImage) return res.status(400).json({ error: "Listing image required." });
 
   try {
     const content = [];
 
     if (listingImage) {
       content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: listingImage.replace(/^data:image\/\w+;base64,/, "") } });
-      content.push({ type: "text", text: "LISTING PHOTO (the photo the seller uses in their listing):" });
+      content.push({ type: "text", text: "IMAGE 1 — LISTING PHOTO (the photo the seller uses in their online listing):" });
     }
 
     if (liveImage) {
       content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: liveImage.replace(/^data:image\/\w+;base64,/, "") } });
-      content.push({ type: "text", text: "LIVE REFERENCE PHOTO (taken immediately after, same device):" });
+      content.push({ type: "text", text: "IMAGE 2 — LIVE REFERENCE PHOTO (taken immediately after by the seller, same session):" });
     }
-
-    const sessionInfo = listingSessionCode && liveSessionCode
-      ? `Session codes: listing=${listingSessionCode}, live=${liveSessionCode}. In-app capture: ${listingCapturedInApp}.`
-      : "";
 
     content.push({
       type: "text",
-      text: `You are LiveProof's AI certification engine. Analyze these photos for the item: "${gemName || "item"}" (category: ${vertical || "general"}).
+      text: `You are LiveProof's AI photo certification engine. Item: "${gemName || "item"}" (category: ${vertical || "general"}).
 
-${sessionInfo}
+MISSION: LiveProof certifies PHOTO HONESTY only — whether the listing photo accurately represents what a buyer will see when the item arrives. You do NOT evaluate item authenticity, condition, or physical properties. You ONLY evaluate the photography.
 
-Your task: determine if the listing photo HONESTLY represents what the buyer will receive when they open the package.
+SCORING SYSTEM — Start at 100 and subtract penalties:
 
-SCIENTIFIC CONTEXT (apply this knowledge):
-- Delta-E color distance: ΔE < 2 = imperceptible difference | ΔE 2–10 = noticeable | ΔE > 10 = significant misrepresentation. Flag anything above ΔE 5 between listing and live shot.
-- CRI (Color Rendering Index): light sources below CRI 90 alter color perception significantly. Warm incandescent (2700K–3500K) exaggerates reds and rubies. Cool studio lights (>6500K) over-enhance blue sapphires and aquamarines. Neutral daylight (5000K–6500K, CRI 95+) is the reference standard.
-- Gemstone-specific risks: pleochroic stones (alexandrite, tanzanite, tourmaline) show dramatically different colors under different light angles — flag if lighting appears directional or manipulated. High-saturation red/pink stones (rubies, spinels, rhodolites) are most vulnerable to artificial warm-light enhancement. Fluorescent lighting can cause UV fluorescence in some diamonds and rubies, artificially brightening them.
-- Studio artifacts: ring lights create circular catchlights on facets. Lightboxes produce unnaturally uniform illumination with no ambient shadows. Softboxes cause very soft, diffused reflections inconsistent with normal viewing conditions. These are detectable from specular highlights and shadow patterns on the stone.
-- Saturation manipulation: post-processing typically shifts hue uniformly, increases chroma beyond natural limits, and reduces texture detail in deep color zones. Compare local saturation in both images.
-- Background color cast: a colored background reflects light onto the stone and shifts its perceived color. Black backgrounds make stones look darker and more saturated; white/colored backgrounds bleed onto the stone. Flag if the listing background appears chosen to flatter the stone vs the live shot.
-- Wet look / oiling: emeralds and corundum are often wetted or oiled to intensify color and hide inclusions. Detect from excessively glossy, uniform surface reflections and loss of inclusion texture compared to the live reference.
-- Shooting angle consistency: transparent gems show more color when shot obliquely (more optical path length) and less when shot face-up. If the listing is oblique and the live shot is face-up, color will differ from geometry alone. Verify the viewing angle is comparable between the two photos.
-- Scale / magnification discrepancy: extreme macro without a scale reference can make a stone look much larger. Compare the stone-to-frame ratio between both photos for size honesty.
-- Tone mapping / HDR: aggressive HDR processing recovers facet highlight detail unnaturally. Detect from overly smooth transitions between bright and dark zones and absence of natural specular clipping.
-- White balance forcing: a manually pushed white balance can shift the entire color rendering toward the stone's "ideal" hue. Assess neutrality of points that should appear white or grey.
+COLOR ACCURACY (compare listing photo vs live reference):
+- Estimated ΔE (Delta-E color difference) 0–2: no penalty (imperceptible)
+- Estimated ΔE 2–5: -5 (slightly perceptible but acceptable)
+- Estimated ΔE 5–10: -15 (noticeable color difference)
+- Estimated ΔE > 10: -30 (significant color misrepresentation)
 
-WHAT TO CHECK:
-1. COLOR MATCH — estimate Delta-E color distance between listing and live reference. Flag if ΔE > 5.
-2. ARTIFICIAL ENHANCEMENT — saturation boosting, filters, presets, post-processing. Look for unnatural chroma levels and loss of texture in saturated areas.
-3. LIGHTING CONDITIONS — detect ring lights (circular catchlights), lightboxes (uniform illumination, white background, no shadows), studio setups (CRI-distorted color rendering). Flag if color temperature appears manipulated for the stone type.
-4. CONSISTENCY — same item in both photos? Check shape, size, inclusions, facet pattern. No swaps, no substitutions.
-5. BACKGROUND & ANGLE — flag flattering background color cast, oiling/wet look, mismatched shooting angle, or scale/magnification tricks between the two photos.
+LIGHTING MANIPULATION:
+- Natural daylight or neutral LED (4000–6500K, no directional enhancement): no penalty
+- Warm incandescent light (2700–3500K) that exaggerates warm colors: -12
+- Cool studio light (>6500K) that exaggerates blues: -12
+- Ring light detected (circular catchlights visible on item surface): -15
+- Lightbox detected (unnaturally uniform illumination, no shadows, white background): -15
+- Multiple studio lights creating unnatural specular highlights: -10
 
-IMPORTANT: The goal is not to require perfect natural light — it is to verify that conditions do NOT significantly alter the item's true appearance. Normal LED room lighting (CRI >90, 4000–6500K) is acceptable. Studio setups that dramatically change perceived color or saturation are not.
+DIGITAL MANIPULATION:
+- Saturation boosting / color filter applied to listing photo: -20
+- White balance forcefully shifted toward ideal hue: -12
+- HDR / tone mapping applied (smooth transitions, no natural specular clipping): -10
+- Photo of a screen or print (moiré pattern, pixel grid, flat luminosity): -40
 
-Be seller-friendly: if in doubt, lean toward certifying. Only fail if the discrepancy would genuinely disappoint a buyer.
+CONSISTENCY BETWEEN PHOTOS:
+- Different item in listing vs live photo: -50
+- Significantly different shooting angle that alters perceived color: -10
+- Extreme macro in listing without scale reference (misleading size): -8
 
-Respond ONLY with valid JSON, no markdown:
+IMPORTANT RULES:
+1. Normal indoor LED lighting is ACCEPTABLE — do not penalize it.
+2. A slight angle difference between photos is ACCEPTABLE if it does not alter color perception significantly.
+3. Judge objectively — do not favor sellers or buyers. Apply penalties consistently.
+4. If only ONE photo is provided (no live reference), apply a flat -20 for inability to verify consistency.
+5. The final score must reflect the sum of all penalties applied. Do not round scores to convenient numbers like 85, 90, 95 — be precise.
+
+SCORE INTERPRETATION:
+- 90–100: Excellent photo honesty, no significant issues
+- 75–89: Good, minor issues present
+- 60–74: Acceptable but with notable concerns
+- 40–59: Significant issues, likely to disappoint buyer
+- 0–39: Clear manipulation or misrepresentation detected
+
+Respond ONLY with valid JSON, no markdown, no explanation outside JSON:
 {
-  "score": <0-100>,
+  "score": <integer 0-100, calculated from penalties above>,
   "certified": <true if score >= 70>,
-  "colorMatch": "<excellent|good|fair|poor>",
-  "deltaE": <estimated Delta-E value 0-50>,
+  "penalties": [{"reason": "<what was detected>", "points": <penalty applied>}],
+  "deltaE": <estimated Delta-E 0-50>,
   "lightingOk": <true|false>,
   "estimatedColorTemp": "<warm_manipulated|neutral_acceptable|cool_manipulated|unknown>",
   "artificialEnhancement": <true|false>,
   "consistencyOk": <true|false>,
-  "summary": "<2-3 sentences explaining the verdict>",
-  "flags": ["<list of specific issues found, empty if none>"]
+  "colorMatch": "<excellent|good|fair|poor>",
+  "summary": "<2-3 sentences explaining the specific issues found and the verdict>",
+  "flags": ["<specific issue 1>", "<specific issue 2>"]
 }`
     });
 
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-5",
-      max_tokens: 1000,
+      max_tokens: 1200,
       messages: [{ role: "user", content }],
     });
 
@@ -157,10 +138,13 @@ Respond ONLY with valid JSON, no markdown:
     const cleaned = text.replace(/```json|```/g, "").trim();
     const raw = JSON.parse(cleaned);
 
-    // Map Anthropic response fields to frontend-expected fields
+    // Enforce score boundaries
+    const score = Math.max(0, Math.min(100, Math.round(raw.score)));
+    const certified = score >= 70;
+
     const result = {
-      score: raw.score,
-      verdict: raw.certified ? 'CERTIFIED' : 'REJECTED',
+      score,
+      verdict: certified ? 'CERTIFIED' : 'REJECTED',
       color_match: raw.colorMatch === 'excellent' ? '✓ Excellent' :
                    raw.colorMatch === 'good' ? '✓ Good' :
                    raw.colorMatch === 'fair' ? '⚠ Fair' : '✗ Poor',
@@ -168,8 +152,9 @@ Respond ONLY with valid JSON, no markdown:
       filter_detected: raw.artificialEnhancement ? '✗ Detected' : '✓ None',
       light_source: raw.lightingOk ? '✓ ' + (raw.estimatedColorTemp || 'Acceptable') : '✗ Manipulated',
       assessment: raw.summary || '',
-      reason: raw.flags && raw.flags.length > 0 ? raw.flags.join('. ') : (raw.certified ? 'Listing accurately represents the item.' : 'Color or lighting discrepancy detected.'),
+      reason: raw.flags?.length > 0 ? raw.flags.join('. ') : (certified ? 'Photo accurately represents the item.' : 'Issues detected that may mislead the buyer.'),
       flags: raw.flags || [],
+      penalties: raw.penalties || [],
       deltaE: raw.deltaE,
       uid,
     };

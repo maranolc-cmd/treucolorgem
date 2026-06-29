@@ -179,9 +179,12 @@ PHOTO METADATA (from EXIF — use to inform your analysis):\n${exifStr}
 IMPORTANT RULES:
 1. Normal indoor LED lighting is ACCEPTABLE — do not penalize it.
 2. A slight angle difference between photos is ACCEPTABLE if it does not alter color perception significantly.
-3. Judge objectively — do not favor sellers or buyers. Apply penalties consistently.
-4. If only ONE photo is provided (no live reference), apply a flat -20 for inability to verify consistency.
-5. The final score must reflect the sum of all penalties applied. Do not round scores to convenient numbers like 85, 90, 95 — be precise.
+3. Background differences (brighter or darker background, different objects in background) are IRRELEVANT — only evaluate the item itself.
+4. If the lighting on the ITEM is consistent between photos, do not penalize lighting even if the overall scene brightness differs.
+5. Small framing differences (item higher/lower/larger in frame) are NOT a consistency issue.
+6. Judge objectively — do not favor sellers or buyers. Apply penalties consistently.
+7. If only ONE photo is provided (no live reference), apply a flat -20 for inability to verify consistency.
+8. The final score must reflect the sum of all penalties applied. Do not round scores to convenient numbers like 85, 90, 95 — be precise.
 
 SCORE INTERPRETATION:
 - 90–100: Excellent photo honesty, no significant issues

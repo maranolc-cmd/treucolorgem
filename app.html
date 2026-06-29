@@ -6,6 +6,7 @@
   <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:;">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>LiveProof</title>
+<script src="https://cdn.jsdelivr.net/npm/exifr@7.1.3/dist/full.umd.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -2121,6 +2122,57 @@ function capturePhoto() {
   }
 }
 
+
+async function extractExifAndWeather(dataUrl) {
+  const result = { timestamp: null, gps: null, device: null, flash: null, whiteBalance: null, lightSource: null, software: null, weather: null };
+  try {
+    // Converti dataUrl in blob per exifr
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const exif = await window.exifr?.parse(blob, {
+      pick: ['DateTimeOriginal', 'GPSLatitude', 'GPSLongitude', 'Make', 'Model',
+             'Flash', 'WhiteBalance', 'LightSource', 'Software', 'FocalLength',
+             'FNumber', 'ISOSpeedRatings', 'ExposureTime']
+    });
+    if (exif) {
+      result.timestamp = exif.DateTimeOriginal ? exif.DateTimeOriginal.toISOString() : new Date().toISOString();
+      result.device = exif.Make && exif.Model ? `${exif.Make} ${exif.Model}` : null;
+      result.flash = exif.Flash !== undefined ? exif.Flash : null;
+      result.whiteBalance = exif.WhiteBalance !== undefined ? (exif.WhiteBalance === 0 ? 'auto' : 'manual') : null;
+      result.lightSource = exif.LightSource !== undefined ? exif.LightSource : null;
+      result.software = exif.Software || null;
+      result.focalLength = exif.FocalLength || null;
+      result.iso = exif.ISOSpeedRatings || null;
+      result.fNumber = exif.FNumber || null;
+      if (exif.GPSLatitude && exif.GPSLongitude) {
+        result.gps = { lat: exif.GPSLatitude, lon: exif.GPSLongitude };
+        // Chiama Open-Meteo per dati meteo
+        try {
+          const ts = result.timestamp ? result.timestamp.slice(0, 16) : new Date().toISOString().slice(0, 16);
+          const dateOnly = ts.slice(0, 10);
+          const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${result.gps.lat}&longitude=${result.gps.lon}&hourly=temperature_2m,cloudcover,weathercode&timezone=auto&start_date=${dateOnly}&end_date=${dateOnly}`;
+          const wRes = await fetch(weatherUrl);
+          const wData = await wRes.json();
+          if (wData.hourly) {
+            const hour = parseInt(ts.slice(11, 13));
+            result.weather = {
+              temperature: wData.hourly.temperature_2m?.[hour],
+              cloudcover: wData.hourly.cloudcover?.[hour],
+              weathercode: wData.hourly.weathercode?.[hour]
+            };
+          }
+        } catch(we) { console.warn('Weather fetch failed:', we); }
+      }
+    } else {
+      result.timestamp = new Date().toISOString();
+    }
+  } catch(e) {
+    console.warn('EXIF extraction failed:', e);
+    result.timestamp = new Date().toISOString();
+  }
+  return result;
+}
+
 function processListingPhoto(dataUrl) {
   state.listingImageData = dataUrl;
   state.listingCapturedInApp = true;
@@ -2305,6 +2357,16 @@ async function callAI() {
     // Compress live photo too
     const liveImage = state.livePhotoData ? await compressImage(state.livePhotoData) : null;
 
+    // Estrai EXIF e meteo dalla live photo
+    let liveExif = null;
+    let listingExif = null;
+    if (state.livePhotoData) {
+      liveExif = await extractExifAndWeather(state.livePhotoData);
+    }
+    if (state.listingImageData) {
+      listingExif = await extractExifAndWeather(state.listingImageData);
+    }
+
 
     // Ottieni token Firebase per autenticazione lato server
     let idToken = null;
@@ -2354,7 +2416,9 @@ async function callAI() {
         liveSessionCode: state.liveSessionCode,
         listingCapturedInApp: state.listingCapturedInApp,
         listingSensorSnap: state.listingSensorSnap,
-        liveSensorSnap: state.liveSensorSnap
+        liveSensorSnap: state.liveSensorSnap,
+        liveExif,
+        listingExif
       })
     });
 

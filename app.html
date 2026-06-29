@@ -571,7 +571,8 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
           <div class="level-fee" id="dash-fee">3 free certifications included</div>
         </div>
       </div>
-      <div class="prog-labels"><span id="dash-prog-label">Progress to Gold</span><span id="dash-prog-txt">0 / 50 listings</span></div>
+      <div class="prog-labels"><span id="dash-prog-label">Progress to Gold</span><span id="dash-prog-txt">0 / 50 certifications</span></div>
+      <div id="dash-monthly" style="font-size:10px;color:var(--grey);text-align:right;margin-top:4px;display:none"></div>
       <div class="prog-bar"><div class="prog-fill" id="dash-prog" style="width:0%"></div></div>
     </div>
     <div class="stats fu">
@@ -1417,10 +1418,11 @@ function initDashboard() {
         const used = snap.size;
         const limit = monthlyLimits[plan];
         const remaining = Math.max(0, limit - used);
-        const feeEl = document.getElementById('dash-fee');
-        if (feeEl) {
-          feeEl.textContent = `${remaining} of ${limit} certifications remaining this month`;
-          feeEl.style.color = remaining <= 5 ? 'var(--red)' : 'var(--grey)';
+        const monthlyEl = document.getElementById('dash-monthly');
+        if (monthlyEl) {
+          monthlyEl.textContent = `${remaining} of ${limit} certifications remaining this month`;
+          monthlyEl.style.color = remaining <= 5 ? 'var(--red)' : 'var(--grey)';
+          monthlyEl.style.display = 'block';
         }
       } catch(e) { console.error('Monthly count error:', e); }
     })();
@@ -1495,9 +1497,11 @@ function updateDashStats() {
     }
   }
 
-  const prog = Math.min(count, 50);
-  document.getElementById('dash-prog').style.width = (prog/50*100)+'%';
-  document.getElementById('dash-prog-txt').textContent = count+' / 50 listings';
+  const planLimits = { free: 3, single: 1, silver: 30, gold: 100, diamond: 200 };
+  const planLimit = planLimits[plan] || 50;
+  const prog = Math.min(count, planLimit);
+  document.getElementById('dash-prog').style.width = (prog/planLimit*100)+'%';
+  document.getElementById('dash-prog-txt').textContent = count+' / '+planLimit+' certifications';
   renderListings();
 }
 

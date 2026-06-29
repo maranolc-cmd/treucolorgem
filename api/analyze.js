@@ -109,7 +109,7 @@ export default async function handler(req, res) {
     // Don't block on limit check errors
   }
 
-  const { listingImage, liveImage, gemName, vertical, listingSessionCode, liveSessionCode, listingCapturedInApp } = req.body;
+  const { listingImage, liveImage, gemName, vertical, listingSessionCode, liveSessionCode, listingCapturedInApp, liveExif, listingExif } = req.body;
 
   if (!listingImage) return res.status(400).json({ error: "Listing image required." });
 
@@ -125,6 +125,21 @@ export default async function handler(req, res) {
       content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: liveImage.replace(/^data:image\/\w+;base64,/, "") } });
       content.push({ type: "text", text: "IMAGE 2 — LIVE REFERENCE PHOTO (taken immediately after by the seller, same session):" });
     }
+
+    // Build EXIF metadata string
+    const exifStr = liveExif ? [
+      `Live photo timestamp: ${liveExif.timestamp || 'not available'}`,
+      `Device: ${liveExif.device || 'not available'}`,
+      `Flash: ${liveExif.flash !== null ? (liveExif.flash === 0 ? 'No flash' : 'Flash fired') : 'not available'}`,
+      `White balance: ${liveExif.whiteBalance || 'not available'}`,
+      `Light source (EXIF): ${liveExif.lightSource !== null ? liveExif.lightSource : 'not available'}`,
+      `Software/editing detected: ${liveExif.software || 'none'}`,
+      `ISO: ${liveExif.iso || 'not available'}`,
+      liveExif.weather ? `Weather at capture: ${liveExif.weather.temperature}°C, cloud cover ${liveExif.weather.cloudcover}%` : '',
+      liveExif.gps ? `GPS location available: yes` : 'GPS: not available',
+      listingExif ? `Listing photo flash: ${listingExif.flash !== null ? (listingExif.flash === 0 ? 'No flash' : 'Flash fired') : 'not available'}` : '',
+      listingExif?.software ? `Listing photo software: ${listingExif.software}` : '',
+    ].filter(Boolean).join('\n') : 'Live photo EXIF: not available (uploaded from gallery)';
 
     content.push({
       type: "text",
@@ -158,6 +173,8 @@ CONSISTENCY BETWEEN PHOTOS:
 - Different item in listing vs live photo: -50
 - Significantly different shooting angle that alters perceived color: -10
 - Extreme macro in listing without scale reference (misleading size): -8
+
+PHOTO METADATA (from EXIF — use to inform your analysis):\n${exifStr}
 
 IMPORTANT RULES:
 1. Normal indoor LED lighting is ACCEPTABLE — do not penalize it.
@@ -217,6 +234,15 @@ Respond ONLY with valid JSON, no markdown, no explanation outside JSON:
       penalties: raw.penalties || [],
       deltaE: raw.deltaE,
       uid,
+      exif: liveExif ? {
+        timestamp: liveExif.timestamp,
+        device: liveExif.device,
+        flash: liveExif.flash,
+        whiteBalance: liveExif.whiteBalance,
+        software: liveExif.software,
+        gps: liveExif.gps,
+        weather: liveExif.weather,
+      } : null,
     };
 
     return res.status(200).json(result);

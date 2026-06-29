@@ -222,7 +222,7 @@ a{text-decoration:none;color:inherit}
 .diff-img{width:100%;height:100%;object-fit:cover;display:block}
 .diff-panel-left .diff-img{filter:saturate(1.25) brightness(1.05)}
 .diff-badge-warn,.diff-badge-pass{position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:1.5px;font-weight:700;text-transform:uppercase;padding:5px 14px;border-radius:20px;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.4)}
-@media(max-width:520px){.diff-badge-warn,.diff-badge-pass{top:0;font-size:8px;letter-spacing:1px;padding:4px 10px;border-radius:20px;margin-top:6px}}
+@media(max-width:520px){.diff-badge-warn,.diff-badge-pass{top:0;left:50%;transform:translateX(-50%);font-size:8px;letter-spacing:1px;padding:4px 10px;border-radius:20px}}
 .diff-badge-warn{background:rgba(30,10,5,0.82);border:1px solid rgba(224,119,85,0.7);color:#ff8a65}
 .diff-badge-pass{background:rgba(5,25,15,0.82);border:1px solid rgba(76,175,125,0.7);color:#4caf7d}
 .diff-meta{margin-top:12px;display:flex;flex-direction:column;gap:6px}
@@ -288,7 +288,7 @@ a{text-decoration:none;color:inherit}
 .navbar-links a:hover{color:var(--gold)}
 .navbar-cta{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--black);font-size:9px;letter-spacing:2px;font-weight:700;padding:9px 18px;border-radius:5px;text-decoration:none;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
 .navbar-cta:hover{opacity:0.9}
-@media(max-width:600px){.navbar-links{gap:14px}.navbar-links a:not(:first-child):not(:last-child){display:none}}
+@media(max-width:600px){.navbar{padding:0 12px;height:auto;flex-wrap:wrap;gap:0}.navbar-logo{padding:10px 0}.navbar-links{width:100%;justify-content:center;gap:12px;padding:6px 0;border-top:1px solid rgba(255,255,255,0.06)}.navbar-links a{font-size:9px;letter-spacing:1.5px}.navbar-cta{font-size:9px;padding:8px 12px}}
 </style>
 </head>
 <body>

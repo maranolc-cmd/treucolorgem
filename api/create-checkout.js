@@ -15,10 +15,10 @@ if (!getApps().length) {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const PRICE_IDS = {
-  single:  'price_1TmCrXQv9UnL7ZMx1hd25Y7Q',
-  silver:  'price_1TmCsgQv9UnL7ZMxWlPRSZLu',
-  gold:    'price_1TmCtCQv9UnL7ZMxyzfDUGy0',
-  diamond: 'price_1TmCtqQv9UnL7ZMxgbAp6uwU',
+  single:  'price_1TncP7JOZfSDYWXQFTSh8KkC',
+  silver:  'price_1TncPAJOZfSDYWXQojrH0gDK',
+  gold:    'price_1TncPBJOZfSDYWXQ9cDhlwsa',
+  diamond: 'price_1TncPAJOZfSDYWXQBYL17XiH',
 };
 
 const PLAN_MODE = {

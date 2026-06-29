@@ -193,7 +193,11 @@ function getCertIdFromUrl() {
 
 async function verifyCert(certId) {
   if (!certId) {
-    showInvalid('—');
+    document.getElementById('state-loading').style.display = 'none';
+    document.getElementById('state-invalid').style.display = 'block';
+    document.getElementById('invalid-id').style.display = 'none';
+    document.querySelector('.state-card.state-invalid').style.display = 'none';
+    document.title = 'Verify Certificate — LiveProof';
     return;
   }
 

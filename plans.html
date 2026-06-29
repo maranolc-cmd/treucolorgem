@@ -23,7 +23,8 @@ body{background:var(--black);color:var(--white);font-family:'Montserrat',sans-se
 /* PLANS GRID */
 .plans{max-width:900px;margin:0 auto;padding:0 16px 60px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
 
-.plan{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:24px 20px;position:relative;transition:border-color 0.2s}
+.plan{background:var(--card);border:1px solid rgba(255,255,255,0.06);border-radius:8px;padding:24px 20px;position:relative;transition:border-color 0.2s;display:flex;flex-direction:column}
+.plan-features{flex:1}
 .plan:hover{border-color:rgba(201,168,76,0.3)}
 .plan.popular{border-color:rgba(201,168,76,0.4);background:linear-gradient(160deg,#141414,#1a1508)}
 .popular-badge{position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--black);font-size:9px;letter-spacing:2px;font-weight:700;padding:4px 14px;border-radius:0 0 6px 6px;text-transform:uppercase;white-space:nowrap}

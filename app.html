@@ -1488,12 +1488,9 @@ function updateDashStats() {
         fee.textContent = planPrice + ' / month';
         fee.style.color = 'var(--grey)';
       }
-    } else if (avg < threshold && count >= 3) {
-      fee.textContent = `⚠ Avg score ${avg}% — minimum required: ${threshold}%`;
-      fee.style.color = 'var(--red)';
     } else {
-      fee.textContent = `${planPrice} / month · Avg score: ${avg}% ${avg >= threshold ? '✓' : ''}`;
-      fee.style.color = avg >= threshold ? 'var(--green)' : 'var(--grey)';
+      fee.textContent = `Avg score: ${avg}%`;
+      fee.style.color = 'var(--grey)';
     }
   }
 

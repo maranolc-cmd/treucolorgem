@@ -118,10 +118,16 @@ body{background:var(--black);color:var(--white);font-family:'Montserrat',sans-se
     </div>
 
     <div id="buyer-verify-section" style="display:none;margin-bottom:20px">
-      <button id="buyer-verify-btn" onclick="confirmReceipt()" style="width:100%;background:linear-gradient(135deg,#1a3a2a,#0d2010);border:1px solid rgba(76,175,125,0.4);color:var(--green);padding:16px;border-radius:6px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;text-transform:uppercase">
-        ✓ I Received This Item — Confirm It Matches
-      </button>
-      <div style="font-size:10px;color:var(--grey);text-align:center;margin-top:8px">
+      <div style="background:#141414;border:1px solid rgba(76,175,125,0.3);border-radius:6px;padding:16px;margin-bottom:12px">
+        <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--green);margin-bottom:8px">Buyer Verification</div>
+        <div style="font-size:11px;color:var(--grey);margin-bottom:12px;line-height:1.6">Enter the 6-digit code you received by email to confirm receipt of this item.</div>
+        <div style="display:flex;gap:8px">
+          <input id="buyer-code-input" type="text" maxlength="6" placeholder="000000" style="flex:1;background:#1a1a1a;border:1px solid #333;color:var(--white);border-radius:4px;padding:10px 12px;font-size:18px;font-family:monospace;letter-spacing:4px;text-align:center;outline:none">
+          <button onclick="confirmReceipt()" style="background:linear-gradient(135deg,#1a3a2a,#0d2010);border:1px solid rgba(76,175,125,0.4);color:var(--green);padding:10px 16px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:1px;font-weight:700;cursor:pointer;white-space:nowrap">CONFIRM</button>
+        </div>
+        <div id="buyer-code-status" style="font-size:11px;margin-top:8px;display:none;text-align:center"></div>
+      </div>
+      <div style="font-size:10px;color:var(--grey);text-align:center">
         As a buyer, your confirmation helps verify this seller's integrity
       </div>
     </div>
@@ -257,14 +263,26 @@ function showValid(certId, data) {
   ring.style.stroke = score >= 85 ? 'var(--gold)' : score >= 70 ? 'var(--yellow)' : 'var(--red)';
   setTimeout(() => { ring.style.strokeDashoffset = offset; }, 100);
 
-  // Show buyer verify section
+  // Show buyer verify section — solo se l'utente NON è il venditore
   const bvSection = document.getElementById('buyer-verify-section');
   const bvConfirmed = document.getElementById('buyer-confirmed');
+  
+  // Controlla se l'utente loggato è il venditore
+  let currentUserUid = null;
+  try {
+    const { getAuth } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');
+    const auth = getAuth();
+    currentUserUid = auth.currentUser?.uid || null;
+  } catch(e) {}
+  
+  const isSeller = currentUserUid && data.uid && currentUserUid === data.uid;
+  
   if (data.buyerVerified) {
     if (bvConfirmed) bvConfirmed.style.display = 'block';
-  } else {
+  } else if (!isSeller) {
     if (bvSection) bvSection.style.display = 'block';
   }
+  // Se è il venditore, non mostra né il bottone né il confirmed
 
   // Table
   const rows = [
@@ -306,32 +324,56 @@ document.getElementById('search-input').addEventListener('keydown', e => {
 
 // Buyer confirm receipt
 window.confirmReceipt = async function() {
-  const btn = document.getElementById('buyer-verify-btn');
-  btn.textContent = 'Confirming...';
-  btn.disabled = true;
+  const codeInput = document.getElementById('buyer-code-input');
+  const status = document.getElementById('buyer-code-status');
+  const code = codeInput?.value.trim();
+  
+  if (!code || code.length !== 6) {
+    status.textContent = 'Please enter the 6-digit code from your email.';
+    status.style.color = 'var(--red)';
+    status.style.display = 'block';
+    return;
+  }
+  
+  status.textContent = 'Verifying...';
+  status.style.color = 'var(--grey)';
+  status.style.display = 'block';
   
   try {
-    // Get cert ID from URL
     const certId = getCertIdFromUrl();
-    
-    // Find and update the certification in Firestore
-    const q = query(
-      collection(db, 'certifications'),
-      where('id', '==', certId),
-      limit(1)
-    );
+    const q = query(collection(db, 'certifications'), where('id', '==', certId), limit(1));
     const snap = await getDocs(q);
     
-    if (!snap.empty) {
-      const { setDoc, doc: fsDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
-      await setDoc(snap.docs[0].ref, { buyerVerified: true, buyerVerifiedAt: new Date().toISOString() }, { merge: true });
+    if (snap.empty) {
+      status.textContent = 'Certificate not found.';
+      status.style.color = 'var(--red)';
+      return;
     }
+    
+    const data = snap.docs[0].data();
+    
+    // Verifica codice
+    if (data.buyerVerifyCode !== code) {
+      status.textContent = 'Invalid code. Please check your email and try again.';
+      status.style.color = 'var(--red)';
+      return;
+    }
+    
+    // Verifica scadenza
+    if (data.buyerVerifyCodeExpiresAt && new Date() > new Date(data.buyerVerifyCodeExpiresAt)) {
+      status.textContent = 'Code expired. Ask the seller to resend the verification email.';
+      status.style.color = 'var(--red)';
+      return;
+    }
+    
+    const { setDoc } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js');
+    await setDoc(snap.docs[0].ref, { buyerVerified: true, buyerVerifiedAt: new Date().toISOString() }, { merge: true });
     
     document.getElementById('buyer-verify-section').style.display = 'none';
     document.getElementById('buyer-confirmed').style.display = 'block';
   } catch(e) {
-    btn.textContent = '✓ I Received This Item — Confirm It Matches';
-    btn.disabled = false;
+    status.textContent = 'Error. Please try again.';
+    status.style.color = 'var(--red)';
     console.error('Confirm error:', e);
   }
 };

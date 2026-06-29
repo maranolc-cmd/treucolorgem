@@ -2602,6 +2602,8 @@ async function show_cert_screen() {
   const expiry = '31/12/' + (new Date().getFullYear() + 1);
 
   document.getElementById('cert-score-badge').textContent = r.score + '%';
+  const planLabels = { free: '🆓 Free Certified', single: '1️⃣ Single Certified', silver: '🥈 Silver Certified', gold: '🥇 Gold Certified', diamond: '💎 Diamond Certified' };
+  document.getElementById('cert-wm-level').textContent = planLabels[state.user?.plan || 'free'] || '🥈 Silver Certified';
   document.getElementById('cert-wm-id').textContent = 'ID: ' + id + ' · Valid to ' + expiry;
   // Logo: TrueColorGem per il verticale gemme, LiveProof per gli altri
   const wmLogo = document.getElementById('cert-wm-logo');
@@ -2741,7 +2743,8 @@ function downloadCert() {
     ctx.font = '34px Georgia, serif';
     ctx.fillText(['gems','jewelry'].includes(state.vertical) ? 'TrueColorGem' : 'LiveProof', 44, 896);
     ctx.font = '16px Arial';
-    ctx.fillText('🥈 SILVER CERTIFIED', 44, 930);
+    const planBadges = { free: '🆓 FREE', single: '1️⃣ SINGLE', silver: '🥈 SILVER CERTIFIED', gold: '🥇 GOLD CERTIFIED', diamond: '💎 DIAMOND CERTIFIED' };
+    ctx.fillText(planBadges[state.user?.plan || 'free'] || '🥈 SILVER CERTIFIED', 44, 930);
     ctx.fillStyle = 'rgba(245,240,232,0.45)';
     ctx.font = '14px monospace';
     const certId = document.getElementById('cert-wm-id')?.textContent || '';

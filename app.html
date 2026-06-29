@@ -2283,9 +2283,10 @@ async function startAnalysis() {
     setTimeout(() => { document.getElementById('gem-name').style.borderColor = ''; }, 2000);
     return; 
   }
-  // Rate limit check
+  // Rate limit check — solo per utenti free o senza piano
   const rl = checkRateLimit();
-  if (!rl.allowed) {
+  const isPaidPlan = state.user?.plan && ['single','silver','gold','diamond'].includes(state.user.plan);
+  if (!rl.allowed && !isPaidPlan) {
     toast('⚠ Daily limit reached (' + DAILY_LIMIT + ' analyses). Try again tomorrow.', 4500);
     return;
   }

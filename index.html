@@ -278,9 +278,31 @@ a{text-decoration:none;color:inherit}
   .step-list{max-width:560px}
   .platform-tags{margin-top:24px}
 }
+
+/* NAVBAR */
+.navbar{position:sticky;top:0;z-index:100;background:rgba(8,8,8,0.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.06);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:54px}
+.navbar-logo{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--gold);letter-spacing:2px;text-decoration:none;flex-shrink:0}
+.navbar-links{display:flex;gap:28px;align-items:center}
+.navbar-links a{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:rgba(245,240,232,0.55);text-decoration:none;transition:color 0.2s;white-space:nowrap}
+.navbar-links a:hover{color:var(--gold)}
+.navbar-cta{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--black);font-size:9px;letter-spacing:2px;font-weight:700;padding:9px 18px;border-radius:5px;text-decoration:none;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.navbar-cta:hover{opacity:0.9}
+@media(max-width:600px){.navbar-links{gap:14px}.navbar-links a:not(:first-child):not(:last-child){display:none}}
 </style>
 </head>
 <body>
+
+<nav class="navbar">
+  <a href="/" class="navbar-logo">LiveProof</a>
+  <div class="navbar-links">
+    <a href="#how-it-works">How It Works</a>
+    <a href="#what-ai-checks">AI Checks</a>
+    <a href="/plans">Plans</a>
+    <a href="#for-buyers">For Buyers</a>
+    <a href="https://www.liveproof.ai/verify">Verify</a>
+  </div>
+  <a href="/app" class="navbar-cta">Start Certifying</a>
+</nav>
 
 <div class="page">
 
@@ -317,7 +339,7 @@ a{text-decoration:none;color:inherit}
   </div>
 
   <!-- ===== HOW IT WORKS (dark card) ===== -->
-  <div class="card card-dark">
+  <div class="card card-dark" id="how-it-works">
     <div class="eyebrow">How it works</div>
     <h2>Two photos.<br>One truth.</h2>
     <div class="step-list">
@@ -377,7 +399,7 @@ a{text-decoration:none;color:inherit}
   </div>
 
   <!-- ===== WHAT AI CHECKS (cream card) ===== -->
-  <div class="card card-cream">
+  <div class="card card-cream" id="what-ai-checks">
     <div class="eyebrow">What AI checks</div>
     <h2>Four checks.<br>One honest verdict.</h2>
     <div class="step-list">
@@ -415,7 +437,7 @@ a{text-decoration:none;color:inherit}
   <div class="connector"><div class="connector-circle">↓</div></div>
 
   <!-- ===== THE DIFFERENCE (gold full-bleed card) ===== -->
-  <div class="card card-dark" style="padding:48px 24px">
+  <div class="card card-dark" id="for-buyers" style="padding:48px 24px">
     <div class="eyebrow" style="margin-bottom:20px">The Difference</div>
     <h2 style="margin-bottom:10px">This used to happen.<br>Not anymore.</h2>
     <p class="body" style="margin-bottom:40px;max-width:440px;margin-left:auto;margin-right:auto;text-align:center">Without LiveProof, buyers had no way to know. With LiveProof, two live photos are captured and compared — and the certificate only issues when they match.</p>

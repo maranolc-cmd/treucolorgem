@@ -288,6 +288,7 @@ a{text-decoration:none;color:inherit}
 .navbar-links a:hover{color:var(--gold)}
 .navbar-cta{background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--black);font-size:9px;letter-spacing:2px;font-weight:700;padding:9px 18px;border-radius:5px;text-decoration:none;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
 .navbar-cta:hover{opacity:0.9}
+@media(max-width:520px){.certifies-grid{grid-template-columns:1fr!important}}
 @media(max-width:600px){.navbar{padding:0 12px;height:auto;flex-wrap:wrap;gap:0}.navbar-logo{padding:10px 0}.navbar-links{width:100%;justify-content:center;gap:12px;padding:6px 0;border-top:1px solid rgba(255,255,255,0.06)}.navbar-links a{font-size:9px;letter-spacing:1.5px}.navbar-cta{font-size:9px;padding:8px 12px}}
 </style>
 </head>
@@ -373,7 +374,7 @@ a{text-decoration:none;color:inherit}
   <div class="section" style="padding-top:0">
     <div style="background:rgba(201,168,76,0.06);border:1px solid rgba(201,168,76,0.2);border-radius:8px;padding:28px 24px;max-width:640px;margin:0 auto">
       <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gold);margin-bottom:16px">What LiveProof certifies</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" class="certifies-grid">
         <div>
           <div style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#5fae7c;margin-bottom:10px">✓ It verifies</div>
           <ul style="list-style:none;font-size:13px;color:var(--cream);line-height:2;opacity:0.85">

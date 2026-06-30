@@ -2732,7 +2732,7 @@ window.show = show;
 function downloadCert() {
   const canvas = document.createElement('canvas');
   canvas.width = 1080;
-  canvas.height = 1080;
+  canvas.height = 1130;
   const ctx = canvas.getContext('2d');
 
   const drawWatermark = () => {
@@ -3144,17 +3144,44 @@ window.downloadCertFromHistory = async function(id, name, score, imageUrl, plan,
     ctx.font = '14px monospace';
     ctx.fillText('ID: ' + id + ' · Valid to 31/12/' + (new Date().getFullYear() + 1), 44, 958);
 
-    // Dati analisi
+    // Dati analisi — formattati e visibili
     if (deltaE || colorMatch || lightSource) {
-      ctx.font = '13px Arial';
-      ctx.fillStyle = 'rgba(245,240,232,0.5)';
-      const analysisLine = [
-        deltaE ? 'ΔE ' + deltaE : '',
-        colorMatch ? 'Color: ' + colorMatch.replace('✓ ','').replace('⚠ ','').replace('✗ ','') : '',
-        lightSource ? 'Light: ' + lightSource.replace('✓ ','').replace('✗ ','') : '',
-        saturation ? 'Sat: ' + saturation.replace('✓ ','').replace('✗ ','') : '',
-      ].filter(Boolean).join(' · ');
-      ctx.fillText(analysisLine, 44, 980);
+      // Traduci valori grezzi in testo leggibile
+      const lightMap = {
+        'neutral_acceptable': 'Natural light',
+        'warm_manipulated': 'Warm light detected',
+        'cool_manipulated': 'Cool light detected',
+        'unknown': 'Light unknown'
+      };
+      const rawLight = (lightSource || '').replace('✓ ','').replace('✗ ','').trim();
+      const lightLabel = lightMap[rawLight] || rawLight;
+      const colorLabel = (colorMatch || '').replace('✓ ','').replace('⚠ ','').replace('✗ ','').trim();
+      const satLabel = (saturation || '').replace('✓ ','').replace('✗ ','').trim();
+
+      // Linea separatrice
+      ctx.strokeStyle = 'rgba(201,168,76,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(44, 970);
+      ctx.lineTo(1036, 970);
+      ctx.stroke();
+
+      // Label in oro
+      ctx.fillStyle = 'rgba(201,168,76,0.7)';
+      ctx.font = 'bold 13px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText('ANALYSIS', 44, 990);
+      ctx.fillText('COLOR MATCH', 280, 990);
+      ctx.fillText('LIGHTING', 560, 990);
+      ctx.fillText('SATURATION', 780, 990);
+
+      // Valori in bianco
+      ctx.fillStyle = 'rgba(245,240,232,0.85)';
+      ctx.font = '15px Arial';
+      ctx.fillText('ΔE ' + (deltaE || '—'), 44, 1012);
+      ctx.fillText(colorLabel || '—', 280, 1012);
+      ctx.fillText(lightLabel || '—', 560, 1012);
+      ctx.fillText(satLabel || '—', 780, 1012);
     }
 
     // QR code

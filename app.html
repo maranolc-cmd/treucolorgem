@@ -1464,7 +1464,7 @@ async function loadListingsFromFirebase() {
       fs.orderBy('createdAt', 'desc')
     );
     const snap = await fs.getDocs(q);
-    state.listings = snap.docs.map(d => ({ ...d.data(), _docId: d.id })); // preserve TC-XXXXX id field
+    state.listings = snap.docs.map(d => ({ ...d.data(), _docId: d.id, buyerEmail: d.data().buyerEmail || '', deltaE: d.data().deltaE || '', colorMatch: d.data().colorMatch || '', lightSource: d.data().lightSource || '', saturation: d.data().saturation || '', plan: d.data().plan || 'free', vertical: d.data().vertical || 'jewelry' })); // preserve TC-XXXXX id field
     updateDashStats();
   } catch(e) {
     console.error('loadListings error:', e);
@@ -1515,7 +1515,7 @@ function updateDashStats() {
   renderListings();
 }
 
-function showListingDetail(id, name, score, date, imageUrl, verifyUrl, buyerVerified) {
+function showListingDetail(id, name, score, date, imageUrl, verifyUrl, buyerVerified, buyerEmail, deltaE, colorMatch, lightSource, saturation, plan, vertical) {
   const verdict = score >= 70 ? 'CERTIFIED' : 'REJECTED';
   const verdictColor = score >= 70 ? 'var(--green)' : 'var(--red)';
   const expiry = '31/12/' + (new Date().getFullYear() + 1);
@@ -1564,7 +1564,7 @@ function showListingDetail(id, name, score, date, imageUrl, verifyUrl, buyerVeri
       </div>`).join('')}
     </div>
 
-    <button onclick="downloadCertFromHistory('${id}','${name}',${score},'${imageUrl}','${state.user?.plan||'free'}','${state.vertical||'jewelry'}')" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#000;padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;margin-bottom:10px;font-weight:700">⬇ DOWNLOAD CERTIFIED PHOTO</button>
+    <button onclick="downloadCertFromHistory('${id}','${name}',${score},'${imageUrl}','${plan||'free'}','${vertical||'jewelry'}','${deltaE||''}','${colorMatch||''}','${lightSource||''}','${saturation||''}')" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#000;padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;margin-bottom:10px;font-weight:700">⬇ DOWNLOAD CERTIFIED PHOTO</button>
     <button onclick="window.open('${verUrl}','_blank')" style="width:100%;background:transparent;border:1px solid var(--gold-dim);color:var(--gold);padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;margin-bottom:10px">🔗 VIEW PUBLIC CERTIFICATE</button>
     <button onclick="show('s-dashboard')" style="width:100%;background:transparent;border:1px solid #2a2a2a;color:var(--grey);padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer">← BACK TO DASHBOARD</button>
   `;
@@ -1601,7 +1601,7 @@ function renderListings(filter) {
     const thumb = l.listingImageUrl 
       ? `<img src="${l.listingImageUrl}" style="width:44px;height:44px;object-fit:cover;border-radius:6px">` 
       : `<div class="listing-thumb">${getGemEmoji(l.name)}</div>`;
-    return `<div class="listing-row" onclick="showListingDetail('${l.id}','${l.name||''}',${l.score||0},'${l.date||''}','${l.listingImageUrl||''}','${l.verifyUrl||''}',${l.buyerVerified||false})">
+    return `<div class="listing-row" onclick="showListingDetail('${l.id}','${l.name||''}',${l.score||0},'${l.date||''}','${l.listingImageUrl||''}','${l.verifyUrl||''}',${l.buyerVerified||false},'${l.buyerEmail||''}','${l.deltaE||''}','${l.colorMatch||''}','${l.lightSource||''}','${l.saturation||''}','${l.plan||'free'}','${l.vertical||'jewelry'}')">
       ${thumb}
       <div class="listing-info">
         <div class="listing-name">${l.name}</div>
@@ -2693,7 +2693,18 @@ async function show_cert_screen() {
         liveImageUrl,
         gemName: state.currentGemName,
         vertical: state.vertical || 'gemstone',
-        verifyUrl: `https://www.liveproof.ai/verify/${listing.id}`
+        verifyUrl: `https://www.liveproof.ai/verify/${listing.id}`,
+        deltaE: r.deltaE || null,
+        colorMatch: r.color_match || null,
+        lightSource: r.light_source || null,
+        saturation: r.saturation || null,
+        filterDetected: r.filter_detected || null,
+        artificialEnhancement: r.saturation === '✗ Enhanced',
+        lightingOk: r.light_source?.startsWith('✓') || false,
+        penalties: r.penalties || [],
+        flags: r.flags || [],
+        assessment: r.assessment || null,
+        plan: state.user.plan || 'free',
       });
       // Decrementa freeTrials se piano free
       if (state.user.plan === 'free' && state.user.freeTrials > 0) {
@@ -3088,7 +3099,7 @@ window.sendBuyerEmail = async function() {
   }
 };
 
-window.downloadCertFromHistory = async function(id, name, score, imageUrl, plan, vertical) {
+window.downloadCertFromHistory = async function(id, name, score, imageUrl, plan, vertical, deltaE, colorMatch, lightSource, saturation) {
   const canvas = document.createElement('canvas');
   canvas.width = 1080;
   canvas.height = 1080;
@@ -3132,6 +3143,19 @@ window.downloadCertFromHistory = async function(id, name, score, imageUrl, plan,
     ctx.fillStyle = 'rgba(245,240,232,0.45)';
     ctx.font = '14px monospace';
     ctx.fillText('ID: ' + id + ' · Valid to 31/12/' + (new Date().getFullYear() + 1), 44, 958);
+
+    // Dati analisi
+    if (deltaE || colorMatch || lightSource) {
+      ctx.font = '13px Arial';
+      ctx.fillStyle = 'rgba(245,240,232,0.5)';
+      const analysisLine = [
+        deltaE ? 'ΔE ' + deltaE : '',
+        colorMatch ? 'Color: ' + colorMatch.replace('✓ ','').replace('⚠ ','').replace('✗ ','') : '',
+        lightSource ? 'Light: ' + lightSource.replace('✓ ','').replace('✗ ','') : '',
+        saturation ? 'Sat: ' + saturation.replace('✓ ','').replace('✗ ','') : '',
+      ].filter(Boolean).join(' · ');
+      ctx.fillText(analysisLine, 44, 980);
+    }
 
     // QR code
     const verifyUrl = 'https://www.liveproof.ai/verify/' + id;
@@ -3180,7 +3204,20 @@ window.downloadCertFromHistory = async function(id, name, score, imageUrl, plan,
       const blob = await resp.blob();
       const blobUrl = URL.createObjectURL(blob);
       const img = new Image();
-      img.onload = () => { ctx.drawImage(img, 0, 0, 1080, 1080); URL.revokeObjectURL(blobUrl); drawAndSave(); };
+      img.onload = () => {
+        // Sfondo nero
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, 1080, 1080);
+        // Mantieni proporzioni (object-fit: contain)
+        const scale = Math.min(1080 / img.width, 1080 / img.height);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        const x = (1080 - w) / 2;
+        const y = (1080 - h) / 2;
+        ctx.drawImage(img, x, y, w, h);
+        URL.revokeObjectURL(blobUrl);
+        drawAndSave();
+      };
       img.onerror = () => { ctx.fillStyle = '#141414'; ctx.fillRect(0,0,1080,1080); drawAndSave(); };
       img.src = blobUrl;
     } catch(e) {

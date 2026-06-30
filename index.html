@@ -303,7 +303,7 @@ a{text-decoration:none;color:inherit}
     <a href="#for-buyers">For Buyers</a>
     <a href="https://www.liveproof.ai/verify">Verify</a>
   </div>
-  <a href="/app" class="navbar-cta">Start Certifying</a>
+  <a href="/app" class="navbar-cta" id="navbar-cta-btn">Start Certifying</a>
 </nav>
 
 <div class="page">
@@ -322,7 +322,7 @@ a{text-decoration:none;color:inherit}
     <div class="tagline">What you see<br>is what you get.</div>
     <div class="tagline-sub">LiveProof certifies that a listing photo honestly matches the real item — verified by AI, before anyone buys.</div>
 
-    <a href="/app" class="btn btn-gold btn-hero-primary">Start Certifying</a>
+    <a href="/app" class="btn btn-gold btn-hero-primary" id="hero-cta-btn">Start Certifying</a>
     <div class="hero-secondary-row">
       <a href="https://www.liveproof.ai/verify" class="btn btn-ghost-dark btn-hero-secondary">Verify Purchase</a>
       <a href="/plans" class="btn btn-ghost-dark btn-hero-secondary">View Plans</a>
@@ -610,5 +610,37 @@ a{text-decoration:none;color:inherit}
   </div>
 </footer>
 
+<script>
+(function() {
+  function isMobile() {
+    return window.innerWidth < 768 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  }
+  function updateCTAs() {
+    if (!isMobile()) {
+      const navBtn = document.getElementById('navbar-cta-btn');
+      if (navBtn) navBtn.textContent = 'Open App';
+      
+      const heroBtn = document.getElementById('hero-cta-btn');
+      if (heroBtn) {
+        heroBtn.textContent = 'Open App';
+        // Aggiungi sottotitolo se non esiste
+        if (!document.getElementById('hero-mobile-note')) {
+          const note = document.createElement('div');
+          note.id = 'hero-mobile-note';
+          note.style = 'font-size:11px;color:rgba(245,240,232,0.45);letter-spacing:1px;margin-top:10px';
+          note.textContent = 'To certify, open on your smartphone';
+          heroBtn.parentNode.insertBefore(note, heroBtn.nextSibling);
+        }
+      }
+    }
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateCTAs);
+  } else {
+    updateCTAs();
+  }
+  window.addEventListener('resize', updateCTAs);
+})();
+</script>
 </body>
 </html>

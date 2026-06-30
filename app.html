@@ -3175,7 +3175,8 @@ window.downloadCertFromHistory = async function(id, name, score, imageUrl, plan,
 
   if (imageUrl) {
     try {
-      const resp = await fetch(imageUrl);
+      const proxyUrl = '/api/proxy-image?url=' + encodeURIComponent(imageUrl);
+      const resp = await fetch(proxyUrl);
       const blob = await resp.blob();
       const blobUrl = URL.createObjectURL(blob);
       const img = new Image();

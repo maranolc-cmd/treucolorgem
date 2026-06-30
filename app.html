@@ -1564,6 +1564,7 @@ function showListingDetail(id, name, score, date, imageUrl, verifyUrl, buyerVeri
       </div>`).join('')}
     </div>
 
+    <button onclick="downloadCertFromHistory('${id}','${name}',${score},'${imageUrl}','${state.user?.plan||'free'}','${state.vertical||'jewelry'}')" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#000;padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;margin-bottom:10px;font-weight:700">⬇ DOWNLOAD CERTIFIED PHOTO</button>
     <button onclick="window.open('${verUrl}','_blank')" style="width:100%;background:transparent;border:1px solid var(--gold-dim);color:var(--gold);padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;margin-bottom:10px">🔗 VIEW PUBLIC CERTIFICATE</button>
     <button onclick="show('s-dashboard')" style="width:100%;background:transparent;border:1px solid #2a2a2a;color:var(--grey);padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer">← BACK TO DASHBOARD</button>
   `;
@@ -3084,6 +3085,102 @@ window.sendBuyerEmail = async function() {
   } catch(e) {
     status.textContent = 'Error sending email. Please try again.';
     status.style.color = 'var(--red)';
+  }
+};
+
+window.downloadCertFromHistory = async function(id, name, score, imageUrl, plan, vertical) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1080;
+  canvas.height = 1080;
+  const ctx = canvas.getContext('2d');
+
+  const drawAndSave = () => {
+    // Gradient bottom
+    const grad = ctx.createLinearGradient(0, 580, 0, 1080);
+    grad.addColorStop(0, 'rgba(0,0,0,0)');
+    grad.addColorStop(1, 'rgba(0,0,0,0.9)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1080, 1080);
+
+    // CERTIFIED badge top right
+    ctx.fillStyle = 'rgba(76,175,125,0.92)';
+    ctx.fillRect(780, 36, 264, 58);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 21px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('CERTIFIED', 912, 72);
+
+    // Score badge top left
+    ctx.fillStyle = 'rgba(0,0,0,0.78)';
+    ctx.fillRect(36, 36, 128, 58);
+    ctx.strokeStyle = '#c9a84c';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(36, 36, 128, 58);
+    ctx.fillStyle = '#c9a84c';
+    ctx.font = 'bold 30px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(score + '%', 100, 76);
+
+    // Bottom watermark
+    ctx.textAlign = 'left';
+    ctx.fillStyle = '#c9a84c';
+    ctx.font = '34px Georgia, serif';
+    ctx.fillText(['gems','jewelry'].includes(vertical) ? 'TrueColorGem' : 'LiveProof', 44, 896);
+    ctx.font = '16px Arial';
+    const planBadges = { free: '🆓 FREE', single: '1️⃣ SINGLE', silver: '🥈 SILVER CERTIFIED', gold: '🥇 GOLD CERTIFIED', diamond: '💎 DIAMOND CERTIFIED' };
+    ctx.fillText(planBadges[plan || 'free'] || '🥈 SILVER CERTIFIED', 44, 930);
+    ctx.fillStyle = 'rgba(245,240,232,0.45)';
+    ctx.font = '14px monospace';
+    ctx.fillText('ID: ' + id + ' · Valid to 31/12/' + (new Date().getFullYear() + 1), 44, 958);
+
+    // QR code
+    const verifyUrl = 'https://www.liveproof.ai/verify/' + id;
+    const qrTempDiv = document.createElement('div');
+    qrTempDiv.style.display = 'none';
+    document.body.appendChild(qrTempDiv);
+    new QRCode(qrTempDiv, { text: verifyUrl, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.M });
+    setTimeout(() => {
+      const qrCanvas = qrTempDiv.querySelector('canvas');
+      if (qrCanvas) ctx.drawImage(qrCanvas, 880, 880, 160, 160);
+      document.body.removeChild(qrTempDiv);
+
+      // Save
+      const brandPrefix = ['gems','jewelry'].includes(vertical) ? 'TrueColorGem' : 'LiveProof';
+      const filename = brandPrefix + '-' + (name||'item').replace(/\s+/g,'-') + '.jpg';
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      if (isIOS) {
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+        const win = window.open();
+        win.document.write('<img src="' + dataUrl + '" style="max-width:100%"><br><p style="font-family:sans-serif;font-size:13px">Tieni premuto → Salva foto</p>');
+      } else if (isAndroid) {
+        canvas.toBlob((blob) => {
+          if (!blob) return;
+          if (navigator.canShare && navigator.canShare({ files: [new File([blob], filename, { type: 'image/jpeg' })] })) {
+            navigator.share({ files: [new File([blob], filename, { type: 'image/jpeg' })], title: brandPrefix + ' Certificate' });
+          } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          }
+        }, 'image/jpeg', 1.0);
+      } else {
+        const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+        const a = document.createElement('a'); a.href = dataUrl; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      }
+      toast('Certificate downloaded ✓');
+    }, 300);
+  };
+
+  if (imageUrl) {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => { ctx.drawImage(img, 0, 0, 1080, 1080); drawAndSave(); };
+    img.onerror = () => { ctx.fillStyle = '#141414'; ctx.fillRect(0,0,1080,1080); drawAndSave(); };
+    img.src = imageUrl;
+  } else {
+    ctx.fillStyle = '#141414'; ctx.fillRect(0,0,1080,1080); drawAndSave();
   }
 };
 

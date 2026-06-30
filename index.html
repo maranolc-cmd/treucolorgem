@@ -622,15 +622,7 @@ a{text-decoration:none;color:inherit}
       
       const heroBtn = document.getElementById('hero-cta-btn');
       if (heroBtn) {
-        heroBtn.textContent = 'Open App';
-        // Aggiungi sottotitolo se non esiste
-        if (!document.getElementById('hero-mobile-note')) {
-          const note = document.createElement('div');
-          note.id = 'hero-mobile-note';
-          note.style = 'font-size:11px;color:rgba(245,240,232,0.45);letter-spacing:1px;margin-top:10px';
-          note.textContent = 'To certify, open on your smartphone';
-          heroBtn.parentNode.insertBefore(note, heroBtn.nextSibling);
-        }
+        heroBtn.innerHTML = 'OPEN APP<br><span style="font-size:10px;font-weight:400;letter-spacing:1px;opacity:0.7">To certify, open on your smartphone</span>';
       }
     }
   }

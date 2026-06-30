@@ -1078,6 +1078,11 @@ function show(id) {
       setTimeout(startCamera, 100);
     }
     if (id === 's-dashboard') {
+    // Mostra banner desktop
+    setTimeout(() => {
+      const b = document.getElementById('desktop-cert-banner');
+      if (b) b.style.display = !isMobileDevice() ? 'block' : 'none';
+    }, 100);
       // Reset stato certificazione quando si torna alla dashboard
       state.listingFiles = [];
       state.listingImageData = null;
@@ -1422,7 +1427,7 @@ function initDashboard() {
   if (progLabel) {
     const nextPlan = { free: 'Silver', single: 'Silver', silver: 'Gold', gold: 'Diamond', diamond: '—' };
     const next = nextPlan[plan] || 'Gold';
-    progLabel.textContent = next === '—' ? 'Top tier reached' : 'Progress to ' + next;
+    progLabel.textContent = next === '—' ? '' : 'Progress to ' + next;
   }
 
   // Monthly usage counter for paid plans
@@ -1463,8 +1468,7 @@ function initDashboard() {
   }
   updateDashStats();
   // Mostra banner desktop se non è mobile
-  const desktopBanner = document.getElementById('desktop-cert-banner');
-  if (desktopBanner) desktopBanner.style.display = !isMobileDevice() ? 'block' : 'none';
+
 }
 
 async function loadListingsFromFirebase() {

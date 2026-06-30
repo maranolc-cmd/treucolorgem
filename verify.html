@@ -270,9 +270,15 @@ async function showValid(certId, data) {
   // Controlla se l'utente loggato è il venditore
   let currentUserUid = null;
   try {
-    const { getAuth } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');
+    const { getAuth, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js');
     const auth = getAuth();
-    currentUserUid = auth.currentUser?.uid || null;
+    // Aspetta che Firebase Auth carichi lo stato utente
+    currentUserUid = await new Promise((resolve) => {
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        unsubscribe();
+        resolve(user?.uid || null);
+      });
+    });
   } catch(e) {}
   
   const isSeller = currentUserUid && data.uid && currentUserUid === data.uid;

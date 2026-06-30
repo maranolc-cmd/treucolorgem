@@ -232,7 +232,7 @@ async function verifyCert(certId) {
   }
 }
 
-function showValid(certId, data) {
+async function showValid(certId, data) {
   document.getElementById('state-loading').style.display = 'none';
   document.getElementById('state-valid').style.display = 'block';
 

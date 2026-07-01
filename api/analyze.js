@@ -210,7 +210,7 @@ Respond ONLY with valid JSON, no markdown, no explanation outside JSON:
     });
 
     const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-5",
+      model: "claude-sonnet-5",
       max_tokens: 1200,
       messages: [{ role: "user", content }],
     });

@@ -158,7 +158,7 @@ body{background:var(--black);color:var(--white);font-family:'Montserrat',sans-se
       </div>
     </div>
 
-    <div class="footer-note">
+    <div class="footer-note" id="invalid-footer-note">
       This ID was not found in the LiveProof database. The listing may not be certified, or the ID may be incorrect.<br><br>
       Sellers certified through LiveProof display a QR code that links directly to this page.<br><br>
       <a href="https://liveproof.ai">liveproof.ai</a>
@@ -203,6 +203,9 @@ async function verifyCert(certId) {
     document.getElementById('state-invalid').style.display = 'block';
     document.getElementById('invalid-id').style.display = 'none';
     document.querySelector('.state-card.state-invalid').style.display = 'none';
+    document.getElementById('invalid-footer-note').innerHTML =
+      'Enter a certification ID above, or scan the QR code on a certified listing to verify authenticity.<br><br>' +
+      '<a href="https://liveproof.ai">liveproof.ai</a>';
     document.title = 'Verify Certificate — LiveProof';
     return;
   }
@@ -308,7 +311,13 @@ async function showValid(certId, data) {
 function showInvalid(certId) {
   document.getElementById('state-loading').style.display = 'none';
   document.getElementById('state-invalid').style.display = 'block';
+  document.querySelector('.state-card.state-invalid').style.display = 'block';
+  document.getElementById('invalid-id').style.display = 'block';
   document.getElementById('invalid-id').textContent = certId;
+  document.getElementById('invalid-footer-note').innerHTML =
+    'This ID was not found in the LiveProof database. The listing may not be certified, or the ID may be incorrect.<br><br>' +
+    'Sellers certified through LiveProof display a QR code that links directly to this page.<br><br>' +
+    '<a href="https://liveproof.ai">liveproof.ai</a>';
   document.getElementById('search-input').value = certId !== '—' ? certId : '';
   document.title = 'Certificate Not Found — LiveProof';
 }

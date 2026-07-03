@@ -1627,7 +1627,7 @@ function renderListings(filter) {
       ${thumb}
       <div class="listing-info">
         <div class="listing-name">${l.name}</div>
-        <div class="listing-meta">Certified ${l.date} · ID #${l.id}</div>
+        <div class="listing-meta">Certified ${l.date} · ID #${l.id}${l.buyerVerified ? ' · <span style="color:var(--green);font-weight:600">✓ Buyer Verified</span>' : ''}</div>
       </div>
       <div class="score-pill ${pillClass}">${l.score}%</div>
     </div>`;

@@ -797,17 +797,6 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     </div>
     <div class="cert-table" id="cert-table"></div>
     <button class="btn btn-gold" onclick="downloadCert()">⬇ Download Certified Photo</button>
-    
-    <!-- BUYER EMAIL SECTION -->
-    <div id="buyer-email-section" style="margin-top:20px;background:#141414;border:1px solid rgba(201,168,76,0.2);border-radius:6px;padding:16px">
-      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Notify Your Buyer</div>
-      <div style="font-size:11px;color:var(--grey);margin-bottom:12px;line-height:1.6">Send your buyer a verification code so they can confirm receipt on the certificate page.</div>
-      <div style="display:flex;gap:8px">
-        <input id="buyer-email-input" type="email" placeholder="buyer@email.com" style="flex:1;background:#1a1a1a;border:1px solid #333;color:var(--white);border-radius:4px;padding:10px 12px;font-size:12px;font-family:'Montserrat',sans-serif;outline:none">
-        <button onclick="sendBuyerEmail()" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#000;border:none;border-radius:4px;padding:10px 16px;font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:1px;font-weight:700;cursor:pointer;white-space:nowrap">SEND</button>
-      </div>
-      <div id="buyer-email-status" style="font-size:11px;margin-top:8px;display:none"></div>
-    </div>
 
     <button class="btn btn-outline" onclick="show('s-dashboard')" style="margin-top:10px">Back to Dashboard</button>
     <div style="height:20px"></div>
@@ -1588,6 +1577,17 @@ function showListingDetail(id, name, score, date, imageUrl, verifyUrl, buyerVeri
 
     <button onclick="downloadCertFromHistory('${id}','${name}',${score},'${imageUrl}','${plan||'free'}','${vertical||'jewelry'}','${deltaE||''}','${colorMatch||''}','${lightSource||''}','${saturation||''}')" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#000;padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;margin-bottom:10px;font-weight:700"><span style="font-size:16px;margin-right:6px">↓</span>DOWNLOAD CERTIFIED PHOTO</button>
     <button onclick="window.open('${verUrl}','_blank')" style="width:100%;background:transparent;border:1px solid var(--gold-dim);color:var(--gold);padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;margin-bottom:10px">🔗 VIEW PUBLIC CERTIFICATE</button>
+
+    ${!buyerVerified ? `<div style="margin-top:6px;margin-bottom:10px;background:#141414;border:1px solid rgba(201,168,76,0.2);border-radius:6px;padding:16px">
+      <div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px">Notify Your Buyer</div>
+      <div style="font-size:11px;color:var(--grey);margin-bottom:12px;line-height:1.6">Send your buyer a verification code so they can confirm receipt on the certificate page.</div>
+      <div style="display:flex;gap:8px">
+        <input id="detail-buyer-email-input" type="email" placeholder="buyer@email.com" value="${buyerEmail||''}" style="flex:1;background:#1a1a1a;border:1px solid #333;color:var(--white);border-radius:4px;padding:10px 12px;font-size:12px;font-family:'Montserrat',sans-serif;outline:none">
+        <button onclick="sendBuyerEmailFromDetail('${id}')" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#000;border:none;border-radius:4px;padding:10px 16px;font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:1px;font-weight:700;cursor:pointer;white-space:nowrap">SEND</button>
+      </div>
+      <div id="detail-buyer-email-status" style="font-size:11px;margin-top:8px;display:none"></div>
+    </div>` : ''}
+
     <button onclick="show('s-dashboard')" style="width:100%;background:transparent;border:1px solid #2a2a2a;color:var(--grey);padding:14px;border-radius:4px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer">← BACK TO DASHBOARD</button>
   `;
 
@@ -3083,6 +3083,43 @@ window.stopCamera = stopCamera;
 window.switchCamera = switchCamera;
 window.showListingDetail = showListingDetail;
 window.filterListings = filterListings;
+window.sendBuyerEmailFromDetail = async function(certId) {
+  const email = document.getElementById('detail-buyer-email-input').value.trim();
+  const status = document.getElementById('detail-buyer-email-status');
+  if (!email || !email.includes('@')) {
+    status.textContent = 'Please enter a valid email.';
+    status.style.color = 'var(--red)';
+    status.style.display = 'block';
+    return;
+  }
+  if (!certId) { status.textContent = 'Certificate ID not found.'; status.style.color = 'var(--red)'; status.style.display = 'block'; return; }
+
+  status.textContent = 'Sending...';
+  status.style.color = 'var(--grey)';
+  status.style.display = 'block';
+
+  try {
+    const idToken = await window._auth.currentUser?.getIdToken();
+    const res = await fetch('/api/send-buyer-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + idToken },
+      body: JSON.stringify({ certId, buyerEmail: email })
+    });
+    const data = await res.json();
+    if (data.success) {
+      status.textContent = '✓ Verification email sent to ' + email;
+      status.style.color = 'var(--green)';
+    } else {
+      status.textContent = data.error || 'Failed to send email.';
+      status.style.color = 'var(--red)';
+    }
+  } catch(e) {
+    status.textContent = 'Error sending email. Please try again.';
+    status.style.color = 'var(--red)';
+    console.error('sendBuyerEmailFromDetail error:', e);
+  }
+};
+
 window.sendBuyerEmail = async function() {
   const email = document.getElementById('buyer-email-input').value.trim();
   const status = document.getElementById('buyer-email-status');

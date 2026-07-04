@@ -76,6 +76,10 @@
   .stat-label{font-size:13.5px;color:var(--grey);line-height:1.5}
   .stat-block{margin:36px 0}
 
+  .chart-block{margin:44px 0}
+  .chart-caption{font-size:11.5px;color:var(--grey-dim);margin-top:14px;line-height:1.6}
+  .chart-caption em{font-style:italic}
+
   .callout{
     background:var(--bg-card);border:1px solid var(--border);
     border-radius:6px;padding:24px 28px;margin:36px 0;
@@ -142,11 +146,26 @@
 
   <p>Not the product description. Not the category. Not even a human-written color label like "navy" or "burgundy." The raw color values extracted directly from the photo — the actual pixels — predicted returns far better than anything else measured.</p>
 
+  <div class="chart-block">
+    <svg viewBox="0 0 600 260" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto">
+      <text x="0" y="20" font-family="Montserrat, sans-serif" font-size="11" letter-spacing="1.5" fill="#8a8a85">SAME PRODUCTS, SAME QUALITY</text>
+
+      <text x="90" y="70" text-anchor="middle" font-family="Fraunces, serif" font-size="34" font-weight="500" fill="#c9a84c">53%</text>
+      <rect x="40" y="90" width="100" height="130" rx="3" fill="#c9a84c"/>
+      <text x="90" y="242" text-anchor="middle" font-family="Montserrat, sans-serif" font-size="12" fill="#d8d5cc">Online</text>
+
+      <text x="230" y="200" text-anchor="middle" font-family="Fraunces, serif" font-size="34" font-weight="500" fill="#4caf7d">3%</text>
+      <rect x="180" y="212" width="100" height="8" rx="3" fill="#4caf7d"/>
+      <text x="230" y="242" text-anchor="middle" font-family="Montserrat, sans-serif" font-size="12" fill="#d8d5cc">In-store</text>
+
+      <line x1="0" y1="220" x2="600" y2="220" stroke="#232320" stroke-width="1"/>
+
+      <text x="600" y="20" text-anchor="end" font-family="Montserrat, sans-serif" font-size="10" fill="#5a5a56">RETURN RATE</text>
+    </svg>
+    <div class="chart-caption">Return rate for the same items sold online vs. in physical stores. Source: Dzyabura, El Kihal, Hauser, Ibragimov (2023), <em>Marketing Science</em>.</div>
+  </div>
+
   <div class="stat-block">
-    <div class="stat-line">
-      <div class="stat-num">53%</div>
-      <div class="stat-label">average online return rate in the study's dataset — compared to just <strong style="color:var(--gold-light)">3%</strong> for the identical products sold in physical stores</div>
-    </div>
     <div class="stat-line">
       <div class="stat-num">+30.2%</div>
       <div class="stat-label">gain in predictive accuracy from adding the photo's actual color data — versus only +4.8% from adding a text color label like "blue"</div>

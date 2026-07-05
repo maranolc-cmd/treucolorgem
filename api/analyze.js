@@ -215,7 +215,12 @@ Respond ONLY with valid JSON, no markdown, no explanation outside JSON:
       messages: [{ role: "user", content }],
     });
 
-    const text = response.content[0].text.trim();
+    const textBlock = response.content?.find(b => b.type === "text");
+    if (!textBlock || typeof textBlock.text !== "string") {
+      console.error("Unexpected API response structure:", JSON.stringify(response));
+      throw new Error("AI analysis returned an unexpected response format. Please try again.");
+    }
+    const text = textBlock.text.trim();
     const cleaned = text.replace(/```json|```/g, "").trim();
     const raw = JSON.parse(cleaned);
 

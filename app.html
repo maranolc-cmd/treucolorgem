@@ -681,7 +681,7 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     <button class="nav-back" onclick="stopCamera();show('s-new')">←</button>
     <div class="nav-title" id="cam-nav-title">Live Photo</div>
   </div>
-  <div class="cam-view" style="position:relative;background:#000;min-height:60vh;display:flex;align-items:center;justify-content:center;">
+  <div class="cam-view" style="position:relative;background:#000;min-height:60vh;display:flex;align-items:center;justify-content:center;overflow:hidden;">
     <video id="cam-video" autoplay playsinline muted style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;display:none"></video>
     <canvas id="cam-canvas" style="display:none"></canvas>
     <canvas id="cam-analyze" width="50" height="50" style="display:none"></canvas>
@@ -1942,9 +1942,12 @@ function stopCamera() {
   if (zoomBar) zoomBar.style.display = 'none';
   const zoomSlider = document.getElementById('zoom-slider');
   if (zoomSlider) zoomSlider.value = 1;
+  digitalZoomLevel = 1;
   lightOK = false;
   cameraInitialized = false;
 }
+
+let digitalZoomLevel = 1;
 
 async function applyZoom(value) {
   if (!cameraStream) return;
@@ -1952,9 +1955,19 @@ async function applyZoom(value) {
   if (!track) return;
   const label = document.getElementById('zoom-label');
   if (label) label.textContent = parseFloat(value).toFixed(1) + '×';
+  const video = document.getElementById('cam-video');
   try {
     await track.applyConstraints({ advanced: [{ zoom: parseFloat(value) }] });
-  } catch(_) {}
+    if (video) video.style.transform = 'none';
+    digitalZoomLevel = 1;
+  } catch(_) {
+    // Fallback: zoom digitale via CSS, solo se applyConstraints fallisce davvero
+    digitalZoomLevel = parseFloat(value);
+    if (video) {
+      video.style.transformOrigin = 'center center';
+      video.style.transform = 'scale(' + digitalZoomLevel + ')';
+    }
+  }
 }
 
 function initZoomSlider() {
@@ -2137,10 +2150,21 @@ function capturePhoto() {
   if (cameraStream && lightOK) {
     const video = document.getElementById('cam-video');
     const canvas = document.getElementById('cam-canvas');
-    canvas.width = video.videoWidth || 1280;
-    canvas.height = video.videoHeight || 720;
+    const vw = video.videoWidth || 1280;
+    const vh = video.videoHeight || 720;
+    canvas.width = vw;
+    canvas.height = vh;
     const ctx = canvas.getContext('2d');
-    ctx.drawImage(video, 0, 0);
+    if (digitalZoomLevel > 1.01) {
+      // Ritaglia la stessa porzione centrale visibile a schermo con lo zoom digitale, poi la ingrandisce
+      const srcW = vw / digitalZoomLevel;
+      const srcH = vh / digitalZoomLevel;
+      const srcX = (vw - srcW) / 2;
+      const srcY = (vh - srcH) / 2;
+      ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, vw, vh);
+    } else {
+      ctx.drawImage(video, 0, 0);
+    }
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
     // Cattura sensor snapshot prima di stopCamera
     const snap = takeSensorSnapshot();

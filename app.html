@@ -1964,6 +1964,7 @@ async function applyZoom(value) {
     video.style.transform = 'scale(' + digitalZoomLevel + ')';
   }
 }
+window.applyZoom = applyZoom;
 
 function initZoomSlider() {
   if (!cameraStream) return;
@@ -3132,6 +3133,8 @@ window.togglePw = togglePw;
 window.selectVertical = selectVertical;
 window.togglePhotoRules = togglePhotoRules;
 window.startAnalysis = startAnalysis;
+window.resendVerificationEmail = resendVerificationEmail;
+window.initZoomSlider = initZoomSlider;
 window.capturePhoto = capturePhoto;
 window.stopCamera = stopCamera;
 window.switchCamera = switchCamera;

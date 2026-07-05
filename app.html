@@ -2797,6 +2797,43 @@ function downloadCert() {
     const certId = document.getElementById('cert-wm-id')?.textContent || '';
     ctx.fillText(certId, 44, 958);
 
+    // Dati analisi — stessa logica di downloadCertFromHistory
+    const r = state.currentScore || {};
+    if (r.deltaE || r.color_match || r.light_source) {
+      const lightMap = {
+        'neutral_acceptable': 'Natural light',
+        'warm_manipulated': 'Warm light detected',
+        'cool_manipulated': 'Cool light detected',
+        'unknown': 'Light unknown'
+      };
+      const rawLight = (r.light_source || '').replace('✓ ','').replace('✗ ','').trim();
+      const lightLabel = lightMap[rawLight] || rawLight;
+      const colorLabel = (r.color_match || '').replace('✓ ','').replace('⚠ ','').replace('✗ ','').trim();
+      const satLabel = (r.saturation || '').replace('✓ ','').replace('✗ ','').trim();
+
+      ctx.strokeStyle = 'rgba(201,168,76,0.3)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(44, 970);
+      ctx.lineTo(1036, 970);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(201,168,76,0.7)';
+      ctx.font = 'bold 13px Arial';
+      ctx.textAlign = 'left';
+      ctx.fillText('ANALYSIS', 44, 990);
+      ctx.fillText('COLOR MATCH', 280, 990);
+      ctx.fillText('LIGHTING', 560, 990);
+      ctx.fillText('SATURATION', 780, 990);
+
+      ctx.fillStyle = 'rgba(245,240,232,0.85)';
+      ctx.font = '15px Arial';
+      ctx.fillText('ΔE ' + (r.deltaE || '—'), 44, 1012);
+      ctx.fillText(colorLabel || '—', 280, 1012);
+      ctx.fillText(lightLabel || '—', 560, 1012);
+      ctx.fillText(satLabel || '—', 780, 1012);
+    }
+
     // QR reale: legge il canvas generato da qrcode.js nel DOM
     const qrContainer = document.getElementById('cert-qr');
     const qrCanvas = qrContainer?.querySelector('canvas');

@@ -718,6 +718,19 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     </div>
     <div class="cam-hint" style="font-size:9px" id="cam-hint-sub">Tap image to focus · Shutter activates when light is optimal</div>
     <input type="file" id="cam-file" accept="image/*" capture="environment" onchange="handleCamFile(this)" style="display:none">
+
+    <!-- CAPTURE CONFIRM OVERLAY -->
+    <div id="capture-confirm" style="display:none;position:absolute;inset:0;background:#000;z-index:20;flex-direction:column;align-items:center;justify-content:center;padding:20px">
+      <div style="max-width:100%;max-height:60vh;overflow:hidden;border-radius:6px;border:1px solid rgba(201,168,76,0.3)">
+        <img id="confirm-preview-img" src="" alt="" style="display:block;max-width:100%;max-height:60vh;touch-action:none;transition:transform 0.15s ease-out">
+      </div>
+      <div id="confirm-sharpness-info" style="margin-top:16px;font-size:12px;color:var(--grey);letter-spacing:0.5px"></div>
+      <div style="margin-top:8px;font-size:11px;color:var(--gold);letter-spacing:1px;text-align:center;padding:0 20px">Double-tap or pinch to zoom in and check sharpness closely</div>
+      <div style="display:flex;gap:12px;width:100%;max-width:360px;margin-top:28px">
+        <button onclick="retakeCapture()" style="flex:1;background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--grey);padding:14px;border-radius:6px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:1.5px;cursor:pointer">↻ RETAKE</button>
+        <button onclick="confirmCapture()" style="flex:1;background:linear-gradient(135deg,var(--gold),var(--gold-light));color:#000;border:none;padding:14px;border-radius:6px;font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:1.5px;font-weight:700;cursor:pointer">✓ USE THIS PHOTO</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1948,6 +1961,9 @@ function stopCamera() {
 }
 
 let digitalZoomLevel = 1;
+let lastSharpness = 0;
+let pendingCaptureDataUrl = null;
+let pendingCaptureSnap = null;
 
 async function applyZoom(value) {
   if (!cameraStream) return;
@@ -2096,7 +2112,8 @@ function analyzeLightConditions() {
 
   const brightOK = brightness > 40 && brightness < 240;
   const tempOK = rbRatio > 0.85 && rbRatio < 1.7;
-  const sharpOK = sharpness > 3.0; // valore provvisorio, da ricalibrare con dati reali
+  const sharpOK = sharpness > 4.0; // calibrato su dati reali: sfocata=2.2, buone=6.4-8.1
+  lastSharpness = sharpness;
 
   const dot = document.getElementById('light-dot');
   const txt = document.getElementById('light-txt');
@@ -2105,7 +2122,7 @@ function analyzeLightConditions() {
   const hint = document.getElementById('cam-hint-main');
   
   detail.style.display = 'block';
-  detail.textContent = `Light: ${rbRatio < 1.0 ? 'Cool' : rbRatio > 1.6 ? 'Warm' : 'Natural'} · Brightness: ${Math.round(brightness)} · Sharpness: ${sharpness.toFixed(1)}/3.0 ${sharpOK ? '✓' : '✗'}`;
+  detail.textContent = `Light: ${rbRatio < 1.0 ? 'Cool' : rbRatio > 1.6 ? 'Warm' : 'Natural'} · Brightness: ${Math.round(brightness)} · Sharpness: ${sharpness.toFixed(1)}/4.0 ${sharpOK ? '✓' : '✗'}`;
 
   // Priority: check problems in order
   if (!brightOK && brightness <= 40) {
@@ -2166,16 +2183,84 @@ function capturePhoto() {
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
     // Cattura sensor snapshot prima di stopCamera
     const snap = takeSensorSnapshot();
-    stopCamera();
-    if (state.camMode === 'listing') {
-      state.listingSensorSnap = snap;
-      processListingPhoto(dataUrl);
-    } else {
-      state.liveSensorSnap = snap;
-      processLivePhoto(dataUrl);
-    }
+    pendingCaptureDataUrl = dataUrl;
+    pendingCaptureSnap = snap;
+    showCaptureConfirm(dataUrl);
   } else {
     document.getElementById('cam-file').click();
+  }
+}
+
+function showCaptureConfirm(dataUrl) {
+  const overlay = document.getElementById('capture-confirm');
+  const img = document.getElementById('confirm-preview-img');
+  const info = document.getElementById('confirm-sharpness-info');
+  img.src = dataUrl;
+  info.textContent = 'Sharpness: ' + lastSharpness.toFixed(1) + '/4.0 ' + (lastSharpness > 4.0 ? '✓' : '⚠ borderline');
+  overlay.style.display = 'flex';
+  if (img._resetZoom) img._resetZoom();
+  else enableImageZoom(img);
+}
+
+function enableImageZoom(img) {
+  let scale = 1, startDist = 0, startScale = 1, originX = 50, originY = 50, lastTap = 0;
+
+  function setTransform() {
+    img.style.transformOrigin = originX + '% ' + originY + '%';
+    img.style.transform = 'scale(' + scale + ')';
+  }
+
+  img.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      startDist = Math.sqrt(dx*dx + dy*dy);
+      startScale = scale;
+    } else if (e.touches.length === 1) {
+      const now = Date.now();
+      if (now - lastTap < 300) {
+        const rect = img.getBoundingClientRect();
+        originX = ((e.touches[0].clientX - rect.left) / rect.width) * 100;
+        originY = ((e.touches[0].clientY - rect.top) / rect.height) * 100;
+        scale = scale > 1 ? 1 : 2.5;
+        setTransform();
+      }
+      lastTap = now;
+    }
+  }, { passive: true });
+
+  img.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      scale = Math.min(4, Math.max(1, startScale * (dist / startDist)));
+      setTransform();
+    }
+  }, { passive: false });
+
+  img._resetZoom = () => { scale = 1; originX = 50; originY = 50; setTransform(); };
+}
+
+function retakeCapture() {
+  document.getElementById('capture-confirm').style.display = 'none';
+  pendingCaptureDataUrl = null;
+  pendingCaptureSnap = null;
+  // La fotocamera è rimasta attiva dietro l'overlay, nessun riavvio necessario
+}
+
+function confirmCapture() {
+  document.getElementById('capture-confirm').style.display = 'none';
+  const dataUrl = pendingCaptureDataUrl;
+  const snap = pendingCaptureSnap;
+  stopCamera();
+  if (state.camMode === 'listing') {
+    state.listingSensorSnap = snap;
+    processListingPhoto(dataUrl);
+  } else {
+    state.liveSensorSnap = snap;
+    processLivePhoto(dataUrl);
   }
 }
 
@@ -3139,6 +3224,8 @@ window.togglePhotoRules = togglePhotoRules;
 window.startAnalysis = startAnalysis;
 window.resendVerificationEmail = resendVerificationEmail;
 window.initZoomSlider = initZoomSlider;
+window.retakeCapture = retakeCapture;
+window.confirmCapture = confirmCapture;
 window.capturePhoto = capturePhoto;
 window.stopCamera = stopCamera;
 window.switchCamera = switchCamera;

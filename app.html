@@ -2083,8 +2083,28 @@ function analyzeLightConditions() {
   
   if (video.readyState < 2) return;
   
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) return;
+
+  // Stessa area "cover" mostrata a schermo, più eventuale zoom digitale corrente —
+  // altrimenti il controllo analizza una zona diversa da quella che l'utente vede.
+  const displayW = video.clientWidth || vw;
+  const displayH = video.clientHeight || vh;
+  const coverScale = Math.max(displayW / vw, displayH / vh);
+  const coverW = displayW / coverScale;
+  const coverH = displayH / coverScale;
+  let srcX = (vw - coverW) / 2;
+  let srcY = (vh - coverH) / 2;
+  let srcW = coverW, srcH = coverH;
+  if (digitalZoomLevel > 1.01) {
+    srcW = coverW / digitalZoomLevel;
+    srcH = coverH / digitalZoomLevel;
+    srcX = srcX + (coverW - srcW) / 2;
+    srcY = srcY + (coverH - srcH) / 2;
+  }
+
   const W = 160; // risoluzione di analisi aumentata da 50 a 160 per rilevare sfocatura reale
-  ctx.drawImage(video, 0, 0, W, W);
+  ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, W, W);
   const pixels = ctx.getImageData(0, 0, W, W).data;
   
   // Color averages
@@ -2172,18 +2192,31 @@ function capturePhoto() {
     const canvas = document.getElementById('cam-canvas');
     const vw = video.videoWidth || 1280;
     const vh = video.videoHeight || 720;
-    canvas.width = vw;
-    canvas.height = vh;
+
+    // object-fit:cover ritaglia il fotogramma nativo per riempire il display.
+    // Calcoliamo la stessa identica area visibile a schermo, altrimenti quello
+    // che l'utente vede centrato non corrisponde a quello che viene catturato.
+    const displayW = video.clientWidth || vw;
+    const displayH = video.clientHeight || vh;
+    const coverScale = Math.max(displayW / vw, displayH / vh);
+    const coverW = displayW / coverScale;
+    const coverH = displayH / coverScale;
+    const coverX = (vw - coverW) / 2;
+    const coverY = (vh - coverH) / 2;
+
+    canvas.width = displayW;
+    canvas.height = displayH;
     const ctx = canvas.getContext('2d');
+
     if (digitalZoomLevel > 1.01) {
-      // Ritaglia la stessa porzione centrale visibile a schermo con lo zoom digitale, poi la ingrandisce
-      const srcW = vw / digitalZoomLevel;
-      const srcH = vh / digitalZoomLevel;
-      const srcX = (vw - srcW) / 2;
-      const srcY = (vh - srcH) / 2;
-      ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, vw, vh);
+      // Ritaglia ulteriormente al centro della stessa area "cover", secondo lo zoom digitale
+      const srcW = coverW / digitalZoomLevel;
+      const srcH = coverH / digitalZoomLevel;
+      const srcX = coverX + (coverW - srcW) / 2;
+      const srcY = coverY + (coverH - srcH) / 2;
+      ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, displayW, displayH);
     } else {
-      ctx.drawImage(video, 0, 0);
+      ctx.drawImage(video, coverX, coverY, coverW, coverH, 0, 0, displayW, displayH);
     }
     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
     // Cattura sensor snapshot prima di stopCamera

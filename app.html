@@ -2076,38 +2076,29 @@ function startLightAnalysis() {
   }, 600);
 }
 
-function analyzeLightConditions() {
-  const video = document.getElementById('cam-video');
+// Calcola la varianza di Laplace (nitidezza) su una sorgente immagine, ritagliando
+// la stessa area "cover" mostrata a schermo. Riutilizzata sia dal controllo live
+// sia sulla foto finale ad alta risoluzione, per coerenza tra i due valori mostrati.
+function computeSharpnessFromSource(source, srcNativeW, srcNativeH, displayW, displayH, zoomLevel) {
   const canvas = document.getElementById('cam-analyze');
   const ctx = canvas.getContext('2d');
-  
-  if (video.readyState < 2) return;
-  
-  const vw = video.videoWidth, vh = video.videoHeight;
-  if (!vw || !vh) return;
-
-  // Stessa area "cover" mostrata a schermo, più eventuale zoom digitale corrente —
-  // altrimenti il controllo analizza una zona diversa da quella che l'utente vede.
-  const displayW = video.clientWidth || vw;
-  const displayH = video.clientHeight || vh;
-  const coverScale = Math.max(displayW / vw, displayH / vh);
+  const coverScale = Math.max(displayW / srcNativeW, displayH / srcNativeH);
   const coverW = displayW / coverScale;
   const coverH = displayH / coverScale;
-  let srcX = (vw - coverW) / 2;
-  let srcY = (vh - coverH) / 2;
+  let srcX = (srcNativeW - coverW) / 2;
+  let srcY = (srcNativeH - coverH) / 2;
   let srcW = coverW, srcH = coverH;
-  if (digitalZoomLevel > 1.01) {
-    srcW = coverW / digitalZoomLevel;
-    srcH = coverH / digitalZoomLevel;
+  if (zoomLevel > 1.01) {
+    srcW = coverW / zoomLevel;
+    srcH = coverH / zoomLevel;
     srcX = srcX + (coverW - srcW) / 2;
     srcY = srcY + (coverH - srcH) / 2;
   }
 
-  const W = 160; // risoluzione di analisi aumentata da 50 a 160 per rilevare sfocatura reale
-  ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, W, W);
+  const W = 160;
+  ctx.drawImage(source, srcX, srcY, srcW, srcH, 0, 0, W, W);
   const pixels = ctx.getImageData(0, 0, W, W).data;
-  
-  // Color averages
+
   let r=0, g=0, b=0, count=0;
   const grays = [];
   for (let i=0; i<pixels.length; i+=4) {
@@ -2118,8 +2109,7 @@ function analyzeLightConditions() {
   const brightness = (r*0.299 + g*0.587 + b*0.114);
   const rbRatio = r / (b + 1);
 
-  // Sharpness: Laplacian variance solo sul centro (dove si trova la gemma)
-  const margin = Math.round(W * 0.3); // analizza il 40% centrale del frame
+  const margin = Math.round(W * 0.3);
   let lapSum = 0, lapCount = 0;
   for (let y = margin; y < W - margin; y++) {
     for (let x = margin; x < W - margin; x++) {
@@ -2131,6 +2121,19 @@ function analyzeLightConditions() {
     }
   }
   const sharpness = lapCount > 0 ? lapSum / lapCount : 0;
+  return { sharpness, brightness, rbRatio };
+}
+
+function analyzeLightConditions() {
+  const video = document.getElementById('cam-video');
+  if (video.readyState < 2) return;
+
+  const vw = video.videoWidth, vh = video.videoHeight;
+  if (!vw || !vh) return;
+
+  const displayW = video.clientWidth || vw;
+  const displayH = video.clientHeight || vh;
+  const { sharpness, brightness, rbRatio } = computeSharpnessFromSource(video, vw, vh, displayW, displayH, digitalZoomLevel);
 
   const brightOK = brightness > 40 && brightness < 240;
   const tempOK = rbRatio > 0.55 && rbRatio < 1.7;
@@ -2186,38 +2189,67 @@ function analyzeLightConditions() {
   shutter.style.pointerEvents = lightOK ? 'auto' : 'none';
 }
 
-function capturePhoto() {
+async function capturePhoto() {
   if (cameraStream && lightOK) {
     const video = document.getElementById('cam-video');
     const canvas = document.getElementById('cam-canvas');
-    const vw = video.videoWidth || 1280;
-    const vh = video.videoHeight || 720;
+    const displayW = video.clientWidth || video.videoWidth || 1280;
+    const displayH = video.clientHeight || video.videoHeight || 720;
 
-    // object-fit:cover ritaglia il fotogramma nativo per riempire il display.
-    // Calcoliamo la stessa identica area visibile a schermo, altrimenti quello
-    // che l'utente vede centrato non corrisponde a quello che viene catturato.
-    const displayW = video.clientWidth || vw;
-    const displayH = video.clientHeight || vh;
-    const coverScale = Math.max(displayW / vw, displayH / vh);
+    // Prova a usare ImageCapture per uno scatto fotografico reale ad alta
+    // risoluzione (modalità foto della fotocamera), molto più nitido di un
+    // singolo fotogramma video. Se non supportato dal browser/device, usa
+    // il fotogramma video come prima (fallback automatico, nessun errore visibile).
+    let source = video;
+    let srcW = video.videoWidth || 1280;
+    let srcH = video.videoHeight || 720;
+    const track = cameraStream.getVideoTracks()[0];
+    if (track && window.ImageCapture) {
+      try {
+        const imageCapture = new ImageCapture(track);
+        const blob = await imageCapture.takePhoto();
+        const bitmap = await createImageBitmap(blob);
+        source = bitmap;
+        srcW = bitmap.width;
+        srcH = bitmap.height;
+      } catch(_) {
+        // Fallback silenzioso al fotogramma video, source/srcW/srcH restano quelli originali
+        source = video;
+        srcW = video.videoWidth || 1280;
+        srcH = video.videoHeight || 720;
+      }
+    }
+
+    // Stessa area "cover" visibile a schermo, ricalcolata sulle dimensioni
+    // reali della sorgente usata (foto ad alta risoluzione o fotogramma video)
+    const coverScale = Math.max(displayW / srcW, displayH / srcH);
     const coverW = displayW / coverScale;
     const coverH = displayH / coverScale;
-    const coverX = (vw - coverW) / 2;
-    const coverY = (vh - coverH) / 2;
+    const coverX = (srcW - coverW) / 2;
+    const coverY = (srcH - coverH) / 2;
 
     canvas.width = displayW;
     canvas.height = displayH;
     const ctx = canvas.getContext('2d');
 
     if (digitalZoomLevel > 1.01) {
-      // Ritaglia ulteriormente al centro della stessa area "cover", secondo lo zoom digitale
-      const srcW = coverW / digitalZoomLevel;
-      const srcH = coverH / digitalZoomLevel;
-      const srcX = coverX + (coverW - srcW) / 2;
-      const srcY = coverY + (coverH - srcH) / 2;
-      ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, displayW, displayH);
+      const zSrcW = coverW / digitalZoomLevel;
+      const zSrcH = coverH / digitalZoomLevel;
+      const zSrcX = coverX + (coverW - zSrcW) / 2;
+      const zSrcY = coverY + (coverH - zSrcH) / 2;
+      ctx.drawImage(source, zSrcX, zSrcY, zSrcW, zSrcH, 0, 0, displayW, displayH);
     } else {
-      ctx.drawImage(video, coverX, coverY, coverW, coverH, 0, 0, displayW, displayH);
+      ctx.drawImage(source, coverX, coverY, coverW, coverH, 0, 0, displayW, displayH);
     }
+    if (source !== video && source.close) {
+      // Ricalcola la nitidezza sulla foto vera ad alta risoluzione appena scattata,
+      // così il valore mostrato in conferma riflette lo scatto reale, non l'ultima
+      // stima approssimativa del flusso video live.
+      const result = computeSharpnessFromSource(source, srcW, srcH, displayW, displayH, digitalZoomLevel);
+      lastSharpness = result.sharpness;
+      source.close(); // libera memoria ImageBitmap
+    }
+
     const dataUrl = canvas.toDataURL('image/jpeg', 0.97);
     // Cattura sensor snapshot prima di stopCamera
     const snap = takeSensorSnapshot();

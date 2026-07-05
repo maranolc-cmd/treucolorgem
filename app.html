@@ -2096,7 +2096,7 @@ function analyzeLightConditions() {
 
   const brightOK = brightness > 40 && brightness < 240;
   const tempOK = rbRatio > 0.85 && rbRatio < 1.7;
-  const sharpOK = sharpness > 6.0; // ricalibrata per la risoluzione di analisi più alta
+  const sharpOK = sharpness > 3.0; // valore provvisorio, da ricalibrare con dati reali
 
   const dot = document.getElementById('light-dot');
   const txt = document.getElementById('light-txt');
@@ -2105,7 +2105,7 @@ function analyzeLightConditions() {
   const hint = document.getElementById('cam-hint-main');
   
   detail.style.display = 'block';
-  detail.textContent = `Light: ${rbRatio < 1.0 ? 'Cool' : rbRatio > 1.6 ? 'Warm' : 'Natural'} · Brightness: ${Math.round(brightness)} · Focus: ${sharpOK ? '✓' : '✗'}`;
+  detail.textContent = `Light: ${rbRatio < 1.0 ? 'Cool' : rbRatio > 1.6 ? 'Warm' : 'Natural'} · Brightness: ${Math.round(brightness)} · Sharpness: ${sharpness.toFixed(1)}/3.0 ${sharpOK ? '✓' : '✗'}`;
 
   // Priority: check problems in order
   if (!brightOK && brightness <= 40) {

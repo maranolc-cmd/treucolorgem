@@ -2218,7 +2218,7 @@ function capturePhoto() {
     } else {
       ctx.drawImage(video, coverX, coverY, coverW, coverH, 0, 0, displayW, displayH);
     }
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.97);
     // Cattura sensor snapshot prima di stopCamera
     const snap = takeSensorSnapshot();
     pendingCaptureDataUrl = dataUrl;

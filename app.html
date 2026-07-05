@@ -1951,42 +1951,35 @@ let digitalZoomLevel = 1;
 
 async function applyZoom(value) {
   if (!cameraStream) return;
-  const track = cameraStream.getVideoTracks()[0];
-  if (!track) return;
   const label = document.getElementById('zoom-label');
   if (label) label.textContent = parseFloat(value).toFixed(1) + '×';
   const video = document.getElementById('cam-video');
-  try {
-    await track.applyConstraints({ advanced: [{ zoom: parseFloat(value) }] });
-    if (video) video.style.transform = 'none';
-    digitalZoomLevel = 1;
-  } catch(_) {
-    // Fallback: zoom digitale via CSS, solo se applyConstraints fallisce davvero
-    digitalZoomLevel = parseFloat(value);
-    if (video) {
-      video.style.transformOrigin = 'center center';
-      video.style.transform = 'scale(' + digitalZoomLevel + ')';
-    }
+  // Zoom digitale via CSS: funziona sempre, su ogni dispositivo/browser.
+  // L'API hardware (applyConstraints zoom) è stata scartata perché su molti
+  // device Android non lancia errore anche quando non fa nulla, rendendo
+  // impossibile rilevare il fallimento e attivare un fallback.
+  digitalZoomLevel = parseFloat(value);
+  if (video) {
+    video.style.transformOrigin = 'center center';
+    video.style.transform = 'scale(' + digitalZoomLevel + ')';
   }
 }
 
 function initZoomSlider() {
   if (!cameraStream) return;
-  const track = cameraStream.getVideoTracks()[0];
-  if (!track) return;
-  const capabilities = track.getCapabilities();
   const bar = document.getElementById('zoom-bar');
   const slider = document.getElementById('zoom-slider');
-  if (capabilities.zoom && bar && slider) {
-    const min = capabilities.zoom.min || 1;
-    const max = Math.min(capabilities.zoom.max || 5, 10);
-    slider.min = min;
-    slider.max = max;
-    slider.step = (max - min) / 50;
-    slider.value = min;
-    document.getElementById('zoom-label').textContent = min.toFixed(1) + '×';
-    bar.style.display = 'flex';
-  }
+  if (!bar || !slider) return;
+  // Zoom digitale via CSS: sempre disponibile, non serve controllare
+  // le capability hardware della fotocamera (spesso inaffidabili).
+  const min = 1;
+  const max = 4;
+  slider.min = min;
+  slider.max = max;
+  slider.step = 0.1;
+  slider.value = min;
+  document.getElementById('zoom-label').textContent = min.toFixed(1) + '×';
+  bar.style.display = 'flex';
 }
 
 let usingWideCamera = false;

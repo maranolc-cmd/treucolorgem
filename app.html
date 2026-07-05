@@ -2111,7 +2111,7 @@ function analyzeLightConditions() {
   const sharpness = lapCount > 0 ? lapSum / lapCount : 0;
 
   const brightOK = brightness > 40 && brightness < 240;
-  const tempOK = rbRatio > 0.85 && rbRatio < 1.7;
+  const tempOK = rbRatio > 0.55 && rbRatio < 1.7;
   const sharpOK = sharpness > 4.0; // calibrato su dati reali: sfocata=2.2, buone=6.4-8.1
   lastSharpness = sharpness;
 
@@ -2138,13 +2138,16 @@ function analyzeLightConditions() {
   } else if (rbRatio > 1.7) {
     lightOK = false;
     dot.style.background = 'var(--yellow)'; dot.style.boxShadow = '0 0 8px var(--yellow)';
-    txt.style.color = 'var(--yellow)'; txt.textContent = 'Warm artificial light ⚠ — move to window';
-    hint.textContent = 'Turn off lamps and move near a window';
-  } else if (rbRatio < 0.85) {
-    lightOK = false;
+    txt.style.color = 'var(--yellow)'; txt.textContent = 'Strong warm color cast — may shift the stone\'s color ⚠';
+    hint.textContent = 'This light may exaggerate warm tones — try neutral/daylight instead';
+  } else if (rbRatio < 0.55) {
+    // Non blocca lo scatto: un cast blu forte può comunque distorcere il colore
+    // percepito quanto una luce calda, ma non sappiamo con certezza se qui è il caso
+    // (potrebbe essere normale luce da finestra in ombra/nuvoloso).
+    lightOK = true;
     dot.style.background = 'var(--yellow)'; dot.style.boxShadow = '0 0 8px var(--yellow)';
-    txt.style.color = 'var(--yellow)'; txt.textContent = 'Cool artificial light ⚠ — use window light';
-    hint.textContent = 'Avoid LED/fluorescent lights — use daylight';
+    txt.style.color = 'var(--yellow)'; txt.textContent = 'Cool tone detected — fine if it\'s natural window light';
+    hint.textContent = 'If colors still look true to life, you\'re good to shoot';
   } else if (!sharpOK) {
     lightOK = false;
     dot.style.background = 'var(--red)'; dot.style.boxShadow = '0 0 8px var(--red)';

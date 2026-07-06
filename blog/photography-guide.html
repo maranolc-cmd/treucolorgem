@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How to Photograph a Gemstone Without Lying to Your Buyer — LiveProof</title>
+<meta name="description" content="A practical guide for gemstone and jewelry sellers on the line between good lighting and misrepresentation, and how to photograph honestly without giving up a beautiful listing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0a0a;
+    --bg-card:#141414;
+    --border:#232320;
+    --gold:#c9a84c;
+    --gold-light:#e8c874;
+    --white:#f5f2ea;
+    --grey:#8a8a85;
+    --grey-dim:#5a5a56;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:var(--bg);
+    color:var(--white);
+    font-family:'Montserrat',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--gold-light);text-decoration:none;border-bottom:1px solid rgba(201,168,76,0.35)}
+  a:hover{border-bottom-color:var(--gold-light)}
+
+  header{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:28px 48px;
+    border-bottom:1px solid var(--border);
+  }
+  .logo{font-family:'Fraunces',serif;font-size:20px;font-weight:500;letter-spacing:0.5px;color:var(--gold-light);border:none}
+  .back{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--grey);border:none}
+  .back:hover{color:var(--gold)}
+
+  article{max-width:660px;margin:0 auto;padding:80px 32px 60px}
+
+  .post-meta{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:20px}
+  h1{
+    font-family:'Fraunces',serif;font-weight:400;
+    font-size:clamp(30px,4.5vw,44px);line-height:1.18;
+    margin-bottom:20px;letter-spacing:-0.3px;
+  }
+  .dek{font-size:16px;line-height:1.7;color:var(--grey);margin-bottom:36px}
+  .byline{font-size:11px;color:var(--grey-dim);letter-spacing:0.5px;margin-bottom:56px;border-bottom:1px solid var(--border);padding-bottom:28px}
+
+  p{font-size:15.5px;line-height:1.8;color:#d8d5cc;margin-bottom:24px}
+  h2{
+    font-family:'Fraunces',serif;font-weight:500;font-style:italic;
+    font-size:24px;color:var(--gold-light);
+    margin:48px 0 20px;
+  }
+
+  .pullquote{
+    font-family:'Fraunces',serif;font-style:italic;font-weight:400;
+    font-size:24px;line-height:1.5;color:var(--white);
+    border-left:2px solid var(--gold);
+    padding:4px 0 4px 28px;
+    margin:44px 0;
+  }
+
+  .stat-line{
+    display:flex;align-items:baseline;gap:16px;
+    padding:20px 0;border-bottom:1px solid var(--border);
+  }
+  .stat-num{
+    font-family:'Fraunces',serif;font-weight:500;
+    font-size:32px;color:var(--gold);
+    min-width:110px;
+  }
+  .stat-label{font-size:13.5px;color:var(--grey);line-height:1.5}
+  .stat-block{margin:36px 0}
+
+  .chart-block{margin:44px 0}
+  .chart-caption{font-size:11.5px;color:var(--grey-dim);margin-top:14px;line-height:1.6}
+  .chart-caption em{font-style:italic}
+
+  .callout{
+    background:var(--bg-card);border:1px solid var(--border);
+    border-radius:6px;padding:24px 28px;margin:36px 0;
+  }
+  .callout .label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+  .callout p{font-size:14px;color:var(--grey);margin-bottom:0}
+
+  .sources{margin-top:64px;padding-top:28px;border-top:1px solid var(--border)}
+  .sources .label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--grey-dim);margin-bottom:14px}
+  .sources ul{list-style:none}
+  .sources li{font-size:12.5px;color:var(--grey);margin-bottom:8px;line-height:1.6}
+
+  .cta{
+    margin-top:60px;padding:32px;
+    background:var(--bg-card);border:1px solid rgba(201,168,76,0.25);
+    border-radius:8px;text-align:center;
+  }
+  .cta p{color:var(--grey);font-size:14px;margin-bottom:18px}
+  .cta a{
+    display:inline-block;border:none;
+    background:linear-gradient(135deg,var(--gold),var(--gold-light));
+    color:#000;padding:13px 28px;border-radius:4px;
+    font-size:11px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;
+  }
+
+  footer{
+    border-top:1px solid var(--border);
+    padding:40px 48px;
+    display:flex;justify-content:space-between;
+    font-size:11px;color:var(--grey-dim);letter-spacing:0.5px;
+  }
+
+  @media(max-width:640px){
+    header{padding:22px 20px}
+    article{padding:50px 20px 40px}
+    .pullquote{font-size:20px;padding-left:20px}
+    .stat-num{font-size:26px;min-width:88px}
+    footer{flex-direction:column;gap:8px;padding:28px 20px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">LiveProof</div>
+  <a href="/blog" class="back">← Blog</a>
+</header>
+
+<article>
+  <div class="post-meta">Guide</div>
+  <h1>How to Photograph a Gemstone Without Lying to Your Buyer</h1>
+  <p class="dek">Every seller wants their stone to look its best. There's a real line between good lighting and misrepresentation, here's where it actually sits, and how to stay on the right side of it without giving up a beautiful listing photo.</p>
+  <div class="byline">6 July 2026 · 7 min read</div>
+
+  <p>Colored gemstones are among the hardest things to photograph honestly. Cameras, screens, and lighting all distort color in ways that have nothing to do with intent, sapphires shift with the smallest change in light direction, greens are notoriously difficult for camera sensors, and a phone's automatic processing is tuned for skin tones, not faceted stones. Getting this wrong isn't always dishonest. But some of it is, and buyers have gotten sharp at spotting the difference.</p>
+
+  <p>Here's a practical breakdown of what actually helps, and where the line sits.</p>
+
+  <h2>What's fine, even encouraged</h2>
+
+  <p><strong style="color:var(--white)">Shooting in multiple lighting conditions.</strong> Indoor LED, natural window light, overcast daylight, direct sun, these all render color differently, and none of them is "the truth." Showing a stone under two or three honest conditions gives a buyer more information, not less. Several experienced sellers do this as standard practice, and buyers consistently mention appreciating it.</p>
+
+  <p><strong style="color:var(--white)">Multiple backgrounds.</strong> A white background is standard for a reason, it's neutral and doesn't tint the stone. But showing the same stone against a second neutral background is fine and can help buyers judge scale and setting.</p>
+
+  <p><strong style="color:var(--white)">Basic exposure and white balance correction.</strong> If your camera's auto white balance makes a stone look slightly too warm or too cool compared to reality, correcting it toward accuracy is exactly what you should do. Correction toward truth is different from enhancement away from it, the direction matters more than whether you touched the photo at all.</p>
+
+  <p><strong style="color:var(--white)">Being upfront in the listing.</strong> A line like "this stone can look slightly more purple in warm light" costs you nothing and builds exactly the kind of trust that turns a first-time buyer into a repeat one.</p>
+
+  <div class="pullquote">Correction toward accuracy and enhancement away from it produce similar-looking edits. Only one of them is honest.</div>
+
+  <h2>What crosses the line</h2>
+
+  <p><strong style="color:var(--white)">Saturation boosts.</strong> Pushing color saturation up in editing software is the single most common way listing photos mislead buyers. It's also one of the easiest to detect, on close inspection, oversaturated stones often show telltale signs: color that's too uniform across facets, or a loss of the subtle tonal variation real gemstones show under light.</p>
+
+  <p><strong style="color:var(--white)">Ring lights and lightboxes used to flatter, not just illuminate.</strong> These aren't dishonest by default, professional product photography uses them constantly. They cross the line when they're specifically positioned to wash out inclusions, exaggerate brilliance, or push a stone's color toward its most flattering possible version rather than its typical one.</p>
+
+  <p><strong style="color:var(--white)">Selective cropping to hide flaws.</strong> Extreme macro shots that don't show the whole stone, framed specifically to keep an inclusion or a color zone out of frame, are a form of misrepresentation even without any digital editing at all.</p>
+
+  <p><strong style="color:var(--white)">The wet-stone trick.</strong> Wetting a stone before photographing it is a known, low-tech way to fake extra shine and saturation that won't survive contact with a dry buyer. It's cheap, common, and worth naming directly: don't do it.</p>
+
+  <div class="callout">
+    <div class="label">A useful test</div>
+    <p>Before publishing a listing photo, ask: if the buyer photographed this same stone themselves, in reasonable light, would they recognize it as the same object? If the honest answer is "probably not," the photo needs work, regardless of whether any single edit seems small on its own.</p>
+  </div>
+
+  <h2>The cost of getting this wrong</h2>
+
+  <p>This isn't just an ethics question, it's a business one. A gap between listing photo and reality is one of the most common drivers of returns in online gemstone sales, and buyers who feel misled rarely come back, even if they keep the stone. Sellers who consistently photograph honestly tend to report the opposite problem, buyers telling them the stone looked <em>better</em> in hand than in photos, which is a far more valuable reputation to build than the alternative.</p>
+
+  <h2>Where LiveProof fits</h2>
+
+  <p>None of this requires a certification tool, honest photography is a practice, not a product. What LiveProof adds is a way to demonstrate it: a live reference photo, shot in natural conditions in the same session as the listing photo, checked for the kind of manipulation described above. It doesn't replace good photography practice. It gives buyers a way to trust that you're already doing it.</p>
+
+  <div class="cta">
+    <p>See how LiveProof verifies photo honesty before a buyer ever asks.</p>
+    <a href="/app">Try it free</a>
+  </div>
+</article>
+
+<footer>
+  <div>LiveProof</div>
+  <div>Photo honesty certification</div>
+</footer>
+
+</body>
+</html>

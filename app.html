@@ -1879,6 +1879,12 @@ async function startCamera() {
 
     cameraStream = stream;
 
+    // Riscalda la modalità foto in anticipo (silenziosamente, risultato scartato),
+    // nella speranza che il browser mantenga la negoziazione "calda" per il vero
+    // scatto successivo, rendendolo più veloce. Non garantito da nessuna specifica,
+    // ma a costo zero se non funziona.
+    warmUpImageCapture(stream);
+
     // Step 5: Assegna stream
     video.srcObject = stream;
     video.setAttribute('autoplay', '');
@@ -2206,10 +2212,11 @@ async function capturePhoto() {
     const displayW = video.clientWidth || video.videoWidth || 1280;
     const displayH = video.clientHeight || video.videoHeight || 720;
 
-    // Prova a usare ImageCapture per uno scatto fotografico reale ad alta
-    // risoluzione (modalità foto della fotocamera), molto più nitido di un
-    // singolo fotogramma video. Se non supportato dal browser/device, usa
-    // il fotogramma video come prima (fallback automatico, nessun errore visibile).
+    // Prova ImageCapture (foto ad alta risoluzione, modalità foto hardware).
+    // Il warm-up fatto all'apertura della fotocamera dovrebbe averla resa
+    // più veloce; in più mettiamo comunque un timeout di sicurezza: se non
+    // risponde entro 700ms, passiamo al fotogramma video istantaneo invece
+    // di far aspettare l'utente più foto ferma.
     let source = video;
     let srcW = video.videoWidth || 1280;
     let srcH = video.videoHeight || 720;
@@ -2217,13 +2224,14 @@ async function capturePhoto() {
     if (track && window.ImageCapture) {
       try {
         const imageCapture = new ImageCapture(track);
-        const blob = await imageCapture.takePhoto();
-        const bitmap = await createImageBitmap(blob);
+        const photoPromise = imageCapture.takePhoto().then(blob => createImageBitmap(blob));
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 700));
+        const bitmap = await Promise.race([photoPromise, timeoutPromise]);
         source = bitmap;
         srcW = bitmap.width;
         srcH = bitmap.height;
       } catch(_) {
-        // Fallback silenzioso al fotogramma video, source/srcW/srcH restano quelli originali
+        // Timeout o non supportato: fallback istantaneo al fotogramma video
         source = video;
         srcW = video.videoWidth || 1280;
         srcH = video.videoHeight || 720;
@@ -2273,6 +2281,15 @@ async function capturePhoto() {
 }
 
 let capturingInterval = null;
+
+function warmUpImageCapture(stream) {
+  const track = stream.getVideoTracks()[0];
+  if (!track || !window.ImageCapture) return;
+  try {
+    const imageCapture = new ImageCapture(track);
+    imageCapture.takePhoto().catch(() => {}); // risultato scartato, serve solo a "scaldare"
+  } catch(_) { /* non supportato, nessun problema */ }
+}
 
 function showCapturingIndicator() {
   const overlay = document.getElementById('capturing-overlay');

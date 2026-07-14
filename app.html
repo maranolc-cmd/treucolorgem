@@ -721,6 +721,15 @@ label{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gre
     <div class="cam-hint" style="font-size:9px" id="cam-hint-sub">Tap image to focus · Shutter activates when light is optimal</div>
     <input type="file" id="cam-file" accept="image/*" capture="environment" onchange="handleCamFile(this)" style="display:none">
 
+    <!-- CAPTURING INDICATOR -->
+    <div id="capturing-overlay" style="display:none;position:absolute;inset:0;background:rgba(0,0,0,0.75);z-index:25;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+      <div style="color:var(--gold);font-family:'Montserrat',sans-serif;font-size:12px;letter-spacing:2px;text-transform:uppercase">Capturing...</div>
+      <div style="width:220px;height:3px;background:rgba(255,255,255,0.15);border-radius:3px;overflow:hidden">
+        <div id="capturing-bar" style="width:0%;height:100%;background:linear-gradient(90deg,var(--gold),var(--gold-light));transition:width 0.2s linear"></div>
+      </div>
+      <div style="color:rgba(255,255,255,0.6);font-family:'Montserrat',sans-serif;font-size:11px;letter-spacing:1px">Hold steady</div>
+    </div>
+
     <!-- CAPTURE CONFIRM OVERLAY -->
     <div id="capture-confirm" style="display:none;position:absolute;inset:0;background:#000;z-index:20;flex-direction:column;align-items:center;justify-content:center;padding:20px">
       <div style="max-width:100%;max-height:60vh;overflow:hidden;border-radius:6px;border:1px solid rgba(201,168,76,0.3)">
@@ -2191,6 +2200,7 @@ function analyzeLightConditions() {
 
 async function capturePhoto() {
   if (cameraStream && lightOK) {
+    showCapturingIndicator();
     const video = document.getElementById('cam-video');
     const canvas = document.getElementById('cam-canvas');
     const displayW = video.clientWidth || video.videoWidth || 1280;
@@ -2255,10 +2265,37 @@ async function capturePhoto() {
     const snap = takeSensorSnapshot();
     pendingCaptureDataUrl = dataUrl;
     pendingCaptureSnap = snap;
+    hideCapturingIndicator();
     showCaptureConfirm(dataUrl);
   } else {
     document.getElementById('cam-file').click();
   }
+}
+
+let capturingInterval = null;
+
+function showCapturingIndicator() {
+  const overlay = document.getElementById('capturing-overlay');
+  const bar = document.getElementById('capturing-bar');
+  overlay.style.display = 'flex';
+  bar.style.width = '0%';
+  let progress = 0;
+  clearInterval(capturingInterval);
+  // Avanza fino al 90% in modo continuo: la durata reale dello scatto
+  // (specialmente con ImageCapture) non è nota in anticipo, quindi non
+  // promettiamo un tempo preciso, solo che qualcosa sta succedendo.
+  capturingInterval = setInterval(() => {
+    progress = Math.min(90, progress + (90 - progress) * 0.08);
+    bar.style.width = progress + '%';
+  }, 150);
+}
+
+function hideCapturingIndicator() {
+  clearInterval(capturingInterval);
+  const overlay = document.getElementById('capturing-overlay');
+  const bar = document.getElementById('capturing-bar');
+  bar.style.width = '100%';
+  setTimeout(() => { overlay.style.display = 'none'; }, 200);
 }
 
 function showCaptureConfirm(dataUrl) {

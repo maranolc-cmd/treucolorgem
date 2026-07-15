@@ -1879,11 +1879,11 @@ async function startCamera() {
 
     cameraStream = stream;
 
-    // Riscalda la modalità foto in anticipo (silenziosamente, risultato scartato),
-    // nella speranza che il browser mantenga la negoziazione "calda" per il vero
-    // scatto successivo, rendendolo più veloce. Non garantito da nessuna specifica,
-    // ma a costo zero se non funziona.
-    warmUpImageCapture(stream);
+    // Forza la risoluzione massima REALE disponibile sul flusso video (non
+    // solo "ideal", che il browser può ridurre), fatto qui all'apertura
+    // della fotocamera per non aggiungere alcun ritardo al momento dello
+    // scatto vero e proprio.
+    maximizeVideoResolution(stream);
 
     // Step 5: Assegna stream
     video.srcObject = stream;
@@ -2206,37 +2206,20 @@ function analyzeLightConditions() {
 
 async function capturePhoto() {
   if (cameraStream && lightOK) {
-    showCapturingIndicator();
     const video = document.getElementById('cam-video');
     const canvas = document.getElementById('cam-canvas');
     const displayW = video.clientWidth || video.videoWidth || 1280;
     const displayH = video.clientHeight || video.videoHeight || 720;
 
-    // Prova ImageCapture (foto ad alta risoluzione, modalità foto hardware).
-    // Il warm-up fatto all'apertura della fotocamera dovrebbe averla resa
-    // più veloce; in più mettiamo comunque un timeout di sicurezza: se non
-    // risponde entro 700ms, passiamo al fotogramma video istantaneo invece
-    // di far aspettare l'utente più foto ferma.
-    let source = video;
-    let srcW = video.videoWidth || 1280;
-    let srcH = video.videoHeight || 720;
-    const track = cameraStream.getVideoTracks()[0];
-    if (track && window.ImageCapture) {
-      try {
-        const imageCapture = new ImageCapture(track);
-        const photoPromise = imageCapture.takePhoto().then(blob => createImageBitmap(blob));
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 700));
-        const bitmap = await Promise.race([photoPromise, timeoutPromise]);
-        source = bitmap;
-        srcW = bitmap.width;
-        srcH = bitmap.height;
-      } catch(_) {
-        // Timeout o non supportato: fallback istantaneo al fotogramma video
-        source = video;
-        srcW = video.videoWidth || 1280;
-        srcH = video.videoHeight || 720;
-      }
-    }
+    // Scatto ISTANTANEO dal fotogramma video, sempre e solo. ImageCapture
+    // è stato rimosso dal momento dello scatto: anche con un timeout di
+    // sicurezza, la richiesta lenta continuava a occupare la fotocamera in
+    // background, rallentando anche il fallback. La risoluzione massima
+    // viene già forzata all'apertura della fotocamera (vedi startCamera),
+    // non qui, per non aggiungere alcun ritardo al momento dello scatto.
+    const source = video;
+    const srcW = video.videoWidth || 1280;
+    const srcH = video.videoHeight || 720;
 
     // Stessa area "cover" visibile a schermo, ricalcolata sulle dimensioni
     // reali della sorgente usata (foto ad alta risoluzione o fotogramma video)
@@ -2259,21 +2242,12 @@ async function capturePhoto() {
     } else {
       ctx.drawImage(source, coverX, coverY, coverW, coverH, 0, 0, displayW, displayH);
     }
-    if (source !== video && source.close) {
-      // Ricalcola la nitidezza sulla foto vera ad alta risoluzione appena scattata,
-      // così il valore mostrato in conferma riflette lo scatto reale, non l'ultima
-      // stima approssimativa del flusso video live.
-      const result = computeSharpnessFromSource(source, srcW, srcH, displayW, displayH, digitalZoomLevel);
-      lastSharpness = result.sharpness;
-      source.close(); // libera memoria ImageBitmap
-    }
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.97);
     // Cattura sensor snapshot prima di stopCamera
     const snap = takeSensorSnapshot();
     pendingCaptureDataUrl = dataUrl;
     pendingCaptureSnap = snap;
-    hideCapturingIndicator();
     showCaptureConfirm(dataUrl);
   } else {
     document.getElementById('cam-file').click();
@@ -2282,13 +2256,18 @@ async function capturePhoto() {
 
 let capturingInterval = null;
 
-function warmUpImageCapture(stream) {
+async function maximizeVideoResolution(stream) {
   const track = stream.getVideoTracks()[0];
-  if (!track || !window.ImageCapture) return;
+  if (!track) return;
   try {
-    const imageCapture = new ImageCapture(track);
-    imageCapture.takePhoto().catch(() => {}); // risultato scartato, serve solo a "scaldare"
-  } catch(_) { /* non supportato, nessun problema */ }
+    const caps = track.getCapabilities();
+    if (caps.width?.max && caps.height?.max) {
+      await track.applyConstraints({
+        width: { ideal: caps.width.max },
+        height: { ideal: caps.height.max }
+      });
+    }
+  } catch(_) { /* se fallisce, resta la risoluzione già negoziata inizialmente */ }
 }
 
 function showCapturingIndicator() {

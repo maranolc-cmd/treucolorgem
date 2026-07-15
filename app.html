@@ -1846,8 +1846,8 @@ async function startCamera() {
     // Step 4: Cerca camera ultrawide se disponibile (migliore per macro)
     let videoConstraints = {
       facingMode: 'environment',
-      width: { ideal: 3840, min: 1280 },
-      height: { ideal: 2160, min: 720 },
+      width: { ideal: 9999, min: 1280 },
+      height: { ideal: 9999, min: 720 },
       focusMode: 'continuous'
     };
 
@@ -1866,8 +1866,8 @@ async function startCamera() {
       if (ultrawide && usingWideCamera) {
         videoConstraints = {
           deviceId: { exact: ultrawide.deviceId },
-          width: { ideal: 3840, min: 1280 },
-          height: { ideal: 2160, min: 720 }
+          width: { ideal: 9999, min: 1280 },
+          height: { ideal: 9999, min: 720 }
         };
       }
     } catch(_) {}
@@ -2250,8 +2250,15 @@ async function capturePhoto() {
     const coverX = (srcW - coverW) / 2;
     const coverY = (srcH - coverH) / 2;
 
-    canvas.width = displayW;
-    canvas.height = displayH;
+    // FIX IMPORTANTE: il canvas di output va dimensionato sulla risoluzione
+    // REALE del ritaglio sorgente (coverW/coverH, in pixel della fonte),
+    // non sulla larghezza CSS a schermo (displayW/displayH, spesso solo
+    // ~390px su un telefono). Prima schiacciavamo qualunque sorgente ad
+    // alta risoluzione dentro pochi pixel prima ancora di salvarla.
+    const outW = Math.round(coverW);
+    const outH = Math.round(coverH);
+    canvas.width = outW;
+    canvas.height = outH;
     const ctx = canvas.getContext('2d');
 
     if (digitalZoomLevel > 1.01) {
@@ -2259,11 +2266,13 @@ async function capturePhoto() {
       const zSrcH = coverH / digitalZoomLevel;
       const zSrcX = coverX + (coverW - zSrcW) / 2;
       const zSrcY = coverY + (coverH - zSrcH) / 2;
-      ctx.drawImage(source, zSrcX, zSrcY, zSrcW, zSrcH, 0, 0, displayW, displayH);
+      ctx.drawImage(source, zSrcX, zSrcY, zSrcW, zSrcH, 0, 0, outW, outH);
     } else {
-      ctx.drawImage(source, coverX, coverY, coverW, coverH, 0, 0, displayW, displayH);
+      ctx.drawImage(source, coverX, coverY, coverW, coverH, 0, 0, outW, outH);
     }
     if (source !== video && source.close) source.close(); // libera memoria se era un ImageBitmap da grabFrame
+
+    applyUnsharpMask(ctx, canvas.width, canvas.height);
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.97);
     // Cattura sensor snapshot prima di stopCamera
@@ -2277,6 +2286,38 @@ async function capturePhoto() {
 }
 
 let capturingInterval = null;
+
+// Unsharp mask: recupera la nitidezza percepita che il flusso video del
+// browser non applica (le fotocamere native lo fanno in post-elaborazione).
+// Non crea dettaglio inesistente, aumenta il contrasto locale sui bordi.
+// Costo: pochi ms, nessun ritardo percepibile allo scatto.
+function applyUnsharpMask(ctx, w, h, amount = 0.85, threshold = 3) {
+  const src = ctx.getImageData(0, 0, w, h);
+  const px = src.data;
+  const out = new Uint8ClampedArray(px);
+
+  for (let y = 1; y < h - 1; y++) {
+    for (let x = 1; x < w - 1; x++) {
+      const i = (y * w + x) * 4;
+      for (let c = 0; c < 3; c++) {
+        const center = px[i + c];
+        const lap =
+          5 * center
+          - px[i - w * 4 + c]
+          - px[i + w * 4 + c]
+          - px[i - 4 + c]
+          - px[i + 4 + c];
+        const diff = lap - center;
+        // threshold: non accentuare il rumore nelle zone piatte (es. sfondo)
+        if (Math.abs(diff) > threshold) {
+          out[i + c] = center + amount * diff;
+        }
+      }
+    }
+  }
+
+  ctx.putImageData(new ImageData(out, w, h), 0, 0);
+}
 
 async function maximizeVideoResolution(stream) {
   const track = stream.getVideoTracks()[0];

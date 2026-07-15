@@ -2211,15 +2211,36 @@ async function capturePhoto() {
     const displayW = video.clientWidth || video.videoWidth || 1280;
     const displayH = video.clientHeight || video.videoHeight || 720;
 
-    // Scatto ISTANTANEO dal fotogramma video, sempre e solo. ImageCapture
-    // è stato rimosso dal momento dello scatto: anche con un timeout di
-    // sicurezza, la richiesta lenta continuava a occupare la fotocamera in
-    // background, rallentando anche il fallback. La risoluzione massima
-    // viene già forzata all'apertura della fotocamera (vedi startCamera),
-    // non qui, per non aggiungere alcun ritardo al momento dello scatto.
-    const source = video;
-    const srcW = video.videoWidth || 1280;
-    const srcH = video.videoHeight || 720;
+    // Scatto ISTANTANEO. Prova prima grabFrame() (diverso da takePhoto():
+    // non attiva la modalità foto lenta, dovrebbe essere veloce come il
+    // fotogramma video, ma su alcuni browser passa da una pipeline diversa
+    // e può dare un risultato meno compresso). Se non supportato o fallisce,
+    // ripiega sul fotogramma video diretto, sempre istantaneo.
+    let source = video;
+    let srcW = video.videoWidth || 1280;
+    let srcH = video.videoHeight || 720;
+    const track = cameraStream.getVideoTracks()[0];
+    if (track && window.ImageCapture) {
+      try {
+        const imageCapture = new ImageCapture(track);
+        const bitmap = await imageCapture.grabFrame();
+        source = bitmap;
+        srcW = bitmap.width;
+        srcH = bitmap.height;
+      } catch(_) {
+        source = video;
+        srcW = video.videoWidth || 1280;
+        srcH = video.videoHeight || 720;
+      }
+    }
+    // Diagnostica: log della risoluzione realmente negoziata sul flusso video,
+    // per capire se la richiesta di risoluzione massima ha avuto effetto o
+    // se il dispositivo la sta comunque limitando (controllabile dai log
+    // della console del browser).
+    if (track) {
+      const settings = track.getSettings();
+      console.log('Risoluzione video negoziata:', settings.width, 'x', settings.height, '— fonte scatto:', srcW, 'x', srcH);
+    }
 
     // Stessa area "cover" visibile a schermo, ricalcolata sulle dimensioni
     // reali della sorgente usata (foto ad alta risoluzione o fotogramma video)
@@ -2242,6 +2263,7 @@ async function capturePhoto() {
     } else {
       ctx.drawImage(source, coverX, coverY, coverW, coverH, 0, 0, displayW, displayH);
     }
+    if (source !== video && source.close) source.close(); // libera memoria se era un ImageBitmap da grabFrame
 
     const dataUrl = canvas.toDataURL('image/jpeg', 0.97);
     // Cattura sensor snapshot prima di stopCamera
